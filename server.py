@@ -123,6 +123,7 @@ class Ser:
             # Default is -1 which means the whole file.
 
             ret, frame = vid.read()
+            #self.send_frame(frame, self.my_socket)
 
             # שליחת הפריים ללקוח
             self.send_frame(frame, self.client_socket)

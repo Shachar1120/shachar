@@ -23,16 +23,17 @@ class Cli:
         For example, DIR should result in printing the contents to the screen,
         Note- special attention should be given to SEND_PHOTO as it requires and extra receive
         """
-        # (8) treat all responses except SEND_PHOTO
-        isTrue, msg = Pro.get_msg(self.my_socket)
-        if isTrue and not cmd == "SEND_PHOTO":
-            print(msg)
-        elif cmd == "SEND_PHOTO":
-            file_size = int(msg)
+        while True:
+            isTrue, msg = Pro.get_msg(self.my_socket)
+            if isTrue:
+                # Display the frame
+                self.receive_frame()
+                print("HELLO")
+                #print(msg)
+            else:
+                print("Error receiving frame from the server.")
+                break
 
-            with open(Cli.SAVED_PHOTO_LOCATION, 'wb') as outfile:
-                outfile.write(self.my_socket.recv(file_size))
-            print("screenshot saved at client")
 
 
 
@@ -58,34 +59,25 @@ class Cli:
 
         return True
 
-    def receive_frame(client_socket):
+    def receive_frame(self):
         frame_data = b""
 
         while True:
-            data = client_socket.recv(BUFFER_SIZE)
+            data = self.my_socket.recv(BUFFER_SIZE)
             if not data:
                 break
             frame_data += data
-
         img_encoded = pickle.loads(frame_data)
-        img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
-        cv2.imshow('Server Stream', img)
-        cv2.waitKey(0)
+        frame = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
+        cv2.imshow('Server Stream', frame)
+        cv2.waitKey(1)
+
+
     def display_frame(frame):
         cv2.imshow('Server Stream', frame)
-        cv2.waitKey(1)  # המתנה קצרה כדי לא להקרוס את החלון
+        cv2.waitKey(1)
 
-    def show_camera(self):
-        while True:
-            # Receive frame from the server
-            isTrue, frame = Pro.get_msg(self.my_socket)
 
-            if isTrue:
-                # Display the frame
-                self.display_frame(frame)
-            else:
-                print("Error receiving frame from the server.")
-                break
 
 
     def close(self):
