@@ -1,21 +1,19 @@
+import pickle
 import socket
 from protocol import Pro
-from camera import Cam
+#from camera import Cam
 
 import glob
 import os
 import shutil
 import subprocess
-import pyautogui
 import cv2
 
 
 class Ser:
     IP = "0.0.0.0"
 
-    PHOTO_PATH = r"c:\users\galis\pictures\ss.jpg"  # The path + filename where the screenshot at the server should be saved
-
-    def _init_(self, ip, port):
+    def __init__(self, ip, port):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((ip, port))
         self.server_socket.listen()
@@ -38,17 +36,15 @@ class Ser:
         """
         # Use protocol.check_cmd first
         tof, msg = Pro.check_cmd(data)
-        # print("at server")
         if tof:
             cmd = data
             if cmd == 'START_STREAMING' or cmd == 'STOP_STREAMING':
                 return True, cmd, None
-        # Then make sure the params are valid
-        # (6)
 
     def donext(self):
+        #do next
         # Check if protocol is OK, e.g. length field OK
-        valid_protocol, cmd = Pro.get_msg(self.client_socket)
+        valid_protocol, cmd = Pro.get_msg(self.client_socket)#מקבלת פקודה מהלקוח
         print(f"received: {cmd} and validation turn out {valid_protocol}")
 
         if valid_protocol:
@@ -62,17 +58,8 @@ class Ser:
                 response = self.handle_client_request(command, params)
 
                 # add length field using "create_msg"
-                msg = Pro.create_msg(response).encode()
-                # if command == 'SEND_FILE':
-                # # Send the data itself to the client
-                #
-                # send to client
-                if command == "SEND_PHOTO":
-                    with open(Ser.PHOTO_PATH, 'rb') as infile:
-                        msg += infile.read()
-                # if cmd == 'EXIT':
-                #     self.client_socket.send(msg)
-                #     return False
+                msg = Pro.create_msg(response.encode())
+
                 if command == 'EXIT':
                     return False
                 self.client_socket.send(msg)
@@ -109,9 +96,6 @@ class Ser:
         #global response
         if command == 'START_STREAMING':
             self.camera(command)
-            #response = " ".join(glob.glob(params[0]))
-        # DIR - files_list = glob.glob
-        # (7)
         elif command == 'STOP_STREAMING':
             os.remove(params[0])
             response = f"deleted file {params[0]}"
@@ -121,23 +105,32 @@ class Ser:
     def close(self):
         self.server_socket.close()
 
+    def send_frame(self, frame, client_socket):
+        _, img_encoded = cv2.imencode('.jpg', frame)
+        frame_data = pickle.dumps(img_encoded)
+        frame_msg = Pro.create_msg(frame_data)
+        self.client_socket.send(frame_msg)
+
     def camera(self, command):
+        #התחלת לקבל פריימים מהמצלמה
         vid = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # an object that capture a video from the camera
 
         while (True):
 
-            # Capture the video frame
-            # by frame
+            # Capture the video frame by frame
 
             # read function-returns the specified number of bytes from the file.
             # Default is -1 which means the whole file.
 
             ret, frame = vid.read()
 
+            # שליחת הפריים ללקוח
+            self.send_frame(frame, self.client_socket)
+
             # Display the resulting frame
             # cv2.imshow(window_name-name of the window in which image to be displayed. , image-he image that is to be displayed.)
 
-            cv2.imshow('frame', frame)
+            #cv2.imshow('frame', frame)
 
 
             if command == "STOP_STREAMING":
@@ -166,5 +159,5 @@ def main():
 
 
 
-if __name__ == '_main_':
+if __name__ == '__main__':
     main()

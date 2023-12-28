@@ -33,12 +33,12 @@ class Pro:
         return False, "Not a valid message"
 
     @staticmethod
-    def create_msg(data):
+    def create_msg(data: bytes):
         """
         Create a valid protocol message, with length field
         """
         data_len = len(data)
-        return str(data_len).zfill(Pro.LENGTH_FIELD_SIZE) + data
+        return str(data_len).zfill(Pro.LENGTH_FIELD_SIZE).encode() + data
 
     @staticmethod
     def get_msg(my_socket):

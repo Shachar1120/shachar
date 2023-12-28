@@ -4,7 +4,7 @@ import cv2
 # define a video capture object
 # the 0 means first camera or webcam. VideoCapture(1): Means second camera or webcam
 
-vid = cv2.VideoCapture(0, cv2.CAP_DSHOW) # an object that capture a video from the camera
+#vid = cv2.VideoCapture(0, cv2.CAP_DSHOW) # an object that capture a video from the camera
 
 while (True):
 

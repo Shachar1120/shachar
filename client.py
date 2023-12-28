@@ -1,10 +1,15 @@
 import socket
+import pickle
+import cv2
+
 from protocol import Pro
+
+BUFFER_SIZE = 4096
 
 class Cli:
     SAVED_PHOTO_LOCATION = r"c:\users\galis\pictures\screenshot.jpg" # The path + filename where the copy of the screenshot at the client should be saved
 
-    def _init_(self):
+    def __init__(self):
         # open socket with the server
 
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,11 +44,10 @@ class Cli:
     def donext(self):
         cmd = input("Please enter command:\n").upper()
         tof, msg = Pro.check_cmd(cmd)
-        #print("at client")
         if tof:
             #sending to server
-            packet = Pro.create_msg(cmd)
-            self.my_socket.send(packet.encode())
+            packet = Pro.create_msg(cmd.encode())
+            self.my_socket.send(packet)
 
             # receiving from server
             self.handle_server_response(cmd)
@@ -54,6 +58,35 @@ class Cli:
 
         return True
 
+    def receive_frame(client_socket):
+        frame_data = b""
+
+        while True:
+            data = client_socket.recv(BUFFER_SIZE)
+            if not data:
+                break
+            frame_data += data
+
+        img_encoded = pickle.loads(frame_data)
+        img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
+        cv2.imshow('Server Stream', img)
+        cv2.waitKey(0)
+    def display_frame(frame):
+        cv2.imshow('Server Stream', frame)
+        cv2.waitKey(1)  # המתנה קצרה כדי לא להקרוס את החלון
+
+    def show_camera(self):
+        while True:
+            # Receive frame from the server
+            isTrue, frame = Pro.get_msg(self.my_socket)
+
+            if isTrue:
+                # Display the frame
+                self.display_frame(frame)
+            else:
+                print("Error receiving frame from the server.")
+                break
+
 
     def close(self):
         self.my_socket.close()
@@ -61,9 +94,9 @@ class Cli:
 
 def main():
     myclient = Cli()
-    myclient.connect("192.168.68.69", Pro.PORT)
+    myclient.connect("127.0.0.1", Pro.PORT)
     print('Welcome to remote computer application. Available commands are:\n')
-    print('TAKE_SCREENSHOT\nSEND_PHOTO\nDIR\nDELETE\nCOPY\nEXECUTE\nEXIT')
+    print('START_STREAMING\nSTOP_STREAMING\nEXIT')
     while myclient.donext():
         continue
     myclient.close()
@@ -78,5 +111,5 @@ def main():
     # loop until user requested to exit
 
 
-if __name__ == '_main_':
+if __name__ == '__main__':
     main()
