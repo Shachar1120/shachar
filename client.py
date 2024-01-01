@@ -32,7 +32,7 @@ class Cli:
                 frame_thread.start()
                 # Display the frame
                 #self.receive_frame() #לולאה אינסופית! להשתמש בthreading
-                print("HELLO")
+                print("heyyy")
                 #print(msg)
             else:
                 print("Error receiving frame from the server.")
