@@ -1,6 +1,7 @@
 import socket
 import pickle
 import cv2
+import threading
 
 from protocol import Pro
 
@@ -26,8 +27,11 @@ class Cli:
         while True:
             isTrue, msg = Pro.get_msg(self.my_socket)
             if isTrue:
+                # Display the frame in a separate thread
+                frame_thread = threading.Thread(target=self.receive_frame)
+                frame_thread.start()
                 # Display the frame
-                self.receive_frame()
+                #self.receive_frame() #לולאה אינסופית! להשתמש בthreading
                 print("HELLO")
                 #print(msg)
             else:
@@ -64,16 +68,20 @@ class Cli:
 
         while True:
             data = self.my_socket.recv(BUFFER_SIZE)
+            self.display_frame(data)
             if not data:
                 break
             frame_data += data
+
+        #img_encoded = pickle.loads(frame_data)
+        #frame = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
+        #cv2.imshow('Server Stream', frame)
+        #cv2.waitKey(1)
+
+
+    def display_frame(self, frame_data):
         img_encoded = pickle.loads(frame_data)
         frame = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
-        cv2.imshow('Server Stream', frame)
-        cv2.waitKey(1)
-
-
-    def display_frame(frame):
         cv2.imshow('Server Stream', frame)
         cv2.waitKey(1)
 
