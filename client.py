@@ -28,19 +28,16 @@ class Cli:
             isTrue, msg = Pro.get_msg(self.my_socket)
             if isTrue:
                 # Display the frame in a separate thread
-                frame_thread = threading.Thread(target=self.receive_frame)
-                frame_thread.start()
+
+                #receive_thread = threading.Thread(target=self.receive_frame)
+                #receive_thread.start()
                 # Display the frame
-                #self.receive_frame() #לולאה אינסופית! להשתמש בthreading
+                self.receive_frame() #לולאה אינסופית! להשתמש בthreading
                 print("heyyy")
                 #print(msg)
             else:
                 print("Error receiving frame from the server.")
                 break
-
-
-
-
 
 
 
@@ -67,11 +64,10 @@ class Cli:
         frame_data = b""
 
         while True:
-            data = self.my_socket.recv(BUFFER_SIZE)
-            self.display_frame(data)
-            if not data:
-                break
-            frame_data += data
+            res, frame_data = Pro.get_msg(self.my_socket)
+            if res:
+                self.display_frame(frame_data)
+
 
         #img_encoded = pickle.loads(frame_data)
         #frame = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)

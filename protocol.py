@@ -4,7 +4,7 @@ import socket
 
 class Pro:
 
-    LENGTH_FIELD_SIZE = 4
+    LENGTH_FIELD_SIZE = 6
     PORT = 8820
 
     @staticmethod

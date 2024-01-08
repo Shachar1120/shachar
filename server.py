@@ -1,5 +1,7 @@
 import pickle
 import socket
+import threading
+
 from protocol import Pro
 #from camera import Cam
 
@@ -110,6 +112,9 @@ class Ser:
         frame_data = pickle.dumps(img_encoded)
         frame_msg = Pro.create_msg(frame_data)
         self.client_socket.send(frame_msg)
+
+        send_thread = threading.Thread(target=frame)
+        send_thread.start()
 
     def camera(self, command):
         #התחלת לקבל פריימים מהמצלמה
