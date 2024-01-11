@@ -6,6 +6,8 @@ import threading
 from protocol import Pro
 
 BUFFER_SIZE = 4096
+#Master = 1
+#slave = 2
 
 class Cli:
     SAVED_PHOTO_LOCATION = r"c:\users\galis\pictures\screenshot.jpg" # The path + filename where the copy of the screenshot at the client should be saved
@@ -17,6 +19,20 @@ class Cli:
 
     def connect(self, ip, port):
         self.my_socket.connect((ip, port))
+
+        username = input("Please enter your name").upper()
+        password = input("Please enter your password").upper()
+        client_detalis = (username, password)
+
+        master_or_slave = input("Are you a Master or a Slave?").upper()
+
+        if master_or_slave == "MASTER":
+            connect_details = (ip, port, 1)  # client_details = (ip, port, master)
+        elif master_or_slave == "SLAVE":
+            connect_details = (ip, port, 2 ) #client_details = (ip, port, slave)
+        else:
+            print('error! write again master or slave')
+
 
     def handle_server_response(self, cmd):
         """
@@ -109,3 +125,16 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# note right of Server: Client connect to server
+# Client1->Server: connect ServerSocket
+# Server->Client1: ServerSocket accept
+#
+# note right of Client: Client sends start_streaming
+# Client1->Server: start_streaming
+# Server->Client1: ServerSocket accept
+# Server->Client1: send_frame 1
+# Server->Client1: send_frame 2
+# Server->Client1: send_frame 3
+#...
+# Server->Client1: send_frame infinite...

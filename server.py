@@ -113,8 +113,8 @@ class Ser:
         frame_msg = Pro.create_msg(frame_data)
         self.client_socket.send(frame_msg)
 
-        send_thread = threading.Thread(target=frame)
-        send_thread.start()
+        #send_thread = threading.Thread(target=frame)
+        #send_thread.start()
 
     def camera(self, command):
         #התחלת לקבל פריימים מהמצלמה

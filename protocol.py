@@ -1,6 +1,44 @@
 import os
 import socket
 
+# title Untitled
+#
+# note right of Server: Client connect to server
+# Client1->Server: connect ServerSocket
+# Server->Client1: ServerSocket accept
+#
+# note right of Server: Client connect to server
+# Client2->Server: connect ServerSocket
+# Server->Client2: ServerSocket accept
+#
+# note right of Client1: initiate call to Client2
+# Client1->Server: call client 2
+# Server->Client2: client 1 sent code to connect
+# Client2->Server: accept code connect of client 1
+#
+# note right of Server: negotiate call between client 1 and 2
+#
+# Server->Client1: client2 (ip, port, master)
+# Server->Client2: client1 (ip, port, slave)
+#
+# note right of Client1: connect to client2
+# Client1->Client2: connect the call
+# Client2->Client1: accept the call
+#
+# note right of Client1: send frames
+# note right of Client2: send frames
+# Client1->Client2: send frame 1
+# Client2->Client1: send frame 1
+# Client2->Client2: present frame 1
+# Client1->Client1: present frame 1
+#
+# Client1->Client2: send frame 2
+# Client2->Client1: send frame 2
+# Client2->Client2: present frame 2
+# Client1->Client1: present frame 2
+#
+# note right of Client1: ...
+# note right of Client2: ...
 
 class Pro:
 
