@@ -6,8 +6,7 @@ import threading
 from protocol import Pro
 
 BUFFER_SIZE = 4096
-#Master = 1
-#slave = 2
+
 
 class Cli:
     SAVED_PHOTO_LOCATION = r"c:\users\galis\pictures\screenshot.jpg" # The path + filename where the copy of the screenshot at the client should be saved
@@ -15,24 +14,47 @@ class Cli:
     def __init__(self):
         # open socket with the server
 
+        self.client_details = {"username": [], "password": []} # Create the dictionary globally
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def connect(self, ip, port):
-        self.my_socket.connect((ip, port))
 
+
+
+    def connect(self, ip, port):
         username = input("Please enter your name").upper()
         password = input("Please enter your password").upper()
-        client_detalis = (username, password)
+
+        # Add the new user to the global dictionary
+        self.client_details["username"].append(username)
+        self.client_details["password"].append(password)
 
         master_or_slave = input("Are you a Master or a Slave?").upper()
 
         if master_or_slave == "MASTER":
             connect_details = (ip, port, 1)  # client_details = (ip, port, master)
         elif master_or_slave == "SLAVE":
-            connect_details = (ip, port, 2 ) #client_details = (ip, port, slave)
+            connect_details = (ip, port, 2) #client_details = (ip, port, slave)
         else:
             print('error! write again master or slave')
 
+
+        self.my_socket.connect((ip, port))
+
+    def check_password(self, username, password):
+        # Check if the username exists in the dictionary
+        if username is not in self.client_details["username"]:
+            # Get the index of the username
+            index = self.client_details["username"].index(username) #למצוא את המיקום במילון
+
+            # Check if the provided password matches the stored password for that username
+            if self.client_details["password"][index] == password:
+                return True
+            else:
+                print("Incorrect password.")
+                return False
+        else:
+            print("Username not found.")
+            return False
 
     def handle_server_response(self, cmd):
         """
@@ -48,9 +70,8 @@ class Cli:
                 #receive_thread = threading.Thread(target=self.receive_frame)
                 #receive_thread.start()
                 # Display the frame
-                self.receive_frame() #לולאה אינסופית! להשתמש בthreading
+                self.receive_frame()
                 print("heyyy")
-                #print(msg)
             else:
                 print("Error receiving frame from the server.")
                 break
@@ -60,6 +81,18 @@ class Cli:
         # (10) treat SEND_PHOTO
 
     def donext(self):
+
+        username = input("Please enter your name").upper()
+        password = input("Please enter your password").upper()
+
+        print(self.client_details)
+
+        if self.check_password(username, password):
+            print("hereeeee!!")
+            return True
+        else:
+            return False # recognition failed
+
         cmd = input("Please enter command:\n").upper()
         tof, msg = Pro.check_cmd(cmd)
         if tof:
@@ -105,6 +138,8 @@ class Cli:
 
 
 def main():
+    #client_details = {"username": [], "password": []}  # dictionary
+
     myclient = Cli()
     myclient.connect("127.0.0.1", Pro.PORT)
     print('Welcome to remote computer application. Available commands are:\n')
