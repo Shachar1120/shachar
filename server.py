@@ -50,7 +50,7 @@ class Ser:
         print(f"received: {cmd} and validation turn out {valid_protocol}")
 
         if valid_protocol:
-            # Check if params are good, e.g. correct number of params, file name exists
+            #Check if params are good,e.g. correct number of params, file name exists
             cmd_str = cmd.decode()
             valid_cmd, command, params = self.check_client_request(cmd_str)
             if valid_cmd:
