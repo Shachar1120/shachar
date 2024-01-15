@@ -42,7 +42,7 @@ class Cli:
 
     def check_password(self, username, password):
         # Check if the username exists in the dictionary
-        if username is not in self.client_details["username"]:
+        if username is self.client_details["username"]:
             # Get the index of the username
             index = self.client_details["username"].index(username) #למצוא את המיקום במילון
 
