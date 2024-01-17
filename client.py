@@ -13,7 +13,7 @@ class Cli:
 
     def __init__(self):
         # open socket with the server
-
+        self.registered = False
         self.client_details = {"username": [], "password": []} # Create the dictionary globally
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -21,12 +21,13 @@ class Cli:
 
 
     def connect(self, ip, port):
-        username = input("Please enter your name").upper()
-        password = input("Please enter your password").upper()
+        username = input("Please enter your name1").upper()
+        password = input("Please enter your password1").upper()
 
         # Add the new user to the global dictionary
         self.client_details["username"].append(username)
         self.client_details["password"].append(password)
+
 
         master_or_slave = input("Are you a Master or a Slave?").upper()
 
@@ -42,19 +43,19 @@ class Cli:
 
     def check_password(self, username, password):
         # Check if the username exists in the dictionary
-        if username is self.client_details["username"]:
+        #if username is self.client_details["username"]:
             # Get the index of the username
             index = self.client_details["username"].index(username) #למצוא את המיקום במילון
 
             # Check if the provided password matches the stored password for that username
-            if self.client_details["password"][index] == password:
+            if self.client_details["password"][index].upper() == password:
                 return True
             else:
                 print("Incorrect password.")
                 return False
-        else:
-            print("Username not found.")
-            return False
+        #else:
+            #print("Username not found.")
+            #return False
 
     def handle_server_response(self, cmd):
         """
@@ -82,32 +83,38 @@ class Cli:
 
     def donext(self):
 
-        username = input("Please enter your name").upper()
-        password = input("Please enter your password").upper()
+        if self.registered == False: #still haven't registered
 
-        print(self.client_details)
+            username = input("Please enter your name2").upper()
+            password = input("Please enter your password2").upper()
 
-        if self.check_password(username, password):
-            print("hereeeee!!")
+            print(self.client_details)
+
+            self.registered = True
+
+            if self.check_password(username, password):
+                print("hereeeee!!")
+                return True
+            else:
+                return False # recognition failed
+
+        else: # is registered
+
+            cmd = input("Please enter command:\n").upper()
+            tof, msg = Pro.check_cmd(cmd)
+            if tof:
+                #sending to server
+                packet = Pro.create_msg(cmd.encode())
+                self.my_socket.send(packet)
+
+                # receiving from server
+                self.handle_server_response(cmd)
+                if cmd == 'EXIT':
+                    return False
+            else:
+                print("Not a valid command, or missing parameters\n")
+
             return True
-        else:
-            return False # recognition failed
-
-        cmd = input("Please enter command:\n").upper()
-        tof, msg = Pro.check_cmd(cmd)
-        if tof:
-            #sending to server
-            packet = Pro.create_msg(cmd.encode())
-            self.my_socket.send(packet)
-
-            # receiving from server
-            self.handle_server_response(cmd)
-            if cmd == 'EXIT':
-                return False
-        else:
-            print("Not a valid command, or missing parameters\n")
-
-        return True
 
     def receive_frame(self):
         frame_data = b""
