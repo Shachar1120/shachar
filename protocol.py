@@ -45,6 +45,10 @@ class Pro:
     LENGTH_FIELD_SIZE = 6
     PORT = 8820
 
+    #cmds:
+    REGISTER = "REGISTER"
+    PARAMETERS_DELIMITER = " "
+
     @staticmethod
     def get_msg(my_socket):
         """

@@ -2,6 +2,7 @@ import pickle
 import socket
 import threading
 
+from client import Cli
 from protocol import Pro
 #from camera import Cam
 
@@ -20,9 +21,47 @@ class Ser:
         self.server_socket.bind((ip, port))
         self.server_socket.listen()
         print("Server is up and running")
+
+        self.registered = False
+        self.client_details = {"username": [], "password": []}  # Create the dictionary globally
+
+
     def accept(self):
         (self.client_socket, self.client_address) = self.server_socket.accept()
         print("Client connected")
+
+
+    def check_password(self, username, password):
+        # get message: get the client details: get username and password
+
+        #message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}"
+        msg_details = Cli.get_msg(self.client_socket).decode()
+
+        username = msg_details[2]
+
+        # Check if the username exists in the dictionary
+        if username is not self.client_details["username"]:
+             #user isn't registered
+            # Add the new user to the global dictionary
+
+            self.client_details["username"].append(username)
+            self.client_details["password"].append(password)
+        else:
+            return False  # user is already registered
+
+
+
+            #index = self.client_details["username"].index(username) #למצוא את המיקום במילון
+
+            # Check if the provided password matches the stored password for that username
+            #if self.client_details["password"][index].upper() == password:
+              #  return True
+            #else:
+               # print("Incorrect password.")
+               # return False
+        #else:
+            #print("Username not found.")
+            #return False
 
     def check_client_request(self, data):
         """

@@ -3,7 +3,6 @@ import pickle
 import cv2
 import threading
 
-import negotitate
 from protocol import Pro
 
 BUFFER_SIZE = 4096
@@ -14,12 +13,21 @@ class Cli:
 
     def __init__(self):
         # open socket with the server
+        self.registered = False
+        self.client_details = {"username": [], "password": []} # Create the dictionary globally
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 
 
     def connect(self, ip, port):
+        username = input("Please enter your name1").upper()
+        password = input("Please enter your password1").upper()
+
+        # Add the new user to the global dictionary
+        self.client_details["username"].append(username)
+        self.client_details["password"].append(password)
+
 
         master_or_slave = input("Are you a Master or a Slave?").upper()
 
@@ -33,25 +41,35 @@ class Cli:
 
         self.my_socket.connect((ip, port))
 
+    def check_password(self, username, password):
+        # Check if the username exists in the dictionary
+        #if username is self.client_details["username"]:
+            # Get the index of the username
+            index = self.client_details["username"].index(username) #למצוא את המיקום במילון
 
-    #def call_another(self, connect_details):
-        #if connect_details[2] == 1:  # is master of the call
-        #    call_code = input("Please enter a call code").upper()
-        #else if connect_details[2] == 2:  # is master of the slave
+            # Check if the provided password matches the stored password for that username
+            if self.client_details["password"][index].upper() == password:
+                return True
+            else:
+                print("Incorrect password.")
+                return False
+        #else:
+            #print("Username not found.")
+            #return False
 
-    def handle_server_response(self, cmd, connect_details):
+    def handle_server_response(self, cmd):
         """
         Receive the response from the server and handle it, according to the request
         For example, DIR should result in printing the contents to the screen,
         Note- special attention should be given to SEND_PHOTO as it requires and extra receive
         """
-
-        #if self.call_another is True:
-           # y
-
         while True:
             isTrue, msg = Pro.get_msg(self.my_socket)
             if isTrue:
+                # Display the frame in a separate thread
+
+                #receive_thread = threading.Thread(target=self.receive_frame)
+                #receive_thread.start()
                 # Display the frame
                 self.receive_frame()
                 print("heyyy")
@@ -59,35 +77,26 @@ class Cli:
                 print("Error receiving frame from the server.")
                 break
 
+
+
         # (10) treat SEND_PHOTO
-
-
-
-
-
-
 
     def donext(self):
 
         if self.registered == False: #still haven't registered
 
-            username = input("Please enter your name").upper()
-            password = input("Please enter your password").upper()
-
-            message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}".encode()
-            # sending to server
-            packet = Pro.create_msg(message)
-            self.my_socket.send(packet)
+            username = input("Please enter your name2").upper()
+            password = input("Please enter your password2").upper()
 
             print(self.client_details)
 
-            #self.registered = True
+            self.registered = True
 
-            #if Ser.check_password(username, password):
-               # print("hereeeee!!")
-               # return True
-            #else:
-               # return False # recognition failed
+            if self.check_password(username, password):
+                print("hereeeee!!")
+                return True
+            else:
+                return False # recognition failed
 
         else: # is registered
 
