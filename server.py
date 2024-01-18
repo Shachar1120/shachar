@@ -36,8 +36,9 @@ class Ser:
 
         #message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}"
         msg_details = Cli.get_msg(self.client_socket).decode()
-
-        username = msg_details[2]
+        cmd_list = msg_details.split(Pro.PARAMETERS_DELIMITER)
+        # what is the CMD
+        username = cmd_list[2]
 
         # Check if the username exists in the dictionary
         if username is not self.client_details["username"]:
