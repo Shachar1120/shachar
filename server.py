@@ -31,14 +31,18 @@ class Ser:
         print("Client connected")
 
 
-    def check_password(self, username, password):
+    def get_client_details(self, message_details):
         # get message: get the client details: get username and password
 
         #message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}"
-        msg_details = Cli.get_msg(self.client_socket).decode()
-        cmd_list = msg_details.split(Pro.PARAMETERS_DELIMITER)
+
+        #msg_details = Cli.get_msg(self.client_socket).decode()
+
+        #cmd_list = message_details.split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
         # what is the CMD
-        username = cmd_list[2]
+        registered = cmd_list[0]
+        username = cmd_list[1]
+        password = cmd_list[2]
 
         # Check if the username exists in the dictionary
         if username is not self.client_details["username"]:
@@ -48,7 +52,7 @@ class Ser:
             self.client_details["username"].append(username)
             self.client_details["password"].append(password)
         else:
-            return False  # user is already registered
+            return False  # user is already registered!!!
 
 
 
@@ -84,44 +88,56 @@ class Ser:
                 return True, cmd, None
 
     def donext(self):
-        #do next
-        # Check if protocol is OK, e.g. length field OK
-        valid_protocol, cmd = Pro.get_msg(self.client_socket)#מקבלת פקודה מהלקוח
-        print(f"received: {cmd} and validation turn out {valid_protocol}")
 
-        if valid_protocol:
-            #Check if params are good,e.g. correct number of params, file name exists
-            cmd_str = cmd.decode()
-            valid_cmd, command, params = self.check_client_request(cmd_str)
-            if valid_cmd:
-                #
+        msg_details = Pro.get_msg(self.client_socket).decode()
+        cmd_list = msg_details.split(Pro.PARAMETERS_DELIMITER)  # [REGISTER, username, password]
 
-                # prepare a response using "handle_client_request"
-                response = self.handle_client_request(command, params)
+        if not self.get_client_details(msg_details): #if == False than user is already registered!
 
-                # add length field using "create_msg"
-                msg = Pro.create_msg(response.encode())
+            #send client that user is registered
+            #לשלוח ערך מהסרבר- או לשנות את הערך registered שנמצא בפרוטוקול???
+            #Pro.REGISTER = True
+            msg = Pro.create_msg(msg_details).encode()
+            self.client_socket.send(msg)
 
-                if command == 'EXIT':
-                    return False
-                self.client_socket.send(msg)
+            #do next
+            # Check if protocol is OK, e.g. length field OK
+            valid_protocol, cmd = Pro.get_msg(self.client_socket)#מקבלת פקודה מהלקוח
+            print(f"received: {cmd} and validation turn out {valid_protocol}")
 
-                # # (9)
-                #
-                return True
+            if valid_protocol:
+                #Check if params are good,e.g. correct number of params, file name exists
+                cmd_str = cmd.decode()
+                valid_cmd, command, params = self.check_client_request(cmd_str)
+                if valid_cmd:
+                    #
+
+                    # prepare a response using "handle_client_request"
+                    response = self.handle_client_request(command, params)
+
+                    # add length field using "create_msg"
+                    msg = Pro.create_msg(response.encode())
+
+                    if command == 'EXIT':
+                        return False
+                    self.client_socket.send(msg)
+
+                    # # (9)
+                    #
+                    return True
+
+                else:
+                    # prepare proper error to client
+                    response = 'Bad command or parameters'
+                    # send to client
 
             else:
                 # prepare proper error to client
-                response = 'Bad command or parameters'
+                response = 'Packet not according to protocol'
                 # send to client
 
-        else:
-            # prepare proper error to client
-            response = 'Packet not according to protocol'
-            # send to client
-
-            # Attempt to clean garbage from socket
-            self.client_socket.recv(1024)
+                # Attempt to clean garbage from socket
+                self.client_socket.recv(1024)
 
 
 
