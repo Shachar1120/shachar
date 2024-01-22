@@ -46,7 +46,7 @@ class Cli:
         Note- special attention should be given to SEND_PHOTO as it requires and extra receive
         """
 
-        #if self.call_another is True:
+        #if
            # y
 
         while True:
@@ -69,28 +69,20 @@ class Cli:
 
     def donext(self):
 
-        if self.registered == False: #still haven't registered
+        username = input("Please enter your name").upper()
+        password = input("Please enter your password").upper()
 
-            username = input("Please enter your name").upper()
-            password = input("Please enter your password").upper()
+        message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}".encode()
+        # sending to server
+        packet = Pro.create_msg(message)
+        self.my_socket.send(packet)
 
-            message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}".encode()
-            # sending to server
-            packet = Pro.create_msg(message)
-            self.my_socket.send(packet)
+        # receiving from server
+        isTrue, msg = Pro.get_msg(self.my_socket)
+        IS_REGISTERED = msg
 
-            print(self.client_details)
-
-            #self.registered = True
-
-            #if Ser.check_password(username, password):
-               # print("hereeeee!!")
-               # return True
-            #else:
-               # return False # recognition failed
-
-        else: # is registered
-
+    # if registered: then keep going
+        if Pro.REGISTER:
             cmd = input("Please enter command:\n").upper()
             tof, msg = Pro.check_cmd(cmd)
             if tof:
@@ -99,13 +91,15 @@ class Cli:
                 self.my_socket.send(packet)
 
                 # receiving from server
-                self.handle_server_response(cmd)
+                self.handle_server_response(cmd, None)
                 if cmd == 'EXIT':
                     return False
             else:
                 print("Not a valid command, or missing parameters\n")
 
             return True
+        else:
+            print("you havent signed up yet")
 
     def receive_frame(self):
         frame_data = b""
