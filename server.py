@@ -36,17 +36,17 @@ class Ser:
 
         #message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}"
 
-        #msg_details = Cli.get_msg(self.client_socket).decode()
+        #message_details.decode()
+        print()
 
-        #cmd_list = message_details.split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
+        cmd_list = message_details.split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
         # what is the CMD
-        registered = cmd_list[0]
         username = cmd_list[1]
         password = cmd_list[2]
 
         # Check if the username exists in the dictionary
         if username is not self.client_details["username"]:
-             #user isn't registered
+             #user isn't registered!!
             # Add the new user to the global dictionary
 
             self.client_details["username"].append(username)
@@ -89,16 +89,16 @@ class Ser:
 
     def donext(self):
 
-        msg_details = Pro.get_msg(self.client_socket).decode()
-        cmd_list = msg_details.split(Pro.PARAMETERS_DELIMITER)  # [REGISTER, username, password]
+        msg_details = Pro.get_msg(self.client_socket)
 
         if not self.get_client_details(msg_details): #if == False than user is already registered!
 
             #send client that user is registered
             #לשלוח ערך מהסרבר- או לשנות את הערך registered שנמצא בפרוטוקול???
-            #Pro.REGISTER = True
-            msg = Pro.create_msg(msg_details).encode()
-            self.client_socket.send(msg)
+
+            register = "True"
+            register_msg = Pro.create_msg(register).encode()
+            self.client_socket.send(register_msg)
 
             #do next
             # Check if protocol is OK, e.g. length field OK
