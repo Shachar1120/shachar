@@ -78,11 +78,9 @@ class Cli:
         self.my_socket.send(packet)
 
         # receiving from server
-        isTrue, msg = Pro.get_msg(self.my_socket)
-        IS_REGISTERED = msg
-
-    # if registered: then keep going
-        if Pro.REGISTER:
+        isTrue, msg = Pro.get_msg(self.my_socket).decode()
+        register = msg
+        if register == "True":
             cmd = input("Please enter command:\n").upper()
             tof, msg = Pro.check_cmd(cmd)
             if tof:
