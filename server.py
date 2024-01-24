@@ -30,43 +30,42 @@ class Ser:
         (self.client_socket, self.client_address) = self.server_socket.accept()
         print("Client connected")
 
+    def login(self, client_details, username, password):
+        # Check if the username exists in the dictionary
+        if username is not self.client_details["username"]:
+            # new user isn't registered! Add him to the global dictionary
+            self.add_client(username, password)
+        else:
+            return False  # user is already registered!!!
+
 
     def get_client_details(self, message_details):
         # get message: get the client details: get username and password
 
         #message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}"
 
-        #message_details.decode()
-        print()
-
         cmd_list = message_details.split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
         # what is the CMD
         username = cmd_list[1]
         password = cmd_list[2]
 
-        # Check if the username exists in the dictionary
-        if username is not self.client_details["username"]:
-             #user isn't registered!!
-            # Add the new user to the global dictionary
 
-            self.client_details["username"].append(username)
-            self.client_details["password"].append(password)
+
+    def add_client(self, username, password):
+        # Add the new user to the global dictionary
+
+        self.client_details["username"].append(username)
+        self.client_details["password"].append(password)
+
+    def check_password(self, client_details, username, password):
+        index = self.client_details["username"].index(username) #למצוא את המיקום במילון
+        if self.client_details["password"][index].upper() == password:
+            return True
         else:
-            return False  # user is already registered!!!
+            print("Incorrect password")
+            return False
 
 
-
-            #index = self.client_details["username"].index(username) #למצוא את המיקום במילון
-
-            # Check if the provided password matches the stored password for that username
-            #if self.client_details["password"][index].upper() == password:
-              #  return True
-            #else:
-               # print("Incorrect password.")
-               # return False
-        #else:
-            #print("Username not found.")
-            #return False
 
     def check_client_request(self, data):
         """
