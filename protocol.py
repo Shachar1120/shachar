@@ -60,7 +60,7 @@ class Pro:
             return False, "ERROR"
 
         msg_len = int(msg_len_before_valid)
-        message = my_socket.recv(msg_len)
+        message = my_socket.recv(msg_len).decode()
         return True, message
 
 
@@ -88,7 +88,8 @@ class Pro:
         Extract message from protocol, without the length field
         If length field does not include a number, returns False, "Error"
         """
-        msg_len_before_valid = my_socket.recv(Pro.LENGTH_FIELD_SIZE).decode()
+        msg_len_before_valid = my_socket.recv(Pro.LENGTH_FIELD_SIZE)
+        msg_len_before_valid = msg_len_before_valid.decode()
         if not msg_len_before_valid.isdecimal():
             return False, "ERROR"
 
