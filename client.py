@@ -124,7 +124,7 @@ class Cli:
 
 
     def close(self):
-        self.my_socket.close()
+        self.my_socket.close()  
 
 
 def main():
