@@ -49,6 +49,8 @@ class Pro:
     REGISTER = "REGISTER"
     PARAMETERS_DELIMITER = " "
 
+    client_details = {"username": [], "password": []}  # Create the dictionary globally
+
     @staticmethod
     def get_msg(my_socket):
         """
