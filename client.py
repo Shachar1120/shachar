@@ -64,7 +64,13 @@ class Cli:
 
 
 
-
+    def check_password(self, client_details, username, password):
+        index = Pro.client_details["username"].index(username) #למצוא את המיקום במילון
+        if Pro.client_details["password"][index].upper() == password:
+            return True
+        else:
+            print("Incorrect password")
+            return False
 
 
     @property
@@ -80,9 +86,17 @@ class Cli:
 
         # receiving from server
         isTrue, msg = Pro.get_msg(self.my_socket)
-        #message = msg.decode().split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
+
         register = msg.decode()
         if register == "True":
+            #check password:
+            user_name = input("Please enter your name again").upper()
+            password_ = input("Please enter your password again").upper()
+
+            self.check_password(Pro.client_details, user_name, password_)
+
+
+            #check if master or slave:
             cmd = input("Please enter command:\n").upper()
             tof, msg = Pro.check_cmd(cmd)
             if tof:
