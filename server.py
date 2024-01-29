@@ -24,7 +24,7 @@ class Ser:
         print("Server is up and running")
 
         self.registered = False
-        self.client_details = {"username": [], "password": []}  # Create the dictionary globally
+        #self.client_details = {"username": [], "password": []}  # Create the dictionary globally
 
 
     def accept(self):
@@ -33,7 +33,7 @@ class Ser:
 
     def login(self, client_details, username, password):
         # Check if the username exists in the dictionary
-        if username is not self.client_details["username"]:
+        if username is not Pro.client_details["username"]:
             # new user isn't registered! Add him to the global dictionary
             self.add_client(username, password)
         else:
@@ -55,12 +55,12 @@ class Ser:
     def add_client(self, username, password):
         # Add the new user to the global dictionary
 
-        self.client_details["username"].append(username)
-        self.client_details["password"].append(password)
+        Pro.client_details["username"].append(username)
+        Pro.client_details["password"].append(password)
 
     def check_password(self, client_details, username, password):
-        index = self.client_details["username"].index(username) #למצוא את המיקום במילון
-        if self.client_details["password"][index].upper() == password:
+        index = Pro.client_details["username"].index(username) #למצוא את המיקום במילון
+        if Pro.client_details["password"][index].upper() == password:
             return True
         else:
             print("Incorrect password")
@@ -99,6 +99,7 @@ class Ser:
             register = "True"
             register_msg = Pro.create_msg(register.encode())
             self.client_socket.send(register_msg)
+
 
             #do next
             # Check if protocol is OK, e.g. length field OK
