@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 import cv2
+import time
 
 
 class Ser:
@@ -43,7 +44,7 @@ class Ser:
         # get message: get the client details: get username and password
 
         #message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}"
-
+        message_details = message_details.decode()
         cmd_list = message_details.split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
         # what is the CMD
         username = cmd_list[1]
@@ -90,13 +91,13 @@ class Ser:
 
         msg_details = Pro.get_msg(self.client_socket)
 
-        if not self.get_client_details(msg_details): #if == False than user is already registered!
+        if not self.get_client_details(msg_details[1]): #if == False than user is already registered!
 
             #send client that user is registered
             #לשלוח ערך מהסרבר- או לשנות את הערך registered שנמצא בפרוטוקול???
 
             register = "True"
-            register_msg = Pro.create_msg(register).encode()
+            register_msg = Pro.create_msg(register.encode())
             self.client_socket.send(register_msg)
 
             #do next
@@ -176,13 +177,14 @@ class Ser:
         vid = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # an object that capture a video from the camera
 
         while (True):
-
+            time.sleep(0.02)
             # Capture the video frame by frame
 
             # read function-returns the specified number of bytes from the file.
             # Default is -1 which means the whole file.
 
             ret, frame = vid.read()
+
             #self.send_frame(frame, self.my_socket)
 
             # שליחת הפריים ללקוח
