@@ -67,6 +67,7 @@ class Cli:
 
 
 
+    @property
     def donext(self):
 
         username = input("Please enter your name").upper()
@@ -78,8 +79,9 @@ class Cli:
         self.my_socket.send(packet)
 
         # receiving from server
-        isTrue, msg = Pro.get_msg(self.my_socket).decode()
-        register = msg
+        isTrue, msg = Pro.get_msg(self.my_socket)
+        #message = msg.decode().split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
+        register = msg.decode()
         if register == "True":
             cmd = input("Please enter command:\n").upper()
             tof, msg = Pro.check_cmd(cmd)
@@ -124,7 +126,7 @@ class Cli:
 
 
     def close(self):
-        self.my_socket.close()  
+        self.my_socket.close()
 
 
 def main():
@@ -134,7 +136,7 @@ def main():
     myclient.connect("127.0.0.1", Pro.PORT)
     print('Welcome to remote computer application. Available commands are:\n')
     print('START_STREAMING\nSTOP_STREAMING\nEXIT')
-    while myclient.donext():
+    while myclient.donext:
         continue
     myclient.close()
     # (2)
