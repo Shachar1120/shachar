@@ -24,49 +24,63 @@ class Ser:
         print("Server is up and running")
 
         self.registered = False
-        #self.client_details = {"username": [], "password": []}  # Create the dictionary globally
+        self.client_details = {"username": [], "password": []}  # Create the dictionary globally
 
 
     def accept(self):
         (self.client_socket, self.client_address) = self.server_socket.accept()
         print("Client connected")
 
-    def login(self, client_details, username, password):
-        # Check if the username exists in the dictionary
-        if username is not Pro.client_details["username"]:
-            # new user isn't registered! Add him to the global dictionary
-            self.add_client(username, password)
-        else:
-            return False  # user is already registered!!!
+    def login(self, client_details):
+
+        #get the client details
+        client_details_list = self.get_client_details(client_details) #[ username , password ]
+
+        client_username = client_details_list[0]
+        client_password = client_details_list[1]
+
+        #check if client is in dictionary
+        if not self.find_client(client_username, client_password):
+            #then new user isn't registered! Add him to the global dictionary
+            self.add_client(client_username, client_password)
+
+        return True
+
+
 
 
     def get_client_details(self, message_details):
+
         # get message: get the client details: get username and password
 
-        #message = f"{Pro.REGISTER}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}"
-        message_details = message_details.decode()
-        cmd_list = message_details.split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
-        # what is the CMD
-        username = cmd_list[1]
-        password = cmd_list[2]
+        #message = f"{username}{Pro.PARAMETERS_DELIMITER}{password}"
 
+        message_details = message_details.decode()
+        client_details_list = message_details.split(Pro.PARAMETERS_DELIMITER) #[REGISTER, username, password]
+        return client_details_list
+
+
+    def find_client(self, username, password):
+         #Check if the user exists in the dictionary
+        if username is not self.client_details["username"]: #if you dont find username in dict
+            return False #isnt registered yet
+        else:
+            return True
 
 
     def add_client(self, username, password):
         # Add the new user to the global dictionary
 
-        Pro.client_details["username"].append(username)
-        Pro.client_details["password"].append(password)
+        self.client_details["username"].append(username)
+        self.client_details["password"].append(password)
 
     def check_password(self, client_details, username, password):
-        index = Pro.client_details["username"].index(username) #למצוא את המיקום במילון
-        if Pro.client_details["password"][index].upper() == password:
+        index = self.client_details["username"].index(username) #למצוא את המיקום במילון
+        if self.client_details["password"][index].upper() == password:
             return True
         else:
             print("Incorrect password")
             return False
-
-
 
     def check_client_request(self, data):
         """
@@ -90,8 +104,11 @@ class Ser:
     def donext(self):
 
         msg_details = Pro.get_msg(self.client_socket)
+        #msg_details = (True/False, USERNAME PASSWORD)
 
-        if not self.get_client_details(msg_details[1]): #if == False than user is already registered!
+        if self.login(msg_details[1])==True:
+
+        #if not self.get_client_details(msg_details[1]): #if == False than user is already registered!
 
             #send client that user is registered
             #לשלוח ערך מהסרבר- או לשנות את הערך registered שנמצא בפרוטוקול???
@@ -99,6 +116,11 @@ class Ser:
             register = "True"
             register_msg = Pro.create_msg(register.encode())
             self.client_socket.send(register_msg)
+
+            # get details again and check password
+
+            #details_again = Pro.get_msg(self.client_socket)
+            #self.get_client_details(msg_details[1])
 
 
             #do next
