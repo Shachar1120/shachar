@@ -46,9 +46,6 @@ class Cli:
         Note- special attention should be given to SEND_PHOTO as it requires and extra receive
         """
 
-        #if
-           # y
-
         while True:
             isTrue, msg = Pro.get_msg(self.my_socket)
             if isTrue:
@@ -60,6 +57,40 @@ class Cli:
                 break
 
         # (10) treat SEND_PHOTO
+
+    def assign(self, username, password):
+        # send again to server to check password:
+        details_again_msg = f"{Pro.CHECK}{Pro.PARAMETERS_DELIMITER}{username}{Pro.PARAMETERS_DELIMITER}{password}".encode()
+        # sending to server
+        packet = Pro.create_msg(details_again_msg)
+        self.my_socket.send(packet)
+
+        # receiving from server
+        isTrue1, msg_again = Pro.get_msg(self.my_socket)
+
+        check = msg_again.decode()
+        if check == "True":
+            return True
+        else:
+            return False
+
+    def handle_cmd(self,cmd):
+        # check if master or slave:
+        tof, msg = Pro.check_cmd(cmd)
+        if tof:
+            # sending to server
+            packet = Pro.create_msg(cmd.encode())
+            self.my_socket.send(packet)
+
+            # receiving from server
+            self.handle_server_response(cmd, None)
+            if cmd == 'EXIT':
+                return False
+        else:
+            print("Not a valid command, or missing parameters\n")
+
+        return True
+
 
 
 
@@ -84,32 +115,18 @@ class Cli:
             username2 = input("Please enter your name again").upper()
             password2 = input("Please enter your password again").upper()
 
-            #send again to server to check password:
-            #details_again_msg = f"{Pro.CHECK}{Pro.PARAMETERS_DELIMITER}{username2}{Pro.PARAMETERS_DELIMITER}{password2}".encode()
-            # sending to server
-            #packet = Pro.create_msg(details_again_msg)
-            #self.my_socket.send(packet)
+            if self.assign(username2, password2):
+                print("your username and password are ok")
 
-
-
-            #check if master or slave:
-            cmd = input("Please enter command:\n").upper()
-            tof, msg = Pro.check_cmd(cmd)
-            if tof:
-                #sending to server
-                packet = Pro.create_msg(cmd.encode())
-                self.my_socket.send(packet)
-
-                # receiving from server
-                self.handle_server_response(cmd, None)
-                if cmd == 'EXIT':
-                    return False
+                get_cmd = input("Please enter command:\n").upper()
+                self.handle_cmd(get_cmd)
             else:
-                print("Not a valid command, or missing parameters\n")
+                print("your password is incorrect")
 
-            return True
-        else:
-            print("you havent signed up yet")
+            #get out of the loop
+        if register == "False":
+                print("you havent signed up yet")
+                break
 
     def receive_frame(self):
         frame_data = b""
@@ -139,6 +156,8 @@ class Cli:
         self.my_socket.close()
 
 
+def print_usage():
+    print(f"options: \n\tregister\n\tassign")
 def main():
     #client_details = {"username": [], "password": []}  # dictionary
 
