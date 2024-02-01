@@ -74,9 +74,17 @@ class Ser:
         self.client_details["username"].append(username)
         self.client_details["password"].append(password)
 
-    def check_password(self, client_details, username, password):
-        index = self.client_details["username"].index(username) #למצוא את המיקום במילון
-        if self.client_details["password"][index].upper() == password:
+    def check_password(self, client_details):
+        # get the client details
+        client_details_list = self.get_client_details(client_details)  # [ username , password ]
+
+        client_username_again = client_details_list[0]
+        client_password_again = client_details_list[1]
+
+        # check if client username and passwords match
+
+        index = self.client_details["username"].index(client_username_again) #למצוא את המיקום במילון
+        if self.client_details["password"][index].upper() == client_password_again.upper():
             return True
         else:
             print("Incorrect password")
@@ -119,8 +127,14 @@ class Ser:
 
             # get details again and check password
 
-            #details_again = Pro.get_msg(self.client_socket)
-            #self.get_client_details(msg_details[1])
+            details_again = Pro.get_msg(self.client_socket)
+            self.check_password(msg_details[1])
+
+            # send client that username and passwords match(client is checked)
+
+            check = "True"
+            check_msg = Pro.create_msg(check.encode())
+            self.client_socket.send(check_msg)
 
 
             #do next
@@ -144,9 +158,6 @@ class Ser:
                     if command == 'EXIT':
                         return False
                     self.client_socket.send(msg)
-
-                    # # (9)
-                    #
                     return True
 
                 else:
@@ -161,6 +172,11 @@ class Ser:
 
                 # Attempt to clean garbage from socket
                 self.client_socket.recv(1024)
+
+        else: #self.login(msg_details[1])==False
+            register = "False"
+            register_msg = Pro.create_msg(register.encode())
+            self.client_socket.send(register_msg)
 
 
 
