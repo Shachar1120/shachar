@@ -29,8 +29,9 @@ class Cli:
         return True, message
     def handle_response(self, response):
         # cmd = message_parts[0], params = message_parts[1:]
-        message_parts = response.split(Pro.PARAMETERS_DELIMITER)
-        cmd = message_parts[0], params = message_parts[1:]
+    #    message_parts = response.split(Pro.PARAMETERS_DELIMITER)
+    #    cmd = message_parts[0], params = message_parts[1:]
+        cmd = response
         if cmd == Pro.cmds[Pro.REGISTER_NACK]:
             print("Maybe user already exist!!! try different username")
             return False
@@ -63,9 +64,18 @@ def main():
 
         myclient.send_cmd(cmd.encode(), params)
 
-        res, response = myclient.get_response()
+        res, cmd_response = myclient.get_response() #res, params = REGISTER_NACK/REGISTER_ACK,
         if res:
-            myclient.handle_response(response)
+            print("here!!!")
+            response = myclient.handle_response(cmd_response.decode())
+            if response:
+                #if REGISTER_ACK
+                #get from server if ASSIGN_ACK or ASSIGN_NACK
+                pass
+
+            else: # REGISTER_NACK- Maybe user already exist!!! try different username
+                pass
+
         else:
             break
 

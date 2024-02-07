@@ -38,12 +38,36 @@ class Ser:
         print("Client disconnected")
 
     def handle_registration(self, params: []) -> int:
-        if params[0] in self.client_details.keys():
+        if params[0] in self.client_details.keys(): #if username exists in dictionary
             return Pro.cmds[Pro.REGISTER_NACK] # already registered
 
+        # else: user is not registered yet
         # registering:
-        self.client_details[params[0]] = params[1]
+        self.client_details[params[0]] = params[1] #add client
         return Pro.cmds[Pro.REGISTER_ACK]
+
+    def handle_assigned(self, params: []) -> int:
+        if self.check_password(params):
+            print("Correct Password!!")
+            return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
+        else:
+            print("Incorrect password!!")
+            return Pro.cmds[Pro.ASSIGN_NACK]  # username acknowledged
+        # mark username as assigned
+        # send assigned ack
+        # else
+        # send assigned nack
+
+
+    def check_password(self, params: []):
+        # check username already registered
+        if params[0] in self.client_details.keys():
+            #check if password fit
+            password_value = self.client_details[params[0]]
+            if password_value == params[1]: #if password of username in dict match password from params
+                return True
+        return False
+
 
 def main():
     # open socket with client
@@ -67,18 +91,23 @@ def main():
                 if not res:
                     myserver.client_disconnected()
 
-                # cmd = message_parts[0], params = message_parts[1:]
+                message = message.decode()
                 message_parts = message.split(Pro.PARAMETERS_DELIMITER)
-                cmd = message_parts[0], params = message_parts[1:]
+                cmd = message_parts[0]
+                params = message_parts[1:]
                 # if REGISTER:
                 if cmd == Pro.cmds[Pro.REGISTER]:
-                    res = myserver.handle_registration(params)
+                    res = myserver.handle_registration(params) # return REGISTER_NACK or REGISTER_ACK
                     # send response to the client
-                    message = Pro.create_msg(res, [])
+                    message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
 
                 # if ASSIGNED:
                 elif cmd == Pro.cmds[Pro.ASSIGN]:
+                    res = myserver.handle_assigned(params)
+                    # send response to the client
+                    message = Pro.create_msg(res.encode(), [])
+                    current_socket.send(message)
                     pass
                 else:
                     pass
