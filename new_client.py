@@ -27,10 +27,7 @@ class Cli:
             return False, None
 
         return True, message
-    def handle_response(self, response):
-        # cmd = message_parts[0], params = message_parts[1:]
-    #    message_parts = response.split(Pro.PARAMETERS_DELIMITER)
-    #    cmd = message_parts[0], params = message_parts[1:]
+    def handle_response_Register(self, response):
         cmd = response
         if cmd == Pro.cmds[Pro.REGISTER_NACK]:
             print("Maybe user already exist!!! try different username")
@@ -38,6 +35,27 @@ class Cli:
         elif cmd == Pro.cmds[Pro.REGISTER_ACK]:
             print("Registration succeedded")
             return True
+        elif cmd == Pro.cmds[Pro.ASSIGN_NACK]:
+            # they need to enter username and password again
+            print("you need to enter password again")
+            return False
+            pass
+        elif cmd == Pro.cmds[Pro.ASSIGN_ACK]:
+            # add user to dift of assigned
+            # create a token
+            pass
+
+    def handle_response_Assign(self, response):
+        cmd = response
+        if cmd == Pro.cmds[Pro.ASSIGN_NACK]:
+            # they need to enter username and password again
+            print("you need to enter password again")
+            return False
+            pass
+        elif cmd == Pro.cmds[Pro.ASSIGN_ACK]:
+            # add user to dift of assigned
+            # create a token
+            pass
 def main():
     myclient = Cli()
     myclient.connect("127.0.0.1", Pro.PORT)
@@ -67,14 +85,19 @@ def main():
         res, cmd_response = myclient.get_response() #res, params = REGISTER_NACK/REGISTER_ACK,
         if res:
             print("here!!!")
-            response = myclient.handle_response(cmd_response.decode())
-            if response:
-                #if REGISTER_ACK
-                #get from server if ASSIGN_ACK or ASSIGN_NACK
-                pass
+            if (cmd_response == Pro.cmds[Pro.REGISTER_NACK]) or (cmd_response == Pro.cmds[Pro.REGISTER_ACK]):
+                response = myclient.handle_response_Register(cmd_response.decode())
+                if response: # if true = REGISTER_ACK
+                    pass
+                else:
+                    pass
 
-            else: # REGISTER_NACK- Maybe user already exist!!! try different username
-                pass
+            if (cmd_response == Pro.cmds[Pro.ASSIGN_NACK]) or (cmd_response == Pro.cmds[Pro.ASSIGN_ACK]):
+                response = myclient.handle_response_Assign(cmd_response.decode())
+                if response: # if true = ASSIGN_ACK
+                    pass
+                else: # REGISTER_NACK- Maybe user already exist!!! try different username
+                    pass
 
         else:
             break

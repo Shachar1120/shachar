@@ -52,7 +52,7 @@ class Ser:
             return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
         else:
             print("Incorrect password!!")
-            return Pro.cmds[Pro.ASSIGN_NACK]  # username acknowledged
+            return Pro.cmds[Pro.ASSIGN_NACK]  # username not! acknowledged
         # mark username as assigned
         # send assigned ack
         # else
