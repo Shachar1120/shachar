@@ -86,7 +86,7 @@ class Pro:
     ASSIGN = 3
     ASSIGN_ACK = 4
     ASSIGN_NACK = 5
-    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK"]
+    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "START_STREAMING", "STOP_STREAMING"]
 
     @staticmethod
     def get_msg(my_socket: socket) -> (bool, str):

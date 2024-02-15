@@ -14,6 +14,8 @@ class Cli:
         # open socket with the server
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        self.assigned_client_details = {}  # Create the dictionary globally
+
     def connect(self, ip, port):
         self.my_socket.connect((ip, port))
 
@@ -56,6 +58,35 @@ class Cli:
             # add user to dift of assigned
             # create a token
             pass
+
+    def handle_cmd(self, cmd):
+        tof, msg = Pro.check_cmd(cmd)
+        if tof:
+            # sending to server
+            send_cmd = Pro.create_msg(cmd.encode())
+            self.my_socket.send(send_cmd)
+
+            # receiving from server
+            #self.handle_server_response(cmd, None)
+            #if cmd == 'EXIT':
+            #    return False
+        #else:
+            #print("Not a valid command, or missing parameters\n")
+
+        return True
+
+
+
+
+def assigned_mode(params):
+    # create a call token
+    # enter cmd to start streaming
+    # get_cmd = input("Please enter command:\n").upper()
+    # res = self.handle_cmd(get_cmd)
+    return True
+    pass
+
+
 def main():
     myclient = Cli()
     myclient.connect("127.0.0.1", Pro.PORT)
@@ -88,13 +119,20 @@ def main():
             if (cmd_response == Pro.cmds[Pro.REGISTER_NACK]) or (cmd_response == Pro.cmds[Pro.REGISTER_ACK]):
                 response = myclient.handle_response_Register(cmd_response.decode())
                 if response: # if true = REGISTER_ACK
+
                     pass
                 else:
+                    # couldn't register/ client exists
                     pass
 
             if (cmd_response == Pro.cmds[Pro.ASSIGN_NACK]) or (cmd_response == Pro.cmds[Pro.ASSIGN_ACK]):
                 response = myclient.handle_response_Assign(cmd_response.decode())
                 if response: # if true = ASSIGN_ACK
+                    # user is assigned!!
+                    # move to assigned mode:
+                    while myclient.assigned_mode(params):
+                        continue
+                    #
                     pass
                 else: # REGISTER_NACK- Maybe user already exist!!! try different username
                     pass

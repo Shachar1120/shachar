@@ -27,6 +27,7 @@ class Ser:
         self.registered = False
         # {"username1": "password1", "username2": "password2",...}
         self.client_details = {}  # Create the dictionary globally
+        self.assigned_clients = {}  # Create the dictionary globally
 
     def accept(self):
         (client_socket, client_address) = self.server_socket.accept()
@@ -53,6 +54,10 @@ class Ser:
         else:
             print("Incorrect password!!")
             return Pro.cmds[Pro.ASSIGN_NACK]  # username not! acknowledged
+
+        # add user to dict of assigned
+        self.assigned_clients[params[0]] = params[1] #add client
+
         # mark username as assigned
         # send assigned ack
         # else
@@ -108,6 +113,9 @@ def main():
                     # send response to the client
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
+
+                    #valid_protocol, cmd = Pro.get_msg(current_socket)  # מקבלת פקודה מהלקוח
+                    #print(f"received: {cmd} and validation turn out {valid_protocol}")
                     pass
                 else:
                     pass
