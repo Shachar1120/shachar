@@ -47,24 +47,21 @@ class Cli:
             # create a token
             pass
 
-    def handle_response_Assign(self, response):
-        cmd = response
-        if cmd == Pro.cmds[Pro.ASSIGN_NACK]:
+    def handle_response_assign(self, response):
+        if response == "ASSIGN_NACK":
             # they need to enter username and password again
             print("you need to enter password again")
             return False
-            pass
-        elif cmd == Pro.cmds[Pro.ASSIGN_ACK]:
+        elif response == "ASSIGN_ACK":
+            return True
             # add user to dift of assigned
             # create a token
-            pass
-
     def handle_cmd(self, cmd):
         tof, msg = Pro.check_cmd(cmd)
         if tof:
             # sending to server
-            send_cmd = Pro.create_msg(cmd.encode())
-            self.my_socket.send(send_cmd)
+            sending_cmd = Pro.create_msg(cmd.encode())
+            self.my_socket.send(sending_cmd)
 
             # receiving from server
             #self.handle_server_response(cmd, None)
@@ -78,13 +75,15 @@ class Cli:
 
 
 
-def assigned_mode(params):
-    # create a call token
-    # enter cmd to start streaming
-    # get_cmd = input("Please enter command:\n").upper()
-    # res = self.handle_cmd(get_cmd)
-    return True
-    pass
+    def assigned_mode(self, params):
+        # create a call token
+        # enter cmd to start streaming
+        get_cmd = input("Please enter command:\n").upper()
+        self.handle_cmd(get_cmd)
+        # get_cmd = input("Please enter command:\n").upper()
+        # res = self.handle_cmd(get_cmd)
+        return True
+        pass
 
 
 def main():
@@ -114,27 +113,37 @@ def main():
         myclient.send_cmd(cmd.encode(), params)
 
         res, cmd_response = myclient.get_response() #res, params = REGISTER_NACK/REGISTER_ACK,
+        cmd_response = cmd_response.decode()
         if res:
-            print("here!!!")
-            if (cmd_response == Pro.cmds[Pro.REGISTER_NACK]) or (cmd_response == Pro.cmds[Pro.REGISTER_ACK]):
-                response = myclient.handle_response_Register(cmd_response.decode())
-                if response: # if true = REGISTER_ACK
-
+            if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
+                print("heyy")
+                response = myclient.handle_response_Register(cmd_response)
+                if not response: # if false = REGISTER_NACK
+                    #couldn't register: client exists (or another reason)
+                    #client already exists! we need to continue to assign too
                     pass
                 else:
-                    # couldn't register/ client exists
+                    # then continue: ask to assign
                     pass
 
-            if (cmd_response == Pro.cmds[Pro.ASSIGN_NACK]) or (cmd_response == Pro.cmds[Pro.ASSIGN_ACK]):
-                response = myclient.handle_response_Assign(cmd_response.decode())
+                    # couldn't register/ client exists
+                    pass
+            else:
+                print("here!!")
+
+            if (cmd_response == "ASSIGN_NACK") or (cmd_response == "ASSIGN_ACK"):
+                response = myclient.handle_response_assign(cmd_response)
                 if response: # if true = ASSIGN_ACK
                     # user is assigned!!
                     # move to assigned mode:
+                    print("hey")
                     while myclient.assigned_mode(params):
                         continue
                     #
                     pass
                 else: # REGISTER_NACK- Maybe user already exist!!! try different username
+                    print("here3")
+                    print("password or username are incorrect!! write again:")
                     pass
 
         else:

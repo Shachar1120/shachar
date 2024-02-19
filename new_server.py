@@ -73,6 +73,19 @@ class Ser:
                 return True
         return False
 
+    def check_client_request(self, data):
+        # Use protocol.check_cmd first
+        tof, msg = Pro.check_cmd(data)
+        if tof:
+            cmd = data
+            if cmd == 'START_STREAMING' or cmd == 'STOP_STREAMING':
+                return True, cmd, None
+    def handle_client_request(self, command):
+        if command == 'START_STREAMING':
+            self.camera(command)
+        elif command == 'STOP_STREAMING':
+            pass
+
 
 def main():
     # open socket with client
@@ -114,8 +127,14 @@ def main():
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
 
-                    #valid_protocol, cmd = Pro.get_msg(current_socket)  # מקבלת פקודה מהלקוח
-                    #print(f"received: {cmd} and validation turn out {valid_protocol}")
+                    valid_protocol, cmd = Pro.get_msg(current_socket)  # מקבלת פקודה מהלקוח
+                    print(f"received: {cmd} and validation turn out {valid_protocol}")
+                    # Check if params are good,e.g. correct number of params, file name exists
+                    cmd_str = cmd.decode()
+                    valid_cmd, command, params = myserver.check_client_request(cmd_str)
+                    if valid_protocol:
+                        # prepare a response using "handle_client_request"
+                        response = myserver.handle_client_request(command, params)
                     pass
                 else:
                     pass
