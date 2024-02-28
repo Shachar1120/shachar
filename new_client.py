@@ -26,7 +26,7 @@ class Cli:
     def get_response(self):
         res, message = Pro.get_msg(self.my_socket)
         if not res:
-            return False, None
+            return False, message
 
         return True, message
     def handle_response_Register(self, response):
@@ -57,10 +57,10 @@ class Cli:
             # add user to dift of assigned
             # create a token
     def handle_cmd(self, cmd):
-        tof, msg = Pro.check_cmd(cmd)
+        tof = Pro.check_cmd(cmd)
         if tof:
             # sending to server
-            sending_cmd = Pro.create_msg(cmd.encode())
+            sending_cmd = Pro.create_msg(cmd, [])
             self.my_socket.send(sending_cmd)
 
             # receiving from server
@@ -113,7 +113,6 @@ def main():
         myclient.send_cmd(cmd.encode(), params)
 
         res, cmd_response = myclient.get_response() #res, params = REGISTER_NACK/REGISTER_ACK,
-        cmd_response = cmd_response.decode()
         if res:
             if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
                 print("heyy")
