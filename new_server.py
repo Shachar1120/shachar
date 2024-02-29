@@ -10,7 +10,7 @@ import glob
 import os
 import shutil
 import subprocess
-import cv2
+#import cv2
 import time
 
 class Ser:
@@ -80,11 +80,20 @@ class Ser:
             cmd = data
             if cmd == 'START_STREAMING' or cmd == 'STOP_STREAMING':
                 return True, cmd
+        else:
+            return False, cmd
+
     def handle_client_request(self, command):
         if command == 'START_STREAMING':
             self.camera(command)
         elif command == 'STOP_STREAMING':
             pass
+
+    def assigned_mode_server(self, cmd):
+        cmd_params = cmd.decode().split(" ")
+        valid_cmd, command = self.check_client_request(cmd_params[0]) #cmd_params[0] = the cmd (ASSIGN for example)
+        # prepare a response using "handle_client_request"
+        response = self.handle_client_request(command)
 
 
 def main():
@@ -129,14 +138,9 @@ def main():
 
                     valid_protocol, cmd = Pro.get_msg(current_socket)  # מקבלת פקודה מהלקוח
                     print(f"received: {cmd} and validation turn out {valid_protocol}")
-                    # Check if params are good,e.g. correct number of params, file name exists
-                    valid_cmd, command = myserver.check_client_request(cmd.decode())
                     if valid_protocol:
-                        # prepare a response using "handle_client_request"
-                        response = myserver.handle_client_request(command, params)
-                    pass
-                else:
-                    pass
+                        while myserver.assigned_mode_server(cmd):
+                            continue
 
     # close sockets
     print("Closing connection")

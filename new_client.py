@@ -1,6 +1,6 @@
 import socket
 import pickle
-import cv2
+#import cv2
 import threading
 
 import negotitate
@@ -30,19 +30,18 @@ class Cli:
 
         return True, message
     def handle_response_Register(self, response):
-        cmd = response
-        if cmd == Pro.cmds[Pro.REGISTER_NACK]:
+        if response == Pro.cmds[Pro.REGISTER_NACK]:
             print("Maybe user already exist!!! try different username")
             return False
-        elif cmd == Pro.cmds[Pro.REGISTER_ACK]:
+        elif response == Pro.cmds[Pro.REGISTER_ACK]:
             print("Registration succeedded")
             return True
-        elif cmd == Pro.cmds[Pro.ASSIGN_NACK]:
+        elif response == Pro.cmds[Pro.ASSIGN_NACK]:
             # they need to enter username and password again
             print("you need to enter password again")
             return False
             pass
-        elif cmd == Pro.cmds[Pro.ASSIGN_ACK]:
+        elif response == Pro.cmds[Pro.ASSIGN_ACK]:
             # add user to dift of assigned
             # create a token
             pass
@@ -60,7 +59,7 @@ class Cli:
         tof = Pro.check_cmd(cmd)
         if tof:
             # sending to server
-            sending_cmd = Pro.create_msg(cmd, [])
+            sending_cmd = Pro.create_msg(cmd.encode(), [])
             self.my_socket.send(sending_cmd)
 
             # receiving from server
@@ -113,6 +112,7 @@ def main():
         myclient.send_cmd(cmd.encode(), params)
 
         res, cmd_response = myclient.get_response() #res, params = REGISTER_NACK/REGISTER_ACK,
+        cmd_response = cmd_response.decode()
         if res:
             if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
                 print("heyy")
@@ -131,6 +131,7 @@ def main():
                 print("here!!")
 
             if (cmd_response == "ASSIGN_NACK") or (cmd_response == "ASSIGN_ACK"):
+                print("i am here!!")
                 response = myclient.handle_response_assign(cmd_response)
                 if response: # if true = ASSIGN_ACK
                     # user is assigned!!
