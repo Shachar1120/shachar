@@ -24,10 +24,12 @@ class Ser:
 
         self.client_sockets = []
 
-        self.registered = False
-        # {"username1": "password1", "username2": "password2",...}
-        self.client_details = {}  # Create the dictionary globally
-        self.assigned_clients = {}  # Create the dictionary globally
+        #self.registered = False
+
+        # {"username1": "password1", "username2": "password2",...}:
+        self.client_details = {} # dict of all the registered clients(all of the clients in the system)
+        self.assigned_clients = {} # dict of all assigned client(as in right now)
+        self.client_sockets_detailes = {} #{"username1" : "(ip, port)" # i have to check there isnt a username already!!!
 
     def accept(self):
         (client_socket, client_address) = self.server_socket.accept()
@@ -38,14 +40,28 @@ class Ser:
         self.client_sockets.remove(client_socket)
         print("Client disconnected")
 
-    def handle_registration(self, params: []) -> int:
+    def handle_registration(self, params: [], client_socket) -> int:
         if params[0] in self.client_details.keys(): #if username exists in dictionary
             return Pro.cmds[Pro.REGISTER_NACK] # already registered
 
         # else: user is not registered yet
         # registering:
         self.client_details[params[0]] = params[1] #add client
+
+        # add client username and socket details
+        self.client_sockets_dict_detailes(params, client_socket)
+
         return Pro.cmds[Pro.REGISTER_ACK]
+
+    def client_sockets_dict_detailes(self, params: [], client_socket):
+        # get client socket details: ip and port
+        ip = client_socket.getpeername()[0]
+        port = client_socket.getpeername()[1]
+        print(f"Username: {params[0]}, IP: {ip}, Port: {port}")
+        # add client username and socket details
+        self.client_sockets_detailes[params[0]] = (ip, port) # add client
+        #print("this is the client_sockets_detailes dict!!!!")
+        print(self.client_sockets_detailes)
 
     def handle_assigned(self, params: []) -> int:
         if self.check_password(params):
@@ -58,10 +74,8 @@ class Ser:
         # add user to dict of assigned
         self.assigned_clients[params[0]] = params[1] #add client
 
-        # mark username as assigned
-        # send assigned ack
-        # else
-        # send assigned nack
+
+
 
 
     def check_password(self, params: []):
@@ -90,6 +104,8 @@ class Ser:
             pass
 
     def assigned_mode_server(self, cmd):
+
+        # adding the current client detailes to a dictionary- we want: username, (ip, port)=client_socket
         cmd_params = cmd.decode().split(" ")
         valid_cmd, command = self.check_client_request(cmd_params[0]) #cmd_params[0] = the cmd (ASSIGN for example)
         # prepare a response using "handle_client_request"
@@ -124,7 +140,7 @@ def main():
                 params = message_parts[1:]
                 # if REGISTER:
                 if cmd == Pro.cmds[Pro.REGISTER]:
-                    res = myserver.handle_registration(params) # return REGISTER_NACK or REGISTER_ACK
+                    res = myserver.handle_registration(params, current_socket) # return REGISTER_NACK or REGISTER_ACK
                     # send response to the client
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
