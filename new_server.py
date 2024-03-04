@@ -104,14 +104,18 @@ class Ser:
             pass
 
     def assigned_mode_server(self, cmd):
+        print("server is in assigned mode!!")
         # send the assigned_clients dict to client to print contact list
-        message = Pro.create_msg(self.assigned_clients, [])
-        self.server_socket.send(message)
+        #message = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(self.assigned_clients)])
+        message = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(self.assigned_clients)])
+        print("here!!")
+        self.client_sockets.send(message.encode())
         #reciving a command
-        cmd_params = cmd.decode().split(" ")
-        valid_cmd, command = self.check_client_request(cmd_params[0]) #cmd_params[0] = the cmd (ASSIGN for example)
+
+        #cmd_params = cmd.decode().split(" ")
+        #valid_cmd, command = self.check_client_request(cmd_params[0]) #cmd_params[0] = the cmd (ASSIGN for example)
         # prepare a response using "handle_client_request"
-        response = self.handle_client_request(command)
+        #response = self.handle_client_request(command)
 
 
 def main():
@@ -149,15 +153,16 @@ def main():
 
                 # if ASSIGNED:
                 elif cmd == Pro.cmds[Pro.ASSIGN]:
+                    print("cmd is assign!!")
                     res = myserver.handle_assigned(params)
                     # send response to the client
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
 
-                    valid_protocol, cmd = Pro.get_msg(current_socket)  # מקבלת פקודה מהלקוח
-                    print(f"received: {cmd} and validation turn out {valid_protocol}")
-                    if valid_protocol:
-                        while myserver.assigned_mode_server(cmd):
+                    #valid_protocol, cmd = Pro.get_msg(current_socket)  # מקבלת פקודה מהלקוח
+                    #print(f"received: {cmd} and validation turn out {valid_protocol}")
+                    #if valid_protocol:
+                    while myserver.assigned_mode_server(cmd):
                             continue
 
     # close sockets
