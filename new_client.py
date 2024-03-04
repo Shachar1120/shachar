@@ -83,8 +83,11 @@ class Cli:
     def assigned_mode(self, params):
         # new client wants to join
         # check if client is assigned = in assigned dict
-        #if self.check_client_assigned(params):
+        if self.check_client_assigned(params):
             #get client details: username, (ip, port)
+            if params[0] in Ser.client_sockets_details.keys(): #if username is in dict
+                ip, port = Ser.client_sockets_details[params[0]] #(ip, port)
+                print("here!!!!!!", ip, port)
 
 
 
