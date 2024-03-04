@@ -72,6 +72,33 @@ class Cli:
 
         return True
 
+<<<<<<< HEAD
+
+    def check_client_assigned(self, params):
+        # check if client is assigned = in assigned dict
+        # send username to server
+        sending_username = Pro.create_msg(cmd.encode(), [])
+        self.my_socket.send(sending_cmd)
+        # server checks if username in dict
+        if params[0].decode() in Ser.assigned_clients.keys():
+            return True
+        else:
+            return False
+
+    def assigned_mode(self, params):
+        print("moved to assigned mode")
+        # client wants to start a call
+        # print all of assigned clients(print assigned dict)
+
+        # get the assigned_clients dict and print it
+        res, assigned_clients_dict = Pro.get_msg(self.my_socket)
+        if not res:
+            return False, None
+        else:
+            return True, assigned_clients_dict
+        #assigned_clients_dict = self.get_response()
+        print("the dict is!!!:" , assigned_clients_dict)
+=======
     def check_client_assigned(self, params):
         # check if client is assigned = in assigned dict
         if params[0] in Ser.assigned_clients.keys():
@@ -82,12 +109,17 @@ class Cli:
 
     def assigned_mode(self, params):
         # new client wants to join
+>>>>>>> origin/master
         # check if client is assigned = in assigned dict
         if self.check_client_assigned(params):
             #get client details: username, (ip, port)
             if params[0] in Ser.client_sockets_details.keys(): #if username is in dict
                 ip, port = Ser.client_sockets_details[params[0]] #(ip, port)
+<<<<<<< HEAD
+                print("this is the ip and port:", ip, port)
+=======
                 print("here!!!!!!", ip, port)
+>>>>>>> origin/master
 
 
 
@@ -131,7 +163,7 @@ def main():
         cmd_response = cmd_response.decode()
         if res:
             if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
-                print("heyy")
+                print("cmd is register")
                 response = myclient.handle_response_Register(cmd_response)
                 if not response: # if false = REGISTER_NACK
                     #couldn't register: client exists (or another reason)
@@ -144,23 +176,23 @@ def main():
                     # couldn't register/ client exists
                     pass
             else:
-                print("here!!")
+                print("cmd isnt register")
 
             if (cmd_response == "ASSIGN_NACK") or (cmd_response == "ASSIGN_ACK"):
-                print("i am here!!")
+                print("cmd is assign")
                 response = myclient.handle_response_assign(cmd_response)
                 if response: # if true = ASSIGN_ACK
                     # user is assigned!!
                     # dict of assigned clients in is server!
 
                     # move to assigned mode:
-                    print("hey")
+                    print("ready to move to assigned mode")
                     while myclient.assigned_mode(params):
                         continue
                     #
                     pass
                 else: # REGISTER_NACK- Maybe user already exist!!! try different username
-                    print("here3")
+                    print("couldn't register")
                     print("password or username are incorrect!! write again:")
                     pass
 
