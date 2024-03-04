@@ -104,8 +104,10 @@ class Ser:
             pass
 
     def assigned_mode_server(self, cmd):
-
-        # adding the current client detailes to a dictionary- we want: username, (ip, port)=client_socket
+        # send the assigned_clients dict to client to print contact list
+        message = Pro.create_msg(self.assigned_clients, [])
+        self.server_socket.send(message)
+        #reciving a command
         cmd_params = cmd.decode().split(" ")
         valid_cmd, command = self.check_client_request(cmd_params[0]) #cmd_params[0] = the cmd (ASSIGN for example)
         # prepare a response using "handle_client_request"
