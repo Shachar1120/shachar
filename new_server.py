@@ -29,7 +29,7 @@ class Ser:
         # {"username1": "password1", "username2": "password2",...}:
         self.client_details = {} # dict of all the registered clients(all of the clients in the system)
         self.assigned_clients = {} # dict of all assigned client(as in right now)
-        self.client_sockets_detailes = {} #{"username1" : "(ip, port)" # i have to check there isnt a username already!!!
+        self.client_sockets_details = {} #{"username1" : "(ip, port)" # i have to check there isnt a username already!!!
 
     def accept(self):
         (client_socket, client_address) = self.server_socket.accept()
@@ -49,19 +49,19 @@ class Ser:
         self.client_details[params[0]] = params[1] #add client
 
         # add client username and socket details
-        self.client_sockets_dict_detailes(params, client_socket)
+        self.client_sockets_dict_details(params, client_socket)
 
         return Pro.cmds[Pro.REGISTER_ACK]
 
-    def client_sockets_dict_detailes(self, params: [], client_socket):
+    def client_sockets_dict_details(self, params: [], client_socket):
         # get client socket details: ip and port
         ip = client_socket.getpeername()[0]
         port = client_socket.getpeername()[1]
         print(f"Username: {params[0]}, IP: {ip}, Port: {port}")
         # add client username and socket details
-        self.client_sockets_detailes[params[0]] = (ip, port) # add client
-        #print("this is the client_sockets_detailes dict!!!!")
-        print(self.client_sockets_detailes)
+        self.client_sockets_details[params[0]] = (ip, port) # add client
+        #print("this is the client_sockets_details dict!!!!")
+        print(self.client_sockets_details)
 
     def handle_assigned(self, params: []) -> int:
         if self.check_password(params):
