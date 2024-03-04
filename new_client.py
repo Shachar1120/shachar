@@ -3,8 +3,9 @@ import pickle
 #import cv2
 import threading
 
-import negotitate
+#import negotitate
 from new_protocol import Pro
+from new_server import Ser
 
 
 class Cli:
@@ -71,14 +72,26 @@ class Cli:
 
         return True
 
-
+    def check_client_assigned(self, params):
+        # check if client is assigned = in assigned dict
+        if params[0] in Ser.assigned_clients.keys():
+            return True
+        else:
+            return False
 
 
     def assigned_mode(self, params):
+        # new client wants to join
+        # check if client is assigned = in assigned dict
+        #if self.check_client_assigned(params):
+            #get client details: username, (ip, port)
+
+
+
         # create a call token
         # enter cmd to start streaming
-        get_cmd = input("Please enter command:\n").upper()
-        self.handle_cmd(get_cmd)
+        #get_cmd = input("Please enter command:\n").upper()
+        #self.handle_cmd(get_cmd)
         # get_cmd = input("Please enter command:\n").upper()
         # res = self.handle_cmd(get_cmd)
         return True
@@ -135,6 +148,8 @@ def main():
                 response = myclient.handle_response_assign(cmd_response)
                 if response: # if true = ASSIGN_ACK
                     # user is assigned!!
+                    # dict of assigned clients in is server!
+
                     # move to assigned mode:
                     print("hey")
                     while myclient.assigned_mode(params):
