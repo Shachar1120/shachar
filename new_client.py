@@ -84,36 +84,35 @@ class Cli:
         else:
             return False
 
+
+
     def assigned_mode(self, params):
+
         print("moved to assigned mode")
         # client wants to start a call
         # print all of assigned clients(print assigned dict)
 
-        # get the assigned_clients dict and print it
+        # get the assigned_clients dict
         res, assigned_clients_dict = Pro.get_msg(self.my_socket)
-        if not res:
-            return False, None
+        if res:
+            print("Received assigned clients dictionary successfully")
+            assigned_clients = pickle.loads(assigned_clients_dict)
+            print("Assigned clients:", assigned_clients)
         else:
-            return True, assigned_clients_dict
-        #assigned_clients_dict = self.get_response()
-        print("the dict is!!!:" , assigned_clients_dict)
-    def check_client_assigned(self, params):
-        # check if client is assigned = in assigned dict
-        if params[0] in Ser.assigned_clients.keys():
-            return True
-        else:
-            return False
+            print("Error receiving assigned clients dictionary")
 
+        #print it
+        assigned_clients_dict = self.get_response()
+        print("the dict is!!!:")
+        print(assigned_clients_dict)
 
-    def assigned_mode(self, params):
-        # new client wants to join
         # check if client is assigned = in assigned dict
-        if self.check_client_assigned(params):
+        #if self.check_client_assigned(params):
             #get client details: username, (ip, port)
-            if params[0] in Ser.client_sockets_details.keys(): #if username is in dict
-                ip, port = Ser.client_sockets_details[params[0]] #(ip, port)
-                print("this is the ip and port:", ip, port)
-                print("here!!!!!!", ip, port)
+        #    if params[0] in Ser.client_sockets_details.keys(): #if username is in dict
+        #        ip, port = Ser.client_sockets_details[params[0]] #(ip, port)
+        #        print("this is the ip and port:", ip, port)
+         #       print("here!!!!!!", ip, port)
 
 
 
