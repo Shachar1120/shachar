@@ -72,7 +72,6 @@ class Cli:
 
         return True
 
-<<<<<<< HEAD
 
     def check_client_assigned(self, params):
         # check if client is assigned = in assigned dict
@@ -98,7 +97,6 @@ class Cli:
             return True, assigned_clients_dict
         #assigned_clients_dict = self.get_response()
         print("the dict is!!!:" , assigned_clients_dict)
-=======
     def check_client_assigned(self, params):
         # check if client is assigned = in assigned dict
         if params[0] in Ser.assigned_clients.keys():
@@ -109,17 +107,13 @@ class Cli:
 
     def assigned_mode(self, params):
         # new client wants to join
->>>>>>> origin/master
         # check if client is assigned = in assigned dict
         if self.check_client_assigned(params):
             #get client details: username, (ip, port)
             if params[0] in Ser.client_sockets_details.keys(): #if username is in dict
                 ip, port = Ser.client_sockets_details[params[0]] #(ip, port)
-<<<<<<< HEAD
                 print("this is the ip and port:", ip, port)
-=======
                 print("here!!!!!!", ip, port)
->>>>>>> origin/master
 
 
 
