@@ -133,22 +133,30 @@ def main():
     myclient.connect("127.0.0.1", Pro.PORT)
 
     while True:
-        print(f"options: \n\tregister\n\tassign\n> ", end=" ")
+        print(f"options: \n\tregister\n\tassign\n\tcontacts\n> ", end=" ")
         cmd = input()
         cmd = cmd.upper()
 
-        if not Pro.check_register_or_assign(cmd):
+        if Pro.check_register_or_assign(cmd):
+            print("Enter username:")
+            username = input()
+            print("Enter password:")
+            password = input()
+            params = [username.encode(), password.encode()]
+            if not Pro.check_cmd_and_params(cmd, params):
+                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
+                print("Invalid command! Try again!")
+                continue
+        elif Pro.check_contacts(cmd):
+            print("Enter only username:")
+            username = input()
+            params = [username.encode(), None]
+            if not Pro.check_cmd_and_params(cmd, params):
+                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
+                print("Invalid command! Try again!")
+                continue
+        else:
             # in this phase only REGISTER or ASSIGN is required
-            print("Invalid command! Try again!")
-            continue
-
-        print("Enter username:")
-        username = input()
-        print("Enter password:")
-        password = input()
-        params = [username.encode(), password.encode()]
-        if not Pro.check_cmd_and_params(cmd, params):
-            # in this phase only REGISTER or ASSIGN is required with [username, password] as params
             print("Invalid command! Try again!")
             continue
 
@@ -180,16 +188,14 @@ def main():
                     # user is assigned!!
                     # dict of assigned clients in is server!
 
-                    # move to assigned mode:
-                    print("ready to move to assigned mode")
-                    res = myclient.assigned_mode(params)
-
-                    #
                     pass
                 else: # REGISTER_NACK- Maybe user already exist!!! try different username
                     print("couldn't register")
                     print("password or username are incorrect!! write again:")
                     pass
+
+            #if(cmd_response == "ASSIGNED_CLIENTS"):
+                #print("ok!!")
 
         else:
             break
