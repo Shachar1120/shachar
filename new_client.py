@@ -92,19 +92,21 @@ class Cli:
         # client wants to start a call
         # print all of assigned clients(print assigned dict)
 
-        # get the assigned_clients dict
-        res, assigned_clients_dict = Pro.get_msg(self.my_socket)
-        if res:
-            print("Received assigned clients dictionary successfully")
-            assigned_clients = pickle.loads(assigned_clients_dict)
-            print("Assigned clients:", assigned_clients)
-        else:
-            print("Error receiving assigned clients dictionary")
+        # ask server for the assigned_clients dict
+        cmd_assigned_clients = "ASSIGNED_CLIENTS"
+        # send request for contact list(all of assigned clients) to server
+        ask_assigned_clients = Pro.create_msg(cmd_assigned_clients.encode(), [])
+        self.my_socket.send(ask_assigned_clients)
 
-        #print it
-        assigned_clients_dict = self.get_response()
-        print("the dict is!!!:")
-        print(assigned_clients_dict)
+        # receiving assigned clients dictionary
+        #res, assigned_clients_dict = Pro.get_msg(self.my_socket)
+        #if res:
+            #print("Received assigned clients dictionary successfully")
+            #assigned_clients = pickle.loads(assigned_clients_dict)
+            #print("the Assigned clients dict is:", assigned_clients)
+        #else:
+            #print("Error receiving assigned clients dictionary")
+
 
         # check if client is assigned = in assigned dict
         #if self.check_client_assigned(params):
@@ -122,8 +124,8 @@ class Cli:
         #self.handle_cmd(get_cmd)
         # get_cmd = input("Please enter command:\n").upper()
         # res = self.handle_cmd(get_cmd)
-        return True
-        pass
+        #return True
+        #pass
 
 
 def main():
@@ -180,8 +182,8 @@ def main():
 
                     # move to assigned mode:
                     print("ready to move to assigned mode")
-                    while myclient.assigned_mode(params):
-                        continue
+                    res = myclient.assigned_mode(params)
+
                     #
                     pass
                 else: # REGISTER_NACK- Maybe user already exist!!! try different username
