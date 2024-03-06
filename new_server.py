@@ -158,10 +158,12 @@ def main():
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
 
-                    #valid, cmd = Pro.get_msg(current_socket)  # מקבלת פקודה מהלקוח
-                    #print(f"received: {cmd} and validation turn out {valid_protocol}")
-                    #if valid_protocol:
-                elif cmd == Pro.cmds[Pro.ASSIGNED_CLIENTS]: # client asks for assigned clients dict
+                # client asks for assigned clients dict
+                elif cmd == Pro.cmds[Pro.ASSIGNED_CLIENTS]:
+                    print("heyy")
+                    #send the assigned_clients dict to client to print contact list
+                    send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
+                    myserver.client_sockets.send(send_dict.encode())
 
 
     # close sockets
