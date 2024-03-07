@@ -20,7 +20,7 @@ class Cli:
     def connect(self, ip, port):
         self.my_socket.connect((ip, port))
 
-    def send_cmd(self, cmd: bytes, params:[]):
+    def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
         self.my_socket.send(msg_to_send)
 
@@ -28,7 +28,6 @@ class Cli:
         res, message = Pro.get_msg(self.my_socket)
         if not res:
             return False, message
-
         return True, message
     def handle_response_Register(self, response):
         if response == Pro.cmds[Pro.REGISTER_NACK]:
@@ -148,10 +147,7 @@ def main():
                 print("Invalid command! Try again!")
                 continue
         elif Pro.check_contacts(cmd):
-            print("Enter only username:")
-            username = input()
-            params = [username.encode(), None]
-            if not Pro.check_cmd_and_params(cmd, params):
+            if not Pro.check_cmd_and_params(cmd):
                 # in this phase only REGISTER or ASSIGN is required with [username, password] as params
                 print("Invalid command! Try again!")
                 continue
@@ -162,21 +158,24 @@ def main():
 
         myclient.send_cmd(cmd.encode(), params)
 
-        res, cmd_response = myclient.get_response() #res, params = REGISTER_NACK/REGISTER_ACK,
+        res, cmd_response = myclient.get_response()  # res, params = REGISTER_NACK/REGISTER_ACK,
         cmd_response = cmd_response.decode()
+        #message_parts = cmd_response.split(Pro.PARAMETERS_DELIMITER)
+        #cmd_part = message_parts[0]
+        #params = message_parts[1:]
+        print(params)
         if res:
             if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
                 print("cmd is register")
                 response = myclient.handle_response_Register(cmd_response)
                 if not response: # if false = REGISTER_NACK
-                    #couldn't register: client exists (or another reason)
+                    print("couldn't register (client already registered)") # couldn't register/ client exists
+                    print("continue to assign")
                     #client already exists! we need to continue to assign too
                     pass
                 else:
+                    print("you registered successfully")
                     # then continue: ask to assign
-                    pass
-
-                    # couldn't register/ client exists
                     pass
             else:
                 print("cmd isnt register")
@@ -185,6 +184,7 @@ def main():
                 print("cmd is assign")
                 response = myclient.handle_response_assign(cmd_response)
                 if response: # if true = ASSIGN_ACK
+                    print("user is assigned")
                     # user is assigned!!
                     # dict of assigned clients in is server!
 
@@ -194,7 +194,9 @@ def main():
                     print("password or username are incorrect!! write again:")
                     pass
 
-            #if(cmd_response == "ASSIGNED_CLIENTS"):
+            #if(cmd_response.decode() == "ASSIGNED_CLIENTS"):
+               # print("got the message!!!")
+                #pickle loads!!
                 #print("ok!!")
 
         else:
