@@ -142,7 +142,9 @@ def main():
                 message = message.decode()
                 message_parts = message.split(Pro.PARAMETERS_DELIMITER)
                 cmd = message_parts[0]
-                params = message_parts[1:]
+                params_len = message_parts[1]
+                params = message_parts[2:]
+                print(params)
                 # if REGISTER:
                 if cmd == Pro.cmds[Pro.REGISTER]:
                     res = myserver.handle_registration(params, current_socket) # return REGISTER_NACK or REGISTER_ACK
@@ -159,11 +161,16 @@ def main():
                     current_socket.send(message)
 
                 # client asks for assigned clients dict
-                elif cmd == Pro.cmds[Pro.ASSIGNED_CLIENTS]:
-                    print("heyy")
+                elif cmd == Pro.cmds[Pro.CONTACTS]:
+                    print("got the message contacts!!!!!")
+                    # send response to the client
+                    res = Pro.cmds[Pro.ASSIGNED_CLIENTS]
+                    send_dict = pickle.dumps(myserver.assigned_clients)
+                    message = Pro.create_msg(res.encode(), [send_dict])
+                    current_socket.send(message)
                     #send the assigned_clients dict to client to print contact list
-                    send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
-                    myserver.client_sockets.send(send_dict.encode())
+                    #send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
+                    #current_socket.send(send_dict).send(send_dict.encode())
 
                 # if CONTACTS
                 #elif cmd == Pro.cmds[Pro.CONTACTS]: # client asks for assigned clients dict
