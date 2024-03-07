@@ -87,7 +87,8 @@ class Pro:
     ASSIGN_ACK = 4
     ASSIGN_NACK = 5
     CONTACTS = 6
-    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "CONTACTS"]
+    ASSIGNED_CLIENTS = 7
+    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "CONTACTS", "ASSIGNED_CLIENTS"]
 
     @staticmethod
     def get_msg(my_socket: socket) -> (bool, str):
@@ -124,7 +125,7 @@ class Pro:
         return cmd == Pro.cmds[Pro.CONTACTS]
 
     @staticmethod
-    def check_cmd_and_params(cmd: str, params:[]):
+    def check_cmd_and_params(cmd: str, params=[]):
         """
         Check if the command is defined in the protocol, including all parameters
         For example, DELETE c:\work\file.txt is good, but DELETE alone is not
@@ -134,11 +135,11 @@ class Pro:
         return False, "Not a valid cmd"
 
     @staticmethod
-    def create_msg(cmd: bytes, params: []) -> bytes:
+    def create_msg(cmd: bytes, params=[]) -> bytes:
         """
         Create a valid protocol message, with length field
         """
-        msg_to_send = Pro.PARAMETERS_DELIMITER.encode().join([cmd] + params)
+        msg_to_send = Pro.PARAMETERS_DELIMITER.encode().join([cmd] + [len(params)]+ params)
         msg_len = len(msg_to_send)
         return str(msg_len).zfill(Pro.LENGTH_FIELD_SIZE).encode() + msg_to_send
 
