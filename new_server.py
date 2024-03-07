@@ -165,6 +165,15 @@ def main():
                     send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
                     myserver.client_sockets.send(send_dict.encode())
 
+                # if CONTACTS
+                #elif cmd == Pro.cmds[Pro.CONTACTS]: # client asks for assigned clients dict
+                    #print("got the message contacts!!!!!")
+                    # return contact list = assigned_clients dict
+                    #send_dict = Pro.create_msg(b"CONTACTS", [pickle.dumps(myserver.assigned_clients)])
+                    #current_socket.send(send_dict)
+
+                    # need to do pickle loads on the other side!!!!
+
 
     # close sockets
     print("Closing connection")
