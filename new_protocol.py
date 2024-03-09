@@ -139,7 +139,11 @@ class Pro:
         """
         Create a valid protocol message, with length field
         """
-        msg_to_send = Pro.PARAMETERS_DELIMITER.encode().join([cmd] + [len(params)]+ params)
+        len_params = len(params)
+        if len_params == 0:
+            msg_to_send = Pro.PARAMETERS_DELIMITER.encode().join([cmd] + [str(len_params).encode()])
+        else:
+            msg_to_send = Pro.PARAMETERS_DELIMITER.encode().join([cmd] + [str(len_params).encode()] + params)
         msg_len = len(msg_to_send)
         return str(msg_len).zfill(Pro.LENGTH_FIELD_SIZE).encode() + msg_to_send
 
