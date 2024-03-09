@@ -29,6 +29,24 @@ class Cli:
         if not res:
             return False, message
         return True, message
+
+    def split_message(self, message):
+        if message == Pro.cmds[Pro.CONTACTS] or message == Pro.cmds[Pro.ASSIGNED_CLIENTS]:
+            #load pickle and not decode to get msg!!
+            received_dict = pickle.loads(message)
+            msg = received_dict
+        else:
+            msg = message.decode()
+        message_parts = msg.split(Pro.PARAMETERS_DELIMITER) # message: cmd + len(params) + params
+        print("0:" + message_parts[0] + "1:" + message_parts[1] )
+        if message_parts[1] == '0':
+            print("False!! no params, only cmd")
+            return False, message_parts[0], None # return only cmd
+        else:
+            return True, message_parts[0], message_parts[2:] # return cmd, params
+
+
+
     def handle_response_Register(self, response):
         if response == Pro.cmds[Pro.REGISTER_NACK]:
             print("Maybe user already exist!!! try different username")
@@ -82,7 +100,6 @@ class Cli:
             return True
         else:
             return False
-
 
 
     def assigned_mode(self, params):
@@ -147,6 +164,7 @@ def main():
                 print("Invalid command! Try again!")
                 continue
         elif Pro.check_contacts(cmd):
+            params = []
             if not Pro.check_cmd_and_params(cmd):
                 # in this phase only REGISTER or ASSIGN is required with [username, password] as params
                 print("Invalid command! Try again!")
@@ -158,46 +176,45 @@ def main():
 
         myclient.send_cmd(cmd.encode(), params)
 
-        res, cmd_response = myclient.get_response()  # res, params = REGISTER_NACK/REGISTER_ACK,
-        cmd_response = cmd_response.decode()
-        #message_parts = cmd_response.split(Pro.PARAMETERS_DELIMITER)
-        #cmd_part = message_parts[0]
-        #params = message_parts[1:]
-        print(params)
-        if res:
-            if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
-                print("cmd is register")
-                response = myclient.handle_response_Register(cmd_response)
-                if not response: # if false = REGISTER_NACK
-                    print("couldn't register (client already registered)") # couldn't register/ client exists
-                    print("continue to assign")
-                    #client already exists! we need to continue to assign too
-                    pass
+        res_response, msg_response  = myclient.get_response()
+        if res_response:
+            res_split_msg, cmd_response, params_response = myclient.split_message(msg_response)
+            if not res_split_msg:
+            #res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
+                if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
+                    print("cmd is register")
+                    response = myclient.handle_response_Register(cmd_response)
+                    if not response: # if false = REGISTER_NACK
+                        print("couldn't register (client already registered)") # couldn't register/ client exists
+                        print("continue to assign")
+                        #client already exists! we need to continue to assign too
+                        pass
+                    else:
+                        print("you registered successfully")
+                        # then continue: ask to assign
+                        pass
                 else:
-                    print("you registered successfully")
-                    # then continue: ask to assign
-                    pass
+                    print("cmd isnt register")
+
+                if (cmd_response == "ASSIGN_NACK") or (cmd_response == "ASSIGN_ACK"):
+                    print("cmd is assign")
+                    response = myclient.handle_response_assign(cmd_response)
+                    if response: # if true = ASSIGN_ACK
+                        print("user is assigned")
+                        # user is assigned!!
+                        # dict of assigned clients in is server!
+
+                        pass
+                    else: # REGISTER_NACK- Maybe user already exist!!! try different username
+                        print("couldn't register")
+                        print("password or username are incorrect!! write again:")
+                        pass
+
             else:
-                print("cmd isnt register")
-
-            if (cmd_response == "ASSIGN_NACK") or (cmd_response == "ASSIGN_ACK"):
-                print("cmd is assign")
-                response = myclient.handle_response_assign(cmd_response)
-                if response: # if true = ASSIGN_ACK
-                    print("user is assigned")
-                    # user is assigned!!
-                    # dict of assigned clients in is server!
-
-                    pass
-                else: # REGISTER_NACK- Maybe user already exist!!! try different username
-                    print("couldn't register")
-                    print("password or username are incorrect!! write again:")
-                    pass
-
-            #if(cmd_response.decode() == "ASSIGNED_CLIENTS"):
-               # print("got the message!!!")
-                #pickle loads!!
-                #print("ok!!")
+            #res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
+                if (cmd_response == "ASSIGNED_CLIENTS"):
+                    print("cmd is ASSIGNED_CLIENTS")
+                    #pickle loads!!
 
         else:
             break
