@@ -114,6 +114,15 @@ class Ser:
             #send_dict = Pro.create_msg(pickle.dumps(self.assigned_clients), [])
             #self.client_sockets.send(send_dict.encode())
 
+    def split_msg(self, message):
+        message = message.decode()
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+        if message_parts[1] == '0': # len(params) == 0
+            # no params, only cmd
+            return False, message_parts[0], None  #return cmd only
+        else:
+            return True, message_parts[0], message_parts[2:]  #  return cmd, params
+
 
 
 
@@ -139,38 +148,43 @@ def main():
                 if not res:
                     myserver.client_disconnected()
 
-                message = message.decode()
-                message_parts = message.split(Pro.PARAMETERS_DELIMITER)
-                cmd = message_parts[0]
-                params_len = message_parts[1]
-                params = message_parts[2:]
-                print(params)
-                # if REGISTER:
-                if cmd == Pro.cmds[Pro.REGISTER]:
-                    res = myserver.handle_registration(params, current_socket) # return REGISTER_NACK or REGISTER_ACK
-                    # send response to the client
-                    message = Pro.create_msg(res.encode(), [])
-                    current_socket.send(message)
+                # check if you have cmd + params or only cmd
+                res_split, cmd_res, params_res = myserver.split_msg(message)
+                if res_split:
+                    #res_response = True: got both cmd and params (like in REGISTER , ASSIGN)
 
-                # if ASSIGNED:
-                elif cmd == Pro.cmds[Pro.ASSIGN]:
-                    print("cmd is assign!!")
-                    res = myserver.handle_assigned(params)
-                    # send response to the client
-                    message = Pro.create_msg(res.encode(), [])
-                    current_socket.send(message)
+                    # if REGISTER:
+                    if cmd_res == Pro.cmds[Pro.REGISTER]:
+                        res = myserver.handle_registration(params_res, current_socket) # return REGISTER_NACK or REGISTER_ACK
+                        # send response to the client
+                        message = Pro.create_msg(res.encode(), [])
+                        current_socket.send(message)
 
-                # client asks for assigned clients dict
-                elif cmd == Pro.cmds[Pro.CONTACTS]:
-                    print("got the message contacts!!!!!")
-                    # send response to the client
-                    res = Pro.cmds[Pro.ASSIGNED_CLIENTS]
-                    send_dict = pickle.dumps(myserver.assigned_clients)
-                    message = Pro.create_msg(res.encode(), [send_dict])
-                    current_socket.send(message)
-                    #send the assigned_clients dict to client to print contact list
-                    #send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
-                    #current_socket.send(send_dict).send(send_dict.encode())
+                    # if ASSIGNED:
+                    elif cmd_res == Pro.cmds[Pro.ASSIGN]:
+                        print("cmd is assign!!")
+                        res = myserver.handle_assigned(params_res)
+                        # send response to the client
+                        message = Pro.create_msg(res.encode(), [])
+                        current_socket.send(message)
+
+
+                else:
+                    #res_response = False: only got cmd (cmd = CONTACTS)
+
+                    # client asks for assigned clients dict
+                    if cmd_res == Pro.cmds[Pro.CONTACTS]:
+                        print("got the message contacts!!!!!")
+
+                        # send response to the client
+                        cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
+                        send_dict = pickle.dumps(myserver.assigned_clients)
+                        message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
+                        current_socket.send(message)
+
+                        #send the assigned_clients dict to client to print contact list
+                        #send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
+                        #current_socket.send(send_dict).send(send_dict.encode())
 
                 # if CONTACTS
                 #elif cmd == Pro.cmds[Pro.CONTACTS]: # client asks for assigned clients dict
