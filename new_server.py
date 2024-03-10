@@ -66,13 +66,14 @@ class Ser:
     def handle_assigned(self, params: []) -> int:
         if self.check_password(params):
             print("Correct Password!!")
+            # add user to dict of assigned
+            self.assigned_clients[params[0]] = params[1]  # add client
+            print("this is the dict!!", self.assigned_clients)
             return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
         else:
             print("Incorrect password!!")
             return Pro.cmds[Pro.ASSIGN_NACK]  # username not! acknowledged
 
-        # add user to dict of assigned
-        self.assigned_clients[params[0]] = params[1] #add client
 
 
 
@@ -178,9 +179,11 @@ def main():
 
                         # send response to the client
                         cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
+                        print("this is the dict!!!:", myserver.assigned_clients)
                         send_dict = pickle.dumps(myserver.assigned_clients)
-                        message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
+                        message = Pro.create_msg(send_dict, [])
                         current_socket.send(message)
+
 
                         #send the assigned_clients dict to client to print contact list
                         #send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
