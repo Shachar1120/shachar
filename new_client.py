@@ -30,11 +30,27 @@ class Cli:
             return False, message
         return True, message
 
+    def check_if_pickle(self, msg):
+        try:
+            # Try to unpickle the message
+            pickle.loads(msg)
+            # If successful, the message is in pickle format
+            return True
+        except pickle.UnpicklingError:
+            # If unsuccessful, the message is not in pickle format
+            return False
+
     def split_message(self, message):
-        if message == Pro.cmds[Pro.CONTACTS] or message == Pro.cmds[Pro.ASSIGNED_CLIENTS]:
+        if self.check_if_pickle(message):
+            #עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+            print("got the dict!!!!")
+            cmd = "ASSIGNED_CLIENTS"
             #load pickle and not decode to get msg!!
             received_dict = pickle.loads(message)
-            msg = received_dict
+            print(" this is the dict!!!:" , received_dict)
+            return True, cmd, received_dict
+            #msg = received_dict
         else:
             msg = message.decode()
         message_parts = msg.split(Pro.PARAMETERS_DELIMITER) # message: cmd + len(params) + params
