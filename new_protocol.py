@@ -88,7 +88,10 @@ class Pro:
     ASSIGN_NACK = 5
     CONTACTS = 6
     ASSIGNED_CLIENTS = 7
-    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "CONTACTS", "ASSIGNED_CLIENTS"]
+    CALL = 8
+    TARGET_ACK = 9
+    TARGET_NACK = 10
+    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "CONTACTS", "ASSIGNED_CLIENTS", "CALL", "TARGET_ACK", "TARGET_NACK"]
 
     @staticmethod
     def get_msg(my_socket: socket) -> (bool, str):
@@ -125,14 +128,27 @@ class Pro:
         return cmd == Pro.cmds[Pro.CONTACTS]
 
     @staticmethod
+    def check_call(cmd: str):
+        return cmd == Pro.cmds[Pro.CALL]
+
+    @staticmethod
+    def check_call(cmd: str):
+        return cmd == Pro.cmds[Pro.CALL]
+
+    @staticmethod
     def check_cmd_and_params(cmd: str, params=[]):
         """
         Check if the command is defined in the protocol, including all parameters
         For example, DELETE c:\work\file.txt is good, but DELETE alone is not
         """
-        if (Pro.check_register_or_assign(cmd) or Pro.check_contacts(cmd)) and len(params) == 2:
+        if Pro.check_register_or_assign(cmd) and len(params) == 2:
             return True, "Valid cmd"
-        return False, "Not a valid cmd"
+        elif Pro.check_contacts(cmd) and len(params) == 0:
+            return True, "Valid cmd"
+        elif Pro.check_call(cmd) and len(params) == 1:
+            return True, "Valid cmd"
+        else:
+            return False, "Not a valid cmd"
 
     @staticmethod
     def create_msg(cmd: bytes, params=[]) -> bytes:
