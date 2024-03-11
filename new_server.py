@@ -28,7 +28,7 @@ class Ser:
 
         # {"username1": "password1", "username2": "password2",...}:
         self.client_details = {} # dict of all the registered clients(all of the clients in the system)
-        self.assigned_clients = {} # dict of all assigned client(as in right now)
+        self.assigned_clients = {} # dict of all usernames of assigned client(right now)
         self.client_sockets_details = {} #{"username1" : "(ip, port)" # i have to check there isnt a username already!!!
 
     def accept(self):
@@ -47,6 +47,7 @@ class Ser:
         # else: user is not registered yet
         # registering:
         self.client_details[params[0]] = params[1] #add client
+        print("client details dict:", self.client_details)
 
         # add client username and socket details
         self.client_sockets_dict_details(params, client_socket)
@@ -75,10 +76,6 @@ class Ser:
             return Pro.cmds[Pro.ASSIGN_NACK]  # username not! acknowledged
 
 
-
-
-
-
     def check_password(self, params: []):
         # check username already registered
         if params[0] in self.client_details.keys():
@@ -104,16 +101,6 @@ class Ser:
         elif command == 'STOP_STREAMING':
             pass
 
-    def assigned_mode_server(self, cmd):
-        print("server is in assigned mode!!")
-        # getting request for assigned clients dict
-        res, message = Pro.get_msg(self.server_socket)
-        if res:
-            print("got the message!!!")
-            # send the assigned_clients dict to client to print contact list
-            #message = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(self.assigned_clients)])
-            #send_dict = Pro.create_msg(pickle.dumps(self.assigned_clients), [])
-            #self.client_sockets.send(send_dict.encode())
 
     def split_msg(self, message):
         message = message.decode()
@@ -125,7 +112,21 @@ class Ser:
             return True, message_parts[0], message_parts[2:]  #  return cmd, params
 
 
+    def handle_call(self, username_param):
+        res = self.check_client_assigned(username_param)
+        if res:
+            print("you can call client, he is assigned")
+            # target ACK
+            return Pro.cmds[Pro.TARGET_ACK]  # username(=target) acknowledged
+        else:
+            print("client isn't assigned! you cant call him")
+            # target NACK
+            return Pro.cmds[Pro.TARGET_NACK]  # username not acknowledged!
 
+    def check_client_assigned(self, username):
+        if username[0] in self.assigned_clients:
+            return True
+        return False
 
 def main():
     # open socket with client
@@ -169,6 +170,13 @@ def main():
                         message = Pro.create_msg(res.encode(), [])
                         current_socket.send(message)
 
+                    elif cmd_res == Pro.cmds[Pro.CALL]:
+                        print("cmd is call!!")
+                        res = myserver.handle_call(params_res)
+                        # send response to the client
+                        message = Pro.create_msg(res.encode(), [])
+                        current_socket.send(message)
+
 
                 else:
                     #res_response = False: only got cmd (cmd = CONTACTS)
@@ -184,19 +192,6 @@ def main():
                         message = Pro.create_msg(send_dict, [])
                         current_socket.send(message)
 
-
-                        #send the assigned_clients dict to client to print contact list
-                        #send_dict = Pro.create_msg(b"ASSIGNED_CLIENTS", [pickle.dumps(myserver.assigned_clients)])
-                        #current_socket.send(send_dict).send(send_dict.encode())
-
-                # if CONTACTS
-                #elif cmd == Pro.cmds[Pro.CONTACTS]: # client asks for assigned clients dict
-                    #print("got the message contacts!!!!!")
-                    # return contact list = assigned_clients dict
-                    #send_dict = Pro.create_msg(b"CONTACTS", [pickle.dumps(myserver.assigned_clients)])
-                    #current_socket.send(send_dict)
-
-                    # need to do pickle loads on the other side!!!!
 
 
     # close sockets
