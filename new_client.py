@@ -48,7 +48,6 @@ class Cli:
             cmd = "ASSIGNED_CLIENTS"
             #load pickle and not decode to get msg!!
             received_dict = pickle.loads(message)
-            print(" this is the dict!!!:" , received_dict)
             return True, cmd, received_dict
             #msg = received_dict
         else:
@@ -87,8 +86,18 @@ class Cli:
             return False
         elif response == "ASSIGN_ACK":
             return True
-            # add user to dift of assigned
-            # create a token
+
+    def handle_response_call_target(self, response):
+        if response == "TARGET_NACK":
+            # they need to call another client
+            print("the person you wanted to call to isn't assigned yet")
+            print("call another person(from contacts)")
+            return False
+        elif response == "TARGET_ACK":
+            return True
+
+
+
     def handle_cmd(self, cmd):
         tof = Pro.check_cmd(cmd)
         if tof:
@@ -106,66 +115,12 @@ class Cli:
         return True
 
 
-    def check_client_assigned(self, params):
-        # check if client is assigned = in assigned dict
-        # send username to server
-        sending_username = Pro.create_msg(cmd.encode(), [])
-        self.my_socket.send(sending_cmd)
-        # server checks if username in dict
-        if params[0].decode() in Ser.assigned_clients.keys():
-            return True
-        else:
-            return False
-
-
-    def assigned_mode(self, params):
-
-        print("moved to assigned mode")
-        # client wants to start a call
-        # print all of assigned clients(print assigned dict)
-
-        # ask server for the assigned_clients dict
-        cmd_assigned_clients = "ASSIGNED_CLIENTS"
-        # send request for contact list(all of assigned clients) to server
-        ask_assigned_clients = Pro.create_msg(cmd_assigned_clients.encode(), [])
-        self.my_socket.send(ask_assigned_clients)
-
-        # receiving assigned clients dictionary
-        #res, assigned_clients_dict = Pro.get_msg(self.my_socket)
-        #if res:
-            #print("Received assigned clients dictionary successfully")
-            #assigned_clients = pickle.loads(assigned_clients_dict)
-            #print("the Assigned clients dict is:", assigned_clients)
-        #else:
-            #print("Error receiving assigned clients dictionary")
-
-
-        # check if client is assigned = in assigned dict
-        #if self.check_client_assigned(params):
-            #get client details: username, (ip, port)
-        #    if params[0] in Ser.client_sockets_details.keys(): #if username is in dict
-        #        ip, port = Ser.client_sockets_details[params[0]] #(ip, port)
-        #        print("this is the ip and port:", ip, port)
-         #       print("here!!!!!!", ip, port)
-
-
-
-        # create a call token
-        # enter cmd to start streaming
-        #get_cmd = input("Please enter command:\n").upper()
-        #self.handle_cmd(get_cmd)
-        # get_cmd = input("Please enter command:\n").upper()
-        # res = self.handle_cmd(get_cmd)
-        #return True
-        #pass
-
-
 def main():
     myclient = Cli()
     myclient.connect("127.0.0.1", Pro.PORT)
 
     while True:
-        print(f"options: \n\tregister\n\tassign\n\tcontacts\n> ", end=" ")
+        print(f"options: \n\tregister\n\tassign\n\tcontacts\n\tcall\n> ", end=" ")
         cmd = input()
         cmd = cmd.upper()
 
@@ -185,8 +140,18 @@ def main():
                 # in this phase only REGISTER or ASSIGN is required with [username, password] as params
                 print("Invalid command! Try again!")
                 continue
+
+        elif Pro.check_call(cmd):
+            print("Call who? enter username: ")
+            target_username = input()
+            params = [target_username.encode()]
+            if not Pro.check_cmd_and_params(cmd, params):
+                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
+                print("Invalid command! Try again!")
+                continue
+
         else:
-            # in this phase only REGISTER or ASSIGN is required
+            # the cmd isn't one of those
             print("Invalid command! Try again!")
             continue
 
@@ -226,11 +191,26 @@ def main():
                         print("password or username are incorrect!! write again:")
                         pass
 
+                if (cmd_response == "TARGET_NACK") or (cmd_response == "TARGET_ACK"):
+                    print("cmd is call(call target client)")
+                    response = myclient.handle_response_call_target(cmd_response)
+                    if response: # if true = ASSIGN_ACK
+                        print("we can call target! he is assigned")
+                        pass
+                    else: # REGISTER_NACK- Maybe user already exist!!! try different username
+                        print("couldn't call target!")
+                        print("call another person: (from contacts)")
+                        pass
+
             else:
             #res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
                 if (cmd_response == "ASSIGNED_CLIENTS"):
                     print("cmd is ASSIGNED_CLIENTS")
-                    #pickle loads!!
+                    dict = params_response
+                    usernames_dict_list = list(dict.keys())
+                    print("the users assigned right now are ", usernames_dict_list)
+                    print
+
 
         else:
             break
