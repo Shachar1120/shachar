@@ -115,6 +115,7 @@ class Cli:
         return True
 
 
+
 def main():
     myclient = Cli()
     myclient.connect("127.0.0.1", Pro.PORT)
@@ -191,25 +192,56 @@ def main():
                         print("password or username are incorrect!! write again:")
                         pass
 
+
+            else:
+            #res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
+
                 if (cmd_response == "TARGET_NACK") or (cmd_response == "TARGET_ACK"):
                     print("cmd is call(call target client)")
+                    client_username = params_response[0]
                     response = myclient.handle_response_call_target(cmd_response)
-                    if response: # if true = ASSIGN_ACK
+                    if response:  # if true = ASSIGN_ACK
                         print("we can call target! he is assigned")
+
+                        # get target details
+
+                        # getting target details from server dict client_sockets_details
+                        # getting ip and port according to username
+
+                        cmd = "ASK_TARGET_DETAILS"
+                        tof = Pro.check_cmd(cmd)
+                        if tof:
+                            # sending to server
+                            cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()] )
+                            myclient.my_socket.send(cmd_send)
+
+                        # get response from server
+                        # should i wait for response from server??? not assume i get it
+                        res_response, msg_response = myclient.get_response()
+                        if res_response:
+                            res_split_msg1, cmd_response1, params_response1 = myclient.split_message(msg_response)
+                            if res_split_msg1:
+                                #res_response = True: got cmd and params
+                                if (cmd_response1 == "SEND_TARGET_DETAILS"):
+                                    print("cmd is SEND_TARGET_DETAILS")
+                                    client_socket_details = params_response1
+                                    print("got the client details params!!!:", client_socket_details)
                         pass
+
                     else: # REGISTER_NACK- Maybe user already exist!!! try different username
                         print("couldn't call target!")
                         print("call another person: (from contacts)")
                         pass
 
-            else:
-            #res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
-                if (cmd_response == "ASSIGNED_CLIENTS"):
+                elif (cmd_response == "ASSIGNED_CLIENTS"):
                     print("cmd is ASSIGNED_CLIENTS")
                     dict = params_response
                     usernames_dict_list = list(dict.keys())
                     print("the users assigned right now are ", usernames_dict_list)
                     print
+
+
+
 
 
         else:
