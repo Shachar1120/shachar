@@ -1,252 +1,181 @@
+import os
 import socket
-import pickle
-#import cv2
-import threading
 
-#import negotitate
-from new_protocol import Pro
-from new_server import Ser
+# title Single Client connect, register, assign
+#
+# note right of Server: Client connect to server
+# Client1->Server: connect ServerSocket
+# Server->Client1: ServerSocket accept
+#
+# note right of Server: Client register to server
+# Client1->Server: REGISTER <username> <password>
+# Server->Server: check if username exist
+#
+# note right of Server: Server already has a username(sending Not Ack):
+# Server->Client1: RGISTER_NACK
+#
+# note right of Server: Server validate new username(sending Ack):
+# Server->Server: add user to dict of registered
+# Server->Client1: RGISTER_ACK
+# Client1->Client1: understand client is registered
+#
+# note right of Server: Client assign to server
+# Client1->Server: ASSIGN <username> <password>
+# Server->Server: check if username exist and password fit to username
+#
+# note right of Server: Server wrong password or no username(sending Not Ack):
+# Server->Client1: ASSIGN_NACK
+#
+# note right of Server: Server validate username credentials (sending Ack):
+# Server->Server: add user to dict of assigned
+# Server->Client1: ASSIGN_ACK <token>
+# note right of Client: client assigned
 
 
-class Cli:
-    SAVED_PHOTO_LOCATION = r"c:\users\galis\pictures\screenshot.jpg" # The path + filename where the copy of the screenshot at the client should be saved
+# title Untitled
+#
+# note right of Server: Client connect to server
+# Client1->Server: connect ServerSocket
+# Server->Client1: ServerSocket accept
+#
+# note right of Server: Client connect to server
+# Client2->Server: connect ServerSocket
+# Server->Client2: ServerSocket accept
+#
+# note right of Client1: initiate call to Client2
+# Client1->Server: call client 2
+# Server->Client2: client 1 sent code to connect
+# Client2->Server: accept code connect of client 1
+#
+# note right of Server: negotiate call between client 1 and 2
+#
+# Server->Client1: client2 (ip, port, master)
+# Server->Client2: client1 (ip, port, slave)
+#
+# note right of Client1: connect to client2
+# Client1->Client2: connect the call
+# Client2->Client1: accept the call
+#
+# note right of Client1: send frames
+# note right of Client2: send frames
+# Client1->Client2: send frame 1
+# Client2->Client1: send frame 1
+# Client2->Client2: present frame 1
+# Client1->Client1: present frame 1
+#
+# Client1->Client2: send frame 2
+# Client2->Client1: send frame 2
+# Client2->Client2: present frame 2
+# Client1->Client1: present frame 2
+#
+# note right of Client1: ...
+# note right of Client2: ...
 
-    def __init__(self):
-        # open socket with the server
-        self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+class Pro:
 
-        self.assigned_client_details = {}  # Create the dictionary globally
+    LENGTH_FIELD_SIZE = 6
+    PORT = 8820
 
-    def connect(self, ip, port):
-        self.my_socket.connect((ip, port))
+    #cmds:
+    #REGISTER = "REGISTER"
+    #CHECK = "CHECK"
+    PARAMETERS_DELIMITER = " "
+    REGISTER = 0
+    REGISTER_ACK = 1
+    REGISTER_NACK = 2
+    ASSIGN = 3
+    ASSIGN_ACK = 4
+    ASSIGN_NACK = 5
+    CONTACTS = 6
+    ASSIGNED_CLIENTS = 7
+    CALL = 8
+    TARGET_ACK = 9
+    TARGET_NACK = 10
+    ASK_TARGET_DETAILS = 11
+    SEND_TARGET_DETAILS = 12
+    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "CONTACTS", "ASSIGNED_CLIENTS", "CALL", "TARGET_ACK", "TARGET_NACK", "ASK_TARGET_DETAILS", "SEND_TARGET_DETAILS"]
 
-    def send_cmd(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.my_socket.send(msg_to_send)
+    @staticmethod
+    def get_msg(my_socket: socket) -> (bool, str):
+        """
+        Extract message from protocol, without the length field
+        If length field does not include a number, returns False, "Error"
+        """
 
-    def get_response(self):
-        res, message = Pro.get_msg(self.my_socket)
-        if not res:
-            return False, message
+        msg_len_before_valid_bytes = my_socket.recv(Pro.LENGTH_FIELD_SIZE)
+        if msg_len_before_valid_bytes == None or msg_len_before_valid_bytes == b'':
+            return False, "ERROR_SOCEKT_DISCONNECTED"
+
+        msg_len_before_valid = msg_len_before_valid_bytes.decode()
+        if not msg_len_before_valid.isdecimal():
+            return False, "ERROR_WRONG_PROTOCOL"
+
+        msg_len = int(msg_len_before_valid)
+        message_bytes = my_socket.recv(msg_len)
+        message = message_bytes.decode()
+        return True, message # message is string
+
+    @staticmethod
+    def check_cmd(cmd: str):
+        if cmd in Pro.cmds:
+            return True
+        return False
+
+    @staticmethod
+    def check_register_or_assign(cmd: str):
+        return cmd == Pro.cmds[Pro.REGISTER] or cmd == Pro.cmds[Pro.ASSIGN]
+
+    @staticmethod
+    def check_contacts(cmd: str):
+        return cmd == Pro.cmds[Pro.CONTACTS]
+
+    @staticmethod
+    def check_call(cmd: str):
+        return cmd == Pro.cmds[Pro.CALL]
+
+    @staticmethod
+    def check_call(cmd: str):
+        return cmd == Pro.cmds[Pro.CALL]
+
+    @staticmethod
+    def check_cmd_and_params(cmd: str, params=[]):
+        """
+        Check if the command is defined in the protocol, including all parameters
+        For example, DELETE c:\work\file.txt is good, but DELETE alone is not
+        """
+        if Pro.check_register_or_assign(cmd) and len(params) == 2:
+            return True, "Valid cmd"
+        elif Pro.check_contacts(cmd) and len(params) == 0:
+            return True, "Valid cmd"
+        elif Pro.check_call(cmd) and len(params) == 1:
+            return True, "Valid cmd"
+        else:
+            return False, "Not a valid cmd"
+
+    @staticmethod
+    def create_msg(cmd: bytes, params=[]) -> bytes:
+        """
+        Create a valid protocol message, with length field
+        """
+        len_params = len(params)
+        if len_params == 0:
+            msg_to_send = Pro.PARAMETERS_DELIMITER.encode().join([cmd] + [str(len_params).encode()])
+        else:
+            msg_to_send = Pro.PARAMETERS_DELIMITER.encode().join([cmd] + [str(len_params).encode()] + params)
+        msg_len = len(msg_to_send)
+        return str(msg_len).zfill(Pro.LENGTH_FIELD_SIZE).encode() + msg_to_send
+
+    @staticmethod
+    def get_msg(my_socket):
+        """
+        Extract message from protocol, without the length field
+        If length field does not include a number, returns False, "Error"
+        """
+        msg_len_before_valid = my_socket.recv(Pro.LENGTH_FIELD_SIZE)
+        msg_len_before_valid = msg_len_before_valid.decode()
+        if not msg_len_before_valid.isdecimal():
+            return False, "ERROR"
+
+        msg_len = int(msg_len_before_valid)
+        message = my_socket.recv(msg_len)
         return True, message
-
-    def check_if_pickle(self, msg):
-        try:
-            # Try to unpickle the message
-            pickle.loads(msg)
-            # If successful, the message is in pickle format
-            return True
-        except pickle.UnpicklingError:
-            # If unsuccessful, the message is not in pickle format
-            return False
-
-    def split_message(self, message):
-        if self.check_if_pickle(message):
-            #עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-            print("got the dict!!!!")
-            cmd = "ASSIGNED_CLIENTS"
-            #load pickle and not decode to get msg!!
-            received_dict = pickle.loads(message)
-            return True, cmd, received_dict
-            #msg = received_dict
-        else:
-            msg = message.decode()
-        message_parts = msg.split(Pro.PARAMETERS_DELIMITER) # message: cmd + len(params) + params
-        print("0:" + message_parts[0] + "1:" + message_parts[1] )
-        if message_parts[1] == '0':
-            print("False!! no params, only cmd")
-            return False, message_parts[0], None # return only cmd
-        else:
-            return True, message_parts[0], message_parts[2:] # return cmd, params
-
-
-
-    def handle_response_Register(self, response):
-        if response == Pro.cmds[Pro.REGISTER_NACK]:
-            print("Maybe user already exist!!! try different username")
-            return False
-        elif response == Pro.cmds[Pro.REGISTER_ACK]:
-            print("Registration succeedded")
-            return True
-        elif response == Pro.cmds[Pro.ASSIGN_NACK]:
-            # they need to enter username and password again
-            print("you need to enter password again")
-            return False
-            pass
-        elif response == Pro.cmds[Pro.ASSIGN_ACK]:
-            # add user to dift of assigned
-            # create a token
-            pass
-
-    def handle_response_assign(self, response):
-        if response == "ASSIGN_NACK":
-            # they need to enter username and password again
-            print("you need to enter password again")
-            return False
-        elif response == "ASSIGN_ACK":
-            return True
-
-    def handle_response_call_target(self, response):
-        if response == "TARGET_NACK":
-            # they need to call another client
-            print("the person you wanted to call to isn't assigned yet")
-            print("call another person(from contacts)")
-            return False
-        elif response == "TARGET_ACK":
-            return True
-
-
-
-    def handle_cmd(self, cmd):
-        tof = Pro.check_cmd(cmd)
-        if tof:
-            # sending to server
-            sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.my_socket.send(sending_cmd)
-
-            # receiving from server
-            #self.handle_server_response(cmd, None)
-            #if cmd == 'EXIT':
-            #    return False
-        #else:
-            #print("Not a valid command, or missing parameters\n")
-
-        return True
-
-
-
-def main():
-    myclient = Cli()
-    myclient.connect("127.0.0.1", Pro.PORT)
-
-    while True:
-        print(f"options: \n\tregister\n\tassign\n\tcontacts\n\tcall\n> ", end=" ")
-        cmd = input()
-        cmd = cmd.upper()
-
-        if Pro.check_register_or_assign(cmd):
-            print("Enter username:")
-            username = input()
-            print("Enter password:")
-            password = input()
-            params = [username.encode(), password.encode()]
-            if not Pro.check_cmd_and_params(cmd, params):
-                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
-                print("Invalid command! Try again!")
-                continue
-        elif Pro.check_contacts(cmd):
-            params = []
-            if not Pro.check_cmd_and_params(cmd):
-                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
-                print("Invalid command! Try again!")
-                continue
-
-        elif Pro.check_call(cmd):
-            print("Call who? enter username: ")
-            target_username = input()
-            params = [target_username.encode()]
-            if not Pro.check_cmd_and_params(cmd, params):
-                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
-                print("Invalid command! Try again!")
-                continue
-
-        else:
-            # the cmd isn't one of those
-            print("Invalid command! Try again!")
-            continue
-
-        myclient.send_cmd(cmd.encode(), params)
-
-        res_response, msg_response  = myclient.get_response()
-        if res_response:
-            res_split_msg, cmd_response, params_response = myclient.split_message(msg_response)
-            if not res_split_msg:
-            #res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
-                if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
-                    print("cmd is register")
-                    response = myclient.handle_response_Register(cmd_response)
-                    if not response: # if false = REGISTER_NACK
-                        print("couldn't register (client already registered)") # couldn't register/ client exists
-                        print("continue to assign")
-                        #client already exists! we need to continue to assign too
-                        pass
-                    else:
-                        print("you registered successfully")
-                        # then continue: ask to assign
-                        pass
-                else:
-                    print("cmd isnt register")
-
-                if (cmd_response == "ASSIGN_NACK") or (cmd_response == "ASSIGN_ACK"):
-                    print("cmd is assign")
-                    response = myclient.handle_response_assign(cmd_response)
-                    if response: # if true = ASSIGN_ACK
-                        print("user is assigned")
-                        # user is assigned!!
-                        # dict of assigned clients in is server!
-
-                        pass
-                    else: # REGISTER_NACK- Maybe user already exist!!! try different username
-                        print("couldn't register")
-                        print("password or username are incorrect!! write again:")
-                        pass
-
-
-            else:
-            #res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
-
-                if (cmd_response == "TARGET_NACK") or (cmd_response == "TARGET_ACK"):
-                    print("cmd is call(call target client)")
-                    client_username = params_response[0]
-                    response = myclient.handle_response_call_target(cmd_response)
-                    if response:  # if true = ASSIGN_ACK
-                        print("we can call target! he is assigned")
-
-                        # get target details
-
-                        # getting target details from server dict client_sockets_details
-                        # getting ip and port according to username
-
-                        cmd = "ASK_TARGET_DETAILS"
-                        tof = Pro.check_cmd(cmd)
-                        if tof:
-                            # sending to server
-                            cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()] )
-                            myclient.my_socket.send(cmd_send)
-
-                        # get response from server
-                        # should i wait for response from server??? not assume i get it
-                        res_response, msg_response = myclient.get_response()
-                        if res_response:
-                            res_split_msg1, cmd_response1, params_response1 = myclient.split_message(msg_response)
-                            if res_split_msg1:
-                                #res_response = True: got cmd and params
-                                if (cmd_response1 == "SEND_TARGET_DETAILS"):
-                                    print("cmd is SEND_TARGET_DETAILS")
-                                    client_socket_details = params_response1
-                                    print("got the client details params!!!:", client_socket_details)
-                        pass
-
-                    else: # REGISTER_NACK- Maybe user already exist!!! try different username
-                        print("couldn't call target!")
-                        print("call another person: (from contacts)")
-                        pass
-
-                elif (cmd_response == "ASSIGNED_CLIENTS"):
-                    print("cmd is ASSIGNED_CLIENTS")
-                    dict = params_response
-                    usernames_dict_list = list(dict.keys())
-                    print("the users assigned right now are ", usernames_dict_list)
-                    print
-
-
-
-
-
-        else:
-            break
-
-
-if __name__ == '__main__':
-    main()
