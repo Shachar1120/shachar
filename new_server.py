@@ -174,7 +174,21 @@ def main():
                         print("cmd is call!!")
                         res = myserver.handle_call(params_res)
                         # send response to the client
-                        message = Pro.create_msg(res.encode(), [])
+                        client_username = params_res[0]
+                        message = Pro.create_msg(res.encode(), [client_username.encode()])
+                        current_socket.send(message)
+
+                    elif cmd_res == Pro.cmds[Pro.ASK_TARGET_DETAILS]:
+                        print("cmd is ASK_TARGET_DETAILS!!")
+                        client_username = params_res[0]
+                        # get client details(ip and port) from client_sockets_details dict
+                        print("client_sockets_details!!:", myserver.client_sockets_details[client_username])
+                        client_ip, client_port = myserver.client_sockets_details[client_username] # tuple (ip, port)
+                        client_port = str(client_port)
+
+                        # send details to the client
+                        cmd_to_send = Pro.cmds[Pro.SEND_TARGET_DETAILS]
+                        message = Pro.create_msg(cmd_to_send.encode(), [client_ip.encode(), client_port.encode()])
                         current_socket.send(message)
 
 
@@ -191,6 +205,7 @@ def main():
                         send_dict = pickle.dumps(myserver.assigned_clients)
                         message = Pro.create_msg(send_dict, [])
                         current_socket.send(message)
+
 
 
 
