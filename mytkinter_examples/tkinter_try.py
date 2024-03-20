@@ -1,24 +1,54 @@
-# importing only those functions
-# which are needed
 from tkinter import *
 from tkinter.ttk import *
 
-# creating tkinter window
-root = Tk()
 
-# Adding widgets to the root window
-Label(root, text='Hello', font=(
-    'Verdana', 15)).pack(side=TOP, pady=10)
+class A:
+    def __init__(self):
+        self.root = Tk()
 
-# Creating a photoimage object to use image
-photo = PhotoImage(file=r"C:\שחר\tkinter\donotpress.gif")
+        # sets the geometry of main
+        # root window
+        self.root.geometry("300x300")
+        self.root.title("sign in")
+        self.label = Label(self.root,
+                      text="This is the main window")
 
-# Create a Button
-#btn = Button(root, text='Click me !', bd='5',
-             #command=root.destroy)
+        self.label.pack(pady=10)
+        # Create a Button
+        self.btn = Button(self.root, text='Click me !',
+                     command=self.openNewWindow)
 
-# here, image option is used to
-# set image on button
-Button(root, text='Click Me !', image=photo, command=root.destroy).pack(side=TOP)
+        self.btn.pack()
 
-mainloop()
+    def main_loop(self):
+        self.root.mainloop()
+    def click_button(self):
+        # printing what happens when button pressed in python
+        print("you pressed the button")
+
+
+    # function to open a new window
+    # on a button click
+    def openNewWindow(self):
+        self.btn.destroy()
+        self.label.destroy()
+
+
+        # sets the title of the
+        # Toplevel widget
+        self.root.title("call list")
+
+        # sets the geometry of toplevel
+        self.root.geometry("500x500")
+
+        # A Label widget to show in toplevel
+        self.label = Label(self.root,
+              text="This is a new window").pack()
+
+def Main():
+    a = A()
+
+    a.main_loop()
+
+if __name__ == "__main__":
+    Main()
