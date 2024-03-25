@@ -10,13 +10,12 @@ class A:
         # root window
         self.root.geometry("300x300")
         self.root.title("Register or Log in")
-        self.label = Label(self.root,
+        self.label_welcome = Label(self.root,
                       text="Welcome to VidPal!")
 
-        self.label.pack(pady=10)
+        self.label_welcome.pack(pady=10)
         # Create a Button
         self.btn_reg = Button(self.root, text='Register', command=self.Register_Window)
-        #self.btn_reg.pack(side=LEFT)
         self.btn_reg.place(x=30, y=100)
 
 
@@ -120,18 +119,25 @@ class A:
 
 
     def Assign_succeeded(self, newWindow):
-        # Destroy the widgets in the log in window
-        self.user_name.destroy()
-        self.user_password.destroy()
-        self.submit_button.destroy()
-        self.user_name_input_area.destroy()
-        self.user_password_entry_area.destroy()
 
-        # Create a label indicating successful registration
-        Label(newWindow, text="You Logged In successfuly!").pack()
+        # when assigned- moving "into the system':
+        # now you can look at contacts list and call whoever you want
+
+        # Destroy the widgets in the log in window
+        newWindow.destroy()
+        self.btn_reg.destroy()
+        self.btn_assign.destroy()
+        self.label_welcome.destroy()
+
+        self.root.title("Call (you are Logged In!)")
+
+        # Create a Button
+        #self.btn_reg = Button(self.root, text='Contact List', command=self.Contact_Window)
+        # self.btn_reg.pack(side=LEFT)
+        #self.btn_reg.place(x=30, y=100)
 
         # Create a button to close the window
-        Button(newWindow, text="Close", command=newWindow.destroy).pack()
+        #Button(newWindow, text="Close", command=newWindow.destroy).pack()
 
 
     def Assign_not_succeeded(self, newWindow):
@@ -147,6 +153,9 @@ class A:
 
         # Create a button to close the window
         Button(newWindow, text="Close", command=newWindow.destroy).pack()
+
+
+
 
 
 def Main():
