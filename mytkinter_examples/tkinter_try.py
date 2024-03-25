@@ -1,9 +1,18 @@
 from tkinter import *
 from tkinter.ttk import *
+import socket
+import pickle
+from new_protocol import Pro
 
 
-class A:
+class Cli:
     def __init__(self):
+        # open socket with the server
+        self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.assigned_client_details = {}  # Create the dictionary globally
+
+
         self.root = Tk()
 
         # sets the geometry of main
@@ -21,13 +30,21 @@ class A:
 
         # Create a Button
         self.btn_assign = Button(self.root, text='Log In', command=self.Assign_Window)
-        #self.btn_reg.pack(side=RIGHT)
         self.btn_assign.place(x=200, y=100)
+
+
+    def connect(self, ip, port):
+        self.my_socket.connect((ip, port))
+
+
+    #tkintern:
 
     def main_loop(self):
         self.root.mainloop()
 
     def Register_Window(self):
+
+        cmd = "REGISTER"
         # Toplevel object which will
         # be treated as a new window
         newWindow = Toplevel(self.root)
@@ -47,18 +64,43 @@ class A:
         self.user_password = Label(newWindow,text="Password")
         self.user_password.place(x=40, y=100)
 
-        self.submit_button = Button(newWindow,text="Submit", command = lambda: self.Register_succeeded(newWindow))
-        self.submit_button.place(x=40, y=130)
-
         self.user_name_input_area = Entry(newWindow,width=30)
         self.user_name_input_area.place(x=110, y=60)
 
         self.user_password_entry_area = Entry(newWindow, width=30)
         self.user_password_entry_area.place(x=110, y=100)
 
+        self.submit_button = Button(newWindow, text="Submit", command=lambda: self.submit_register(newWindow))
+        self.submit_button.place(x=40, y=130)
+
+
+
+    def submit_register(self, newWindow):
+        # Create a label indicating successful registration
+        cmd = "REGISTER"
+        username = self.user_name_input_area.get()
+        password = self.user_password_entry_area.get()
+        # Check if username and password are not empty
+        if username.strip() and password.strip():
+            print("the params:", username, password)
+            params = [username.encode(), password.encode()]
+            if not Pro.check_cmd_and_params(cmd, params):
+                # Invalid command! Try again!
+                self.Register_not_succeeded(newWindow)
+            else:
+                self.Register_succeeded(newWindow)
+
+        else:
+            # hasattr is a python function that checks if a value exists
+            if not hasattr(self, 'try_again_label'):
+                # username or password are empty! try again
+                # if the Lable doesnt exists yet:
+                self.try_again_label = Label(newWindow, text="Username or password are empty! Try again.")
+                self.try_again_label.pack()
 
     def Register_succeeded(self, newWindow):
         # Destroy the widgets in the registration window
+        self.try_again_label.destroy()
         self.user_name.destroy()
         self.user_password.destroy()
         self.submit_button.destroy()
@@ -84,8 +126,6 @@ class A:
 
         # Create a button to close the window
         Button(newWindow, text="Close", command=newWindow.destroy).pack()
-
-
 
     def Assign_Window(self):
         # Toplevel object which will
@@ -116,8 +156,6 @@ class A:
         self.user_password_entry_area = Entry(newWindow, width=30)
         self.user_password_entry_area.place(x=110, y=100)
 
-
-
     def Assign_succeeded(self, newWindow):
 
         # when assigned- moving "into the system':
@@ -132,13 +170,20 @@ class A:
         self.root.title("Call (you are Logged In!)")
 
         # Create a Button
+        self.btn_reg = Button(self.root, text='Call', command=self.Register_Window)
+        self.btn_reg.place(x=120, y=100)
+
+        # Create a Button
+        self.btn_reg = Button(self.root, text='Contact List', command=self.Contact_List_window)
+        self.btn_reg.place(x=120, y=130)
+
+        # Create a Button
         #self.btn_reg = Button(self.root, text='Contact List', command=self.Contact_Window)
         # self.btn_reg.pack(side=LEFT)
         #self.btn_reg.place(x=30, y=100)
 
         # Create a button to close the window
         #Button(newWindow, text="Close", command=newWindow.destroy).pack()
-
 
     def Assign_not_succeeded(self, newWindow):
         # Destroy the widgets in the log in window
@@ -154,14 +199,28 @@ class A:
         # Create a button to close the window
         Button(newWindow, text="Close", command=newWindow.destroy).pack()
 
+    def Contact_List_window(self):
+        newWindow1 = Toplevel(self.root)
+        # sets the title of the
+        # Toplevel widget
+        newWindow1.title("New Window")
+
+        # sets the geometry of toplevel
+        newWindow1.geometry("450x300")
+
+        # the label for user_name
+        self.user_name = Label(newWindow1, text="Your Contacts Are:")
+        self.user_name.place(x=180, y=60)
+
 
 
 
 
 def Main():
-    a = A()
+    myclient = Cli()
+    myclient.connect("127.0.0.1", Pro.PORT)
+    myclient.main_loop()
 
-    a.main_loop()
 
 if __name__ == "__main__":
     Main()
