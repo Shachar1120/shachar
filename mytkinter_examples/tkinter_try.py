@@ -18,7 +18,7 @@ class Cli:
         # sets the geometry of main
         # root window
         self.root.geometry("300x300")
-        self.root.title("Register or Log in")
+        self.root.title("Home Page")
         self.label_welcome = Label(self.root,
                       text="Welcome to VidPal!")
 
@@ -141,7 +141,7 @@ class Cli:
 
         # sets the title of the
         # Toplevel widget
-        newWindow.title("New Window")
+        newWindow.title("Register")
 
         # sets the geometry of toplevel
         newWindow.geometry("450x300")
@@ -174,6 +174,9 @@ class Cli:
         if hasattr(self, 'try_again_label1'):
             self.try_again_label.destroy()
 
+        if hasattr(self, 'already_registered_try_again'):
+            self.already_registered_try_again.destroy()
+
         # Create a label indicating successful registration
         cmd = "REGISTER"
         username = self.user_name_input_area.get()
@@ -192,7 +195,9 @@ class Cli:
                 #self.Register_not_succeeded(newWindow)
 
             else:
+                # send cmd and params(username, password) to server
                 self.send_cmd(cmd.encode(), params)
+                # get response from server
                 res_response, msg_response = self.get_response()
                 if res_response:
                     res_split_msg, cmd_response, params_response = self.split_message(msg_response)
@@ -204,11 +209,9 @@ class Cli:
 
                             if not response:  # if false = REGISTER_NACK
                                 # checking if the lable already exists
-                                if hasattr(self, 'already_registered_try_again'):
-                                    self.try_again_label.destroy()
-
-                                self.already_registered_try_again = Label(newWindow, text="User Already Registered! Try To Log In.")
-                                self.already_registered_try_again.pack()
+                                if not hasattr(self, 'already_registered_try_again'):
+                                    self.already_registered_try_again = Label(newWindow, text="User Already Registered! Try To Log Inq Use Differente Username")
+                                    self.already_registered_try_again.pack()
 
                                 print("couldn't register (client already registered)")  # couldn't register/ client exists
                                 print("continue to assign")
@@ -217,9 +220,8 @@ class Cli:
                             else:
                                 self.Register_succeeded(newWindow, self.submit_register)
                                 print("you registered successfully")
-                                # then continue: ask to assign
+
                                 pass
-                #self.Register_succeeded(newWindow)
 
         else:
                 self.try_again_label = Label(newWindow, text="Username or password are empty! Try again.")
@@ -227,7 +229,6 @@ class Cli:
 
     def Register_succeeded(self, newWindow, submit_register):
         # Destroy the widgets in the registration window
-        self.try_again_label.destroy()
         self.user_name.destroy()
         self.user_password.destroy()
         self.submit_button.destroy()
@@ -236,6 +237,10 @@ class Cli:
 
         # Create a label indicating successful registration
         Label(newWindow, text="Registration succeeded").pack()
+
+        # then continue: ask to Log In(assign)
+        self.Log_In_Register_Window = Button(newWindow, text="Log In",command=lambda: [newWindow.destroy(), self.Assign_Window()])
+        self.Log_In_Register_Window.place(x=40, y=130)
 
         # Create a button to close the window
         Button(newWindow, text="Close", command=newWindow.destroy).pack()
@@ -261,7 +266,7 @@ class Cli:
 
         # sets the title of the
         # Toplevel widget
-        newWindow.title("New Window")
+        newWindow.title("Log In")
 
         # sets the geometry of toplevel
         newWindow.geometry("450x300")
@@ -274,14 +279,78 @@ class Cli:
         self.user_password = Label(newWindow, text="Password")
         self.user_password.place(x=40, y=100)
 
-        self.submit_button = Button(newWindow, text="Submit", command=lambda: self.Assign_succeeded(newWindow))
-        self.submit_button.place(x=40, y=130)
-
         self.user_name_input_area = Entry(newWindow, width=30)
         self.user_name_input_area.place(x=110, y=60)
 
         self.user_password_entry_area = Entry(newWindow, width=30)
         self.user_password_entry_area.place(x=110, y=100)
+
+        self.submit_button = Button(newWindow, text="Submit", command=lambda: self.submit_assign(newWindow))
+        self.submit_button.place(x=40, y=130)
+
+    def submit_assign(self, newWindow):
+
+        # hasattr is a python function that checks if a value exists
+        if hasattr(self, 'try_again_label'):
+            self.try_again_label.destroy()
+
+        if hasattr(self, 'try_again_label1'):
+            self.try_again_label.destroy()
+
+        cmd = "ASSIGN"
+        username = self.user_name_input_area.get()
+        password = self.user_password_entry_area.get()
+
+        # Check if username and password are not empty
+        if username.strip() and password.strip():
+            print("the params:", username, password)
+
+            params = [username.encode(), password.encode()]
+            if not Pro.check_cmd_and_params(cmd, params):
+                # Assign not succeeded!!
+                self.try_again_label1 = Label(newWindow, text="Couldn't Log In! Try Again.")
+                self.try_again_label1.pack()
+
+            else:
+                # send cmd and params(username, password) to server
+                self.send_cmd(cmd.encode(), params)
+                # get response from server
+                res_response, msg_response = self.get_response()
+                if res_response:
+                    res_split_msg, cmd_response, params_response = self.split_message(msg_response)
+                    if not res_split_msg:
+                        # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
+                        if (cmd_response == "ASSIGN_NACK") or (cmd_response == "ASSIGN_ACK"):
+                            print("cmd is assign")
+                            response = self.handle_response_assign(cmd_response)
+
+                            if response:  # if true = ASSIGN_ACK
+                                print("user is assigned")
+                                # user is assigned!! dict of assigned clients in is server!
+                                self.Assign_succeeded(newWindow)
+                                pass
+
+                            else:  # ASSIGN_NACK- Can't Log In! maybe user doesn't exists yet(isn't registered yet)
+                                # checking if the lable already exists
+                                if not hasattr(self, 'user_doesnt_exists_try_again'):
+                                    self.user_doesnt_exists_try_again = Label(newWindow, text="User doesnt exists! Try to Register Again")
+                                    self.user_doesnt_exists_try_again.pack()
+
+                                    # checking if the button already exists
+                                    # register again button
+                                    if not hasattr(self, 'user_doesnt_exists_try_again'):
+                                        self.register_again = Button(newWindow, text="Submit",
+                                                                    command=lambda: [newWindow.destroy(), self.Register_Window(newWindow)])
+                                        self.register_again.place(x=40, y=130)
+
+
+                                print(
+                                    "couldn't register (client already registered)")  # couldn't register/ client exists
+                                print("continue to assign")
+                                # client already exists! we need to continue to assign too
+        else:
+            self.try_again_label = Label(newWindow, text="Username or password are empty! Try again.")
+            self.try_again_label.pack()
 
     def Assign_succeeded(self, newWindow):
 
