@@ -4,7 +4,6 @@ import socket
 import pickle
 from new_protocol import Pro
 
-
 class AssignPanel:
     def __init__(self, root, my_socket):
 
