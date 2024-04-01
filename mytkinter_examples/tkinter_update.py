@@ -4,77 +4,7 @@ import socket
 import pickle
 from new_protocol import Pro
 
-# global functions
-@staticmethod
-def send_cmd(self, cmd: bytes, params):
-    msg_to_send = Pro.create_msg(cmd, params)
-    self.my_socket.send(msg_to_send)
 
-@staticmethod
-def get_response(self):
-    res, message = Pro.get_msg(self.my_socket)
-    if not res:
-        return False, message
-    return True, message
-
-@staticmethod
-def check_if_pickle(self, msg):
-    try:
-        # Try to unpickle the message
-        pickle.loads(msg)
-        # If successful, the message is in pickle format
-        return True
-    except pickle.UnpicklingError:
-        # If unsuccessful, the message is not in pickle format
-        return False
-
-@staticmethod
-def split_message(self, message):
-    if self.check_if_pickle(message):
-        # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-        # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-        print("got the dict!!!!")
-        cmd = "ASSIGNED_CLIENTS"
-        # load pickle and not decode to get msg!!
-        received_dict = pickle.loads(message)
-        return True, cmd, received_dict
-        # msg = received_dict
-    else:
-        msg = message.decode()
-    message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-    print("0:" + message_parts[0] + "1:" + message_parts[1])
-    if message_parts[1] == '0':
-        print("False!! no params, only cmd")
-        return False, message_parts[0], None  # return only cmd
-    else:
-        return True, message_parts[0], message_parts[2:]  # return cmd, params
-
-@staticmethod
-def handle_response_call_target(self, response):
-    if response == "TARGET_NACK":
-        # they need to call another client
-        print("the person you wanted to call to isn't assigned yet")
-        print("call another person(from contacts)")
-        return False
-    elif response == "TARGET_ACK":
-        return True
-
-@staticmethod
-def handle_cmd(self, cmd):
-    tof = Pro.check_cmd(cmd)
-    if tof:
-        # sending to server
-        sending_cmd = Pro.create_msg(cmd.encode(), [])
-        self.my_socket.send(sending_cmd)
-
-        # receiving from server
-        # self.handle_server_response(cmd, None)
-        # if cmd == 'EXIT':
-        #    return False
-    # else:
-    # print("Not a valid command, or missing parameters\n")
-
-    return True
 
 
 class RegisterPanel:
@@ -82,7 +12,6 @@ class RegisterPanel:
         self.root = root
         self.panel_window = None
         self.my_socket = my_socket
-
 
     def handle_response_Register(self, response):
         if response == Pro.cmds[Pro.REGISTER_NACK]:
@@ -101,52 +30,69 @@ class RegisterPanel:
             # create a token
             pass
 
-    def init_panel_create(self):
-        # before class it was Register_window function!!!
-        # Toplevel object which will
-        # be treated as a new window
+    def send_cmd(self, cmd: bytes, params):
+        msg_to_send = Pro.create_msg(cmd, params)
+        self.my_socket.send(msg_to_send)
 
-        self.register_panel_window = Toplevel(self.root)
+    def check_if_pickle(self, msg):
+        try:
+            # Try to unpickle the message
+            pickle.loads(msg)
+            # If successful, the message is in pickle format
+            return True
+        except pickle.UnpicklingError:
+            # If unsuccessful, the message is not in pickle format
+            return False
 
-        # sets the title of the
-        # Toplevel widget
-        self.register_panel_window.title("Register")
+    def split_message(self, message):
+        if self.check_if_pickle(message):
+            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+            print("got the dict!!!!")
+            cmd = "ASSIGNED_CLIENTS"
+            # load pickle and not decode to get msg!!
+            received_dict = pickle.loads(message)
+            return True, cmd, received_dict
+            # msg = received_dict
+        else:
+            msg = message.decode()
+        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+        print("0:" + message_parts[0] + "1:" + message_parts[1])
+        if message_parts[1] == '0':
+            print("False!! no params, only cmd")
+            return False, message_parts[0], None  # return only cmd
+        else:
+            return True, message_parts[0], message_parts[2:]  # return cmd, params
 
-        # sets the geometry of toplevel
-        self.register_panel_window.geometry("450x300")
+    def handle_response_call_target(self, response):
+        if response == "TARGET_NACK":
+            # they need to call another client
+            print("the person you wanted to call to isn't assigned yet")
+            print("call another person(from contacts)")
+            return False
+        elif response == "TARGET_ACK":
+            return True
 
-        # the label for user_name
-        self.user_name = Label(self.register_panel_window, text="Username")
-        self.user_name.place(x=40, y=60)
+    def handle_cmd(self, cmd):
+        tof = Pro.check_cmd(cmd)
+        if tof:
+            # sending to server
+            sending_cmd = Pro.create_msg(cmd.encode(), [])
+            self.my_socket.send(sending_cmd)
 
-        # the label for user_password
-        self.user_password = Label(self.register_panel_window, text="Password")
-        self.user_password.place(x=40, y=100)
+            # receiving from server
+            # self.handle_server_response(cmd, None)
+            # if cmd == 'EXIT':
+            #    return False
+        # else:
+        # print("Not a valid command, or missing parameters\n")
 
-        self.user_name_input_area = Entry(self.register_panel_window, width=30)
-        self.user_name_input_area.place(x=110, y=60)
-
-        self.user_password_entry_area = Entry(self.register_panel_window, width=30)
-        self.user_password_entry_area.place(x=110, y=100)
-
-        self.submit_button = Button(self.register_panel_window, text="Submit", command= self.submit_register)
-        self.submit_button.place(x=40, y=130)
-
-
-    def init_panel_destroy(self):
-        self.submit_button.destroy()
-        self.user_password_entry_area.destroy()
-        self.user_name_input_area.destroy()
-        self.user_password.destroy()
-        self.user_name.destroy()
-        if hasattr(self, 'try_again_label') and self.try_again_label1:
-            # Assign not succeeded!!
-            self.try_again_label1 = None
-            self.try_again_label1.pack()
-        self.panel_window.destroy()
-        self.panel_window = None
-
-
+        return True
+    def get_response(self):
+        res, message = Pro.get_msg(self.my_socket)
+        if not res:
+            return False, message
+        return True, message
     def submit_register(self):
 
         # hasattr is a python function that checks if a value exists
@@ -170,11 +116,11 @@ class RegisterPanel:
 
             params = [username.encode(), password.encode()]
             if not Pro.check_cmd_and_params(cmd, params):
-                #Register_not_succeeded!!
+                # Register_not_succeeded!!
                 self.try_again_label1 = Label(self.register_panel_window, text="Couldn't Register! Try Again.")
                 self.try_again_label1.pack()
 
-                #self.Register_not_succeeded(newWindow)
+                # self.Register_not_succeeded(newWindow)
 
             else:
                 # send cmd and params(username, password) to server
@@ -192,22 +138,72 @@ class RegisterPanel:
                             if not response:  # if false = REGISTER_NACK
                                 # checking if the lable already exists
                                 if not hasattr(self, 'already_registered_try_again'):
-                                    self.already_registered_try_again = Label(self.register_panel_window, text="User Already Registered! Try To Log Inq Use Differente Username")
+                                    self.already_registered_try_again = Label(self.register_panel_window,
+                                                                              text="User Already Registered! Try To Log Inq Use Differente Username")
                                     self.already_registered_try_again.pack()
 
-                                print("couldn't register (client already registered)")  # couldn't register/ client exists
+                                print(
+                                    "couldn't register (client already registered)")  # couldn't register/ client exists
                                 print("continue to assign")
                                 # client already exists! we need to continue to assign too
                                 pass
                             else:
-                                self.Register_succeeded(self.register_panel_window, self.submit_register)
+                                self.Register_succeeded(self.submit_register)
                                 print("you registered successfully")
 
                                 pass
 
         else:
-                self.try_again_label = Label(self.register_panel_window, text="Username or password are empty! Try again.")
-                self.try_again_label.pack()
+            self.try_again_label = Label(self.register_panel_window, text="Username or password are empty! Try again.")
+            self.try_again_label.pack()
+    def init_panel_create(self):
+        # before class it was Register_window function!!!
+        # Toplevel object which will
+        # be treated as a new window
+
+        self.register_panel_window = Toplevel(self.root)
+
+        # sets the title of the
+        # Toplevel widget
+        self.register_panel_window.title("Register")
+
+        # sets the geometry of toplevel
+        self.register_panel_window.geometry("1280x720")
+
+        # the label for user_name
+        self.user_name = Label(self.register_panel_window, text="Username")
+        self.user_name.place(x=40, y=60)
+
+        # the label for user_password
+        self.user_password = Label(self.register_panel_window, text="Password")
+        self.user_password.place(x=40, y=100)
+
+        self.user_name_input_area = Entry(self.register_panel_window, width=30)
+        self.user_name_input_area.place(x=110, y=60)
+
+        self.user_password_entry_area = Entry(self.register_panel_window, width=30)
+        self.user_password_entry_area.place(x=110, y=100)
+
+        self.submit_button = Button(self.register_panel_window, text="Submit", command=self.submit_register)
+        self.submit_button.place(x=40, y=130)
+
+
+
+
+    def init_panel_destroy(self):
+        self.submit_button.destroy()
+        self.user_password_entry_area.destroy()
+        self.user_name_input_area.destroy()
+        self.user_password.destroy()
+        self.user_name.destroy()
+        if hasattr(self, 'try_again_label') and self.try_again_label1:
+            # Assign not succeeded!!
+            self.try_again_label1 = None
+            self.try_again_label1.pack()
+        self.panel_window.destroy()
+        self.panel_window = None
+
+
 
     def Register_succeeded(self, submit_register):
         # Destroy the widgets in the registration window
@@ -222,7 +218,8 @@ class RegisterPanel:
 
         # then continue: ask to Log In(assign)
         self.assigned_obj = AssignPanel(self.root, self.my_socket)
-        self.Log_In_Register_Window = Button(self.register_panel_window, text="Log In",command=self.assigned_obj.init_panel_create)
+        self.Log_In_Register_Window = Button(self.register_panel_window, text="Log In",
+                                             command=self.assigned_obj.init_panel_create)
         self.Log_In_Register_Window.place(x=40, y=130)
 
         # Create a button to close the window
@@ -243,14 +240,12 @@ class RegisterPanel:
         Button(self.register_panel_window, text="Close", command=self.register_panel_window.destroy).pack()
 
 
-
 class AssignPanel:
     def __init__(self, root, my_socket):
 
         self.root = root
         self.panel_window = None
         self.my_socket = my_socket
-
 
     def handle_response_assign(self, response):
         if response == "ASSIGN_NACK":
@@ -259,6 +254,71 @@ class AssignPanel:
             return False
         elif response == "ASSIGN_ACK":
             return True
+
+
+    def send_cmd(self, cmd: bytes, params):
+        msg_to_send = Pro.create_msg(cmd, params)
+        self.my_socket.send(msg_to_send)
+
+    def check_if_pickle(self, msg):
+        try:
+            # Try to unpickle the message
+            pickle.loads(msg)
+            # If successful, the message is in pickle format
+            return True
+        except pickle.UnpicklingError:
+            # If unsuccessful, the message is not in pickle format
+            return False
+
+    def split_message(self, message):
+        if self.check_if_pickle(message):
+            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+            print("got the dict!!!!")
+            cmd = "ASSIGNED_CLIENTS"
+            # load pickle and not decode to get msg!!
+            received_dict = pickle.loads(message)
+            return True, cmd, received_dict
+            # msg = received_dict
+        else:
+            msg = message.decode()
+        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+        print("0:" + message_parts[0] + "1:" + message_parts[1])
+        if message_parts[1] == '0':
+            print("False!! no params, only cmd")
+            return False, message_parts[0], None  # return only cmd
+        else:
+            return True, message_parts[0], message_parts[2:]  # return cmd, params
+
+    def handle_response_call_target(self, response):
+        if response == "TARGET_NACK":
+            # they need to call another client
+            print("the person you wanted to call to isn't assigned yet")
+            print("call another person(from contacts)")
+            return False
+        elif response == "TARGET_ACK":
+            return True
+
+    def handle_cmd(self, cmd):
+        tof = Pro.check_cmd(cmd)
+        if tof:
+            # sending to server
+            sending_cmd = Pro.create_msg(cmd.encode(), [])
+            self.my_socket.send(sending_cmd)
+
+            # receiving from server
+            # self.handle_server_response(cmd, None)
+            # if cmd == 'EXIT':
+            #    return False
+        # else:
+        # print("Not a valid command, or missing parameters\n")
+
+        return True
+    def get_response(self):
+        res, message = Pro.get_msg(self.my_socket)
+        if not res:
+            return False, message
+        return True, message
 
     def init_panel_create(self):
         # before class it was Assign_Window function!!!
@@ -271,7 +331,7 @@ class AssignPanel:
         self.assign_panel_window.title("Log In")
 
         # sets the geometry of toplevel
-        self.assign_panel_window.geometry("450x300")
+        self.assign_panel_window.geometry("1280x720")
 
         # the label for user_name
         self.user_name = Label(self.assign_panel_window, text="Username")
@@ -296,21 +356,24 @@ class AssignPanel:
         self.user_name_input_area.destroy()
         self.user_password.destroy()
         self.user_name.destroy()
+
         if hasattr(self, 'try_again_label') and self.try_again_label1:
             # Assign not succeeded!!
             self.try_again_label1 = None
             self.try_again_label1.pack()
-        self.panel_window.destroy()
-        self.panel_window = None
+
+        self.assign_panel_window.destroy()
+        #self.panel_window = None
+
 
     def submit_assign(self):
 
         # hasattr is a python function that checks if a value exists
 
-        #if hasattr(self, 'try_again_label'):
+        # if hasattr(self, 'try_again_label'):
         #    self.try_again_label.destroy()
 
-        #if hasattr(self, 'try_again_label1'):
+        # if hasattr(self, 'try_again_label1'):
         #    self.try_again_label.destroy()
 
         cmd = "ASSIGN"
@@ -353,7 +416,6 @@ class AssignPanel:
         Button(self.assign_panel_window, text="Close", command=self.assign_panel_window.destroy).pack()
 
 
-
 class Cli:
     def __init__(self):
         # open socket with the server
@@ -361,27 +423,91 @@ class Cli:
 
         self.assigned_client_details = {}  # Create the dictionary globally
 
-
         self.root = Tk()
 
         # sets the geometry of main
         # root window
-        self.root.geometry("300x300")
+        self.root.geometry("1280x720")
         self.root.title("Home Page")
         self.init_panel_create()
 
+    def send_cmd(self, cmd: bytes, params):
+        msg_to_send = Pro.create_msg(cmd, params)
+        self.my_socket.send(msg_to_send)
+
+    def get_response(self):
+        res, message = Pro.get_msg(self.my_socket)
+        if not res:
+            return False, message
+        return True, message
+
+    def check_if_pickle(self, msg):
+        try:
+            # Try to unpickle the message
+            pickle.loads(msg)
+            # If successful, the message is in pickle format
+            return True
+        except pickle.UnpicklingError:
+            # If unsuccessful, the message is not in pickle format
+            return False
+
+    def split_message(self, message):
+        if self.check_if_pickle(message):
+            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+            print("got the dict!!!!")
+            cmd = "ASSIGNED_CLIENTS"
+            # load pickle and not decode to get msg!!
+            received_dict = pickle.loads(message)
+            return True, cmd, received_dict
+            # msg = received_dict
+        else:
+            msg = message.decode()
+        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+        print("0:" + message_parts[0] + "1:" + message_parts[1])
+        if message_parts[1] == '0':
+            print("False!! no params, only cmd")
+            return False, message_parts[0], None  # return only cmd
+        else:
+            return True, message_parts[0], message_parts[2:]  # return cmd, params
+
+    def handle_response_call_target(self, response):
+        if response == "TARGET_NACK":
+            # they need to call another client
+            print("the person you wanted to call to isn't assigned yet")
+            print("call another person(from contacts)")
+            return False
+        elif response == "TARGET_ACK":
+            return True
+
+    def handle_cmd(self, cmd):
+        tof = Pro.check_cmd(cmd)
+        if tof:
+            # sending to server
+            sending_cmd = Pro.create_msg(cmd.encode(), [])
+            self.my_socket.send(sending_cmd)
+
+            # receiving from server
+            # self.handle_server_response(cmd, None)
+            # if cmd == 'EXIT':
+            #    return False
+        # else:
+        # print("Not a valid command, or missing parameters\n")
+
+        return True
 
     def init_panel_create(self):
         self.label_welcome = Label(self.root,
                                    text="Welcome to VidPal!")
         self.label_welcome.pack(pady=10)
+        self.register_obj = RegisterPanel(self.root, self.my_socket)
+        self.assign_obj = AssignPanel(self.root, self.my_socket)
         # Create a Button
-        self.btn_reg = Button(self.root, text='Register', command= RegisterPanel.init_panel_create)
+        self.btn_reg = Button(self.root, text='Register', command=self.register_obj.init_panel_create)
         self.btn_reg.place(x=30, y=100)
 
-
         # Create a Button
-        self.btn_assign = Button(self.root, text='Log In', command= AssignPanel.init_panel_create)
+        self.btn_assign = Button(self.root, text='Log In', command=self.assign_obj.init_panel_create)
         self.btn_assign.place(x=200, y=100)
 
     def init_panel_destroy(self):
@@ -394,21 +520,13 @@ class Cli:
         self.btn_assign.destroy()
         self.btn_assign = None
 
-
     def connect(self, ip, port):
         self.my_socket.connect((ip, port))
 
-
-
-    #tkintern:
+    # tkintern:
 
     def main_loop(self):
         self.root.mainloop()
-
-
-
-
-
 
     def AssignedPanel(self, newWindow):
 
@@ -432,14 +550,12 @@ class Cli:
         self.btn_contact.place(x=120, y=130)
 
         # Create a Button
-        #self.btn_reg = Button(self.root, text='Contact List', command=self.Contact_Window)
+        # self.btn_reg = Button(self.root, text='Contact List', command=self.Contact_Window)
         # self.btn_reg.pack(side=LEFT)
-        #self.btn_reg.place(x=30, y=100)
+        # self.btn_reg.place(x=30, y=100)
 
         # Create a button to close the window
-        #Button(newWindow, text="Close", command=newWindow.destroy).pack()
-
-
+        # Button(newWindow, text="Close", command=newWindow.destroy).pack()
 
     def Contact_List_window(self):
         newWindow1 = Toplevel(self.root)
@@ -448,7 +564,7 @@ class Cli:
         newWindow1.title("New Window")
 
         # sets the geometry of toplevel
-        newWindow1.geometry("450x300")
+        newWindow1.geometry("1280x720")
 
         # the label for user_name
         self.user_name = Label(newWindow1, text="Your Contacts Are:")
@@ -470,7 +586,7 @@ class Cli:
         newWindow1.title("Call")
 
         # sets the geometry of toplevel
-        newWindow1.geometry("450x300")
+        newWindow1.geometry("1280x720")
 
         self.call_who = Label(newWindow1, text="Who Do You Want To Call To?")
         self.call_who.place(x=180, y=60)
@@ -496,7 +612,6 @@ class Cli:
                 self.try_again_label1 = Label(newWindow1, text="Invalid command! Try again!")
                 self.try_again_label1.pack()
 
-
             self.send_cmd(cmd.encode(), params)
 
             res_response, msg_response = self.get_response()
@@ -512,7 +627,6 @@ class Cli:
                             print("we can call target! he is assigned")
 
                             # get target details
-
                             # getting target details from server dict client_sockets_details
                             # getting ip and port according to username
 
@@ -548,8 +662,6 @@ class Cli:
         else:
             self.try_again_label2 = Label(newWindow1, text="It's Empty! Write again")
             self.try_again_label2.pack()
-
-
 
 
 def Main():
