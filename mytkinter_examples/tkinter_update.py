@@ -168,7 +168,7 @@ class RegisterPanel:
         self.register_panel_window.title("Register")
 
         # sets the geometry of toplevel
-        self.register_panel_window.geometry("1280x720")
+        self.register_panel_window.geometry("500x500")
 
         # the label for user_name
         self.user_name = Label(self.register_panel_window, text="Username")
@@ -331,7 +331,7 @@ class AssignPanel:
         self.assign_panel_window.title("Log In")
 
         # sets the geometry of toplevel
-        self.assign_panel_window.geometry("1280x720")
+        self.assign_panel_window.geometry("500x500")
 
         # the label for user_name
         self.user_name = Label(self.assign_panel_window, text="Username")
@@ -394,8 +394,15 @@ class AssignPanel:
             else:
                 # send cmd and params(username, password) to server
                 self.send_cmd(cmd.encode(), params)
+
+
                 # get response from server
-                self.init_panel_destroy()
+
+                #moving into Logged In panel
+
+                self.log_in_panel = LoggedInPanel(self.root, self.my_socket)
+                self.log_in_panel.init_panel_create()
+
 
         else:
             self.try_again_label = Label(self.assign_panel_window, text="Username or password are empty! Try again.")
@@ -416,6 +423,43 @@ class AssignPanel:
         Button(self.assign_panel_window, text="Close", command=self.assign_panel_window.destroy).pack()
 
 
+class LoggedInPanel:
+    def __init__(self, root, my_socket):
+
+        self.root = root
+        self.panel_window = None
+        self.my_socket = my_socket
+
+    def init_panel_create(self):
+        # before class it was Assign_Window function!!!
+        # Toplevel object which will
+        # be treated as a new window
+
+        self.LoggedIn_panel_window = Toplevel(self.root)
+        # sets the title of the
+        # Toplevel widget
+        self.LoggedIn_panel_window.title("Log In")
+
+        # sets the geometry of toplevel
+        self.LoggedIn_panel_window.geometry("500x500")
+
+        self.root.title("Call (you are Logged In!)")
+
+        # Create a Button
+        self.btn_call = Button(self.root, text='Call', command=self.call_who_Window)
+        self.btn_call.place(x=120, y=100)
+
+        # Create a Button
+        self.btn_contact = Button(self.root, text='Contact List', command=self.Contact_List_window)
+        self.btn_contact.place(x=120, y=130)
+
+    def init_panel_destroy(self):
+        self.btn_call.destroy()
+        self.btn_contact.destroy()
+        self.LoggedIn_panel_window.destroy()
+
+
+
 class Cli:
     def __init__(self):
         # open socket with the server
@@ -427,7 +471,7 @@ class Cli:
 
         # sets the geometry of main
         # root window
-        self.root.geometry("1280x720")
+        self.root.geometry("500x500")
         self.root.title("Home Page")
         self.init_panel_create()
 
@@ -528,7 +572,7 @@ class Cli:
     def main_loop(self):
         self.root.mainloop()
 
-    def AssignedPanel(self, newWindow):
+    def LoggedInPanel(self, newWindow):
 
         # when assigned- moving "into the system':
         # now you can look at contacts list and call whoever you want
@@ -564,11 +608,24 @@ class Cli:
         newWindow1.title("New Window")
 
         # sets the geometry of toplevel
-        newWindow1.geometry("1280x720")
+        newWindow1.geometry("500x500")
 
         # the label for user_name
         self.user_name = Label(newWindow1, text="Your Contacts Are:")
         self.user_name.place(x=180, y=60)
+
+        def item_clicked(item):
+            print(f"Clicked item: {item}")
+
+        # רשימת הפריטים
+        items = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
+
+        # יצירת כפתורים לכל פריט ברשימה
+        for item in items:
+            button = Tk.Button(newWindow1, text=item, command=lambda i=item: item_clicked(i), bd=0, relief="flat",
+                               bg=newWindow1.cget("bg"))
+            button.pack(pady=5, padx=10, fill="x")
+
 
     def call_who_Window(self, newWindow):
 
@@ -586,7 +643,7 @@ class Cli:
         newWindow1.title("Call")
 
         # sets the geometry of toplevel
-        newWindow1.geometry("1280x720")
+        newWindow1.geometry("500x500")
 
         self.call_who = Label(newWindow1, text="Who Do You Want To Call To?")
         self.call_who.place(x=180, y=60)
