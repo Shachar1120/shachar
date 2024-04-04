@@ -469,10 +469,10 @@ class LoggedInPanel:
         self.btn_contact.destroy()
         self.LoggedIn_panel_window.destroy()
 
-    def call_who_Window(self):
+    def call_button(self):
         pass
 
-    def Contact_List_window(self):
+    def Contact_button(self):
         pass
 
 class Cli:
