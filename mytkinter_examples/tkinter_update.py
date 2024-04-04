@@ -8,10 +8,11 @@ from new_protocol import Pro
 
 
 class RegisterPanel:
-    def __init__(self, root, my_socket):
+    def __init__(self, root, my_socket, complete_func):
         self.root = root
         self.panel_window = None
         self.my_socket = my_socket
+        self.complete_func = complete_func
 
     def handle_response_Register(self, response):
         if response == Pro.cmds[Pro.REGISTER_NACK]:
@@ -148,7 +149,7 @@ class RegisterPanel:
                                 # client already exists! we need to continue to assign too
                                 pass
                             else:
-                                self.Register_succeeded(self.submit_register)
+                                self.complete_func()
                                 print("you registered successfully")
 
                                 pass
@@ -160,7 +161,6 @@ class RegisterPanel:
         # before class it was Register_window function!!!
         # Toplevel object which will
         # be treated as a new window
-
         self.register_panel_window = Toplevel(self.root)
 
         # sets the title of the
@@ -200,30 +200,30 @@ class RegisterPanel:
             # Assign not succeeded!!
             self.try_again_label1 = None
             self.try_again_label1.pack()
-        self.panel_window.destroy()
-        self.panel_window = None
+        self.register_panel_window.destroy()
+        self.register_panel_window = None
 
 
 
-    def Register_succeeded(self, submit_register):
-        # Destroy the widgets in the registration window
-        self.user_name.destroy()
-        self.user_password.destroy()
-        self.submit_button.destroy()
-        self.user_name_input_area.destroy()
-        self.user_password_entry_area.destroy()
-
-        # Create a label indicating successful registration
-        Label(self.register_panel_window, text="Registration succeeded").pack()
-
-        # then continue: ask to Log In(assign)
-        self.assigned_obj = AssignPanel(self.root, self.my_socket)
-        self.Log_In_Register_Window = Button(self.register_panel_window, text="Log In",
-                                             command=self.assigned_obj.init_panel_create)
-        self.Log_In_Register_Window.place(x=40, y=130)
-
-        # Create a button to close the window
-        Button(self.register_panel_window, text="Close", command=self.register_panel_window.destroy).pack()
+    # def Register_succeeded(self, submit_register):
+    #     # Destroy the widgets in the registration window
+    #     self.user_name.destroy()
+    #     self.user_password.destroy()
+    #     self.submit_button.destroy()
+    #     self.user_name_input_area.destroy()
+    #     self.user_password_entry_area.destroy()
+    #
+    #     # Create a label indicating successful registration
+    #     Label(self.register_panel_window, text="Registration succeeded").pack()
+    #
+    #     # then continue: ask to Log In(assign)
+    #     self.assigned_obj = AssignPanel(self.root, self.my_socket)
+    #     self.Log_In_Register_Window = Button(self.register_panel_window, text="Log In",
+    #                                          command=self.assigned_obj.init_panel_create)
+    #     self.Log_In_Register_Window.place(x=40, y=130)
+    #
+    #     # Create a button to close the window
+    #     Button(self.register_panel_window, text="Close", command=self.register_panel_window.destroy).pack()
 
     def Register_not_succeeded(self):
         # Destroy the widgets in the registration window
@@ -241,11 +241,12 @@ class RegisterPanel:
 
 
 class AssignPanel:
-    def __init__(self, root, my_socket):
+    def __init__(self, root, my_socket, complete_func):
 
         self.root = root
         self.panel_window = None
         self.my_socket = my_socket
+        self.complete_func = complete_func
 
     def handle_response_assign(self, response):
         if response == "ASSIGN_NACK":
@@ -399,9 +400,8 @@ class AssignPanel:
                 # get response from server
 
                 #moving into Logged In panel
-
-                self.log_in_panel = LoggedInPanel(self.root, self.my_socket)
-                self.log_in_panel.init_panel_create()
+                self.complete_func()
+                #self.log_in_panel.init_panel_create()
 
 
         else:
@@ -424,24 +424,35 @@ class AssignPanel:
 
 
 class LoggedInPanel:
-    def __init__(self, root, my_socket):
+    def __init__(self, cli):
 
-        self.root = root
+        self.root = cli.root
         self.panel_window = None
-        self.my_socket = my_socket
+        self.my_socket = cli.my_socket
+
+
 
     def init_panel_create(self):
+
+        #self.register_panel = RegisterPanel(self.root, self.my_socket)
+        #self.register_panel_window = self.register_panel.register_panel_window
+
+        self.Logged_In_window = self.root
+
+        self.label1 = Label(self.root,
+                                   text="Logged In!!")
+
         # before class it was Assign_Window function!!!
         # Toplevel object which will
         # be treated as a new window
 
-        self.LoggedIn_panel_window = Toplevel(self.root)
+        #self.LoggedIn_panel_window = Toplevel(self.root)
         # sets the title of the
         # Toplevel widget
-        self.LoggedIn_panel_window.title("Log In")
+        self.Logged_In_window.title("Log In")
 
         # sets the geometry of toplevel
-        self.LoggedIn_panel_window.geometry("500x500")
+        #self.LoggedIn_panel_window.geometry("500x500")
 
         self.root.title("Call (you are Logged In!)")
 
@@ -458,7 +469,11 @@ class LoggedInPanel:
         self.btn_contact.destroy()
         self.LoggedIn_panel_window.destroy()
 
+    def call_who_Window(self):
+        pass
 
+    def Contact_List_window(self):
+        pass
 
 class Cli:
     def __init__(self):
@@ -540,12 +555,23 @@ class Cli:
 
         return True
 
+    def RegisterComplete(self):
+        self.register_obj.init_panel_destroy()
+
+    def AssignComplete(self):
+        self.assign_obj.init_panel_destroy()
+        # destroy main:
+        self.destroy_panel_create()
+        self.logged_in_obj.init_panel_create()
+
     def init_panel_create(self):
         self.label_welcome = Label(self.root,
                                    text="Welcome to VidPal!")
         self.label_welcome.pack(pady=10)
-        self.register_obj = RegisterPanel(self.root, self.my_socket)
-        self.assign_obj = AssignPanel(self.root, self.my_socket)
+        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete)
+        self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
+        self.logged_in_obj =LoggedInPanel(self)
+
         # Create a Button
         self.btn_reg = Button(self.root, text='Register', command=self.register_obj.init_panel_create)
         self.btn_reg.place(x=30, y=100)
@@ -554,7 +580,7 @@ class Cli:
         self.btn_assign = Button(self.root, text='Log In', command=self.assign_obj.init_panel_create)
         self.btn_assign.place(x=200, y=100)
 
-    def init_panel_destroy(self):
+    def destroy_panel_create(self):
         self.label_welcome.destroy()
         self.label_welcome = None
 
