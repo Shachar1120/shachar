@@ -431,37 +431,71 @@ class LoggedInPanel:
         self.my_socket = cli.my_socket
 
 
+    def get_response(self):
+        res, message = Pro.get_msg(self.my_socket)
+        if not res:
+            return False, message
+        return True, message
 
+    def split_message(self, message):
+        if self.check_if_pickle(message):
+            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+            print("got the dict!!!!")
+            cmd = "ASSIGNED_CLIENTS"
+            # load pickle and not decode to get msg!!
+            received_dict = pickle.loads(message)
+            return True, cmd, received_dict
+            # msg = received_dict
+        else:
+            msg = message.decode()
+        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+        print("0:" + message_parts[0] + "1:" + message_parts[1])
+        if message_parts[1] == '0':
+            print("False!! no params, only cmd")
+            return False, message_parts[0], None  # return only cmd
+        else:
+            return True, message_parts[0], message_parts[2:]  # return cmd, params
+
+    def send_cmd(self, cmd: bytes, params):
+        msg_to_send = Pro.create_msg(cmd, params)
+        self.my_socket.send(msg_to_send)
+
+    def check_if_pickle(self, msg):
+        try:
+            # Try to unpickle the message
+            pickle.loads(msg)
+            # If successful, the message is in pickle format
+            return True
+        except pickle.UnpicklingError:
+            # If unsuccessful, the message is not in pickle format
+            return False
+
+    def handle_response_call_target(self, response):
+        if response == "TARGET_NACK":
+            # they need to call another client
+            print("the person you wanted to call to isn't assigned yet")
+            print("call another person(from contacts)")
+            return False
+        elif response == "TARGET_ACK":
+            return True
     def init_panel_create(self):
-
-        #self.register_panel = RegisterPanel(self.root, self.my_socket)
-        #self.register_panel_window = self.register_panel.register_panel_window
 
         self.Logged_In_window = self.root
 
         self.label1 = Label(self.root,
                                    text="Logged In!!")
 
-        # before class it was Assign_Window function!!!
-        # Toplevel object which will
-        # be treated as a new window
-
-        #self.LoggedIn_panel_window = Toplevel(self.root)
-        # sets the title of the
-        # Toplevel widget
         self.Logged_In_window.title("Log In")
 
-        # sets the geometry of toplevel
-        #self.LoggedIn_panel_window.geometry("500x500")
-
-        self.root.title("Call (you are Logged In!)")
+        self.Logged_In_window.title("Call (you are Logged In!)")
 
         # Create a Button
-        self.btn_call = Button(self.root, text='Call', command=self.call_who_Window)
+        self.btn_call = Button(self.Logged_In_window, text='Call', command=self.call_button)
         self.btn_call.place(x=120, y=100)
 
         # Create a Button
-        self.btn_contact = Button(self.root, text='Contact List', command=self.Contact_List_window)
+        self.btn_contact = Button(self.Logged_In_window, text='Contact List', command=self.contact_button)
         self.btn_contact.place(x=120, y=130)
 
     def init_panel_destroy(self):
@@ -470,10 +504,119 @@ class LoggedInPanel:
         self.LoggedIn_panel_window.destroy()
 
     def call_button(self):
-        pass
+        call_window = Toplevel(self.root)
+        # sets the title of the
+        # Toplevel widget
+        call_window.title("Call")
 
-    def Contact_button(self):
-        pass
+        # sets the geometry of toplevel
+        call_window.geometry("500x500")
+
+        self.call_who = Label(call_window, text="Who Do You Want To Call To?")
+        self.call_who.place(x=180, y=60)
+
+        self.enter_username = Label(call_window, text="Enter Username:")
+        self.enter_username.place(x=40, y=100)
+
+        self.username_input_area = Entry(call_window, width=30)
+        self.username_input_area.place(x=130, y=100)
+
+        # Create a Button
+        self.btn_contact = Button(call_window, text='submit', command=self.submit_call)
+        self.btn_contact.place(x=150, y=150)
+
+
+    def submit_call(self):
+        cmd = "CALL"
+        username = self.username_input_area.get()
+        # Check if username is not empty
+        if username.strip():
+            print("he wants to call:", username)
+            target_username = self.username_input_area.get()
+
+            params = [target_username.encode()]
+            if not Pro.check_cmd_and_params(cmd, params):
+                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
+                print("Invalid command! Try again!")
+
+                # user isnt registered!!!
+                self.try_again_label1 = Label(self.root, text="Invalid command! Try again!")
+                self.try_again_label1.pack()
+
+            self.send_cmd(cmd.encode(), params)
+
+            res_response, msg_response = self.get_response()
+            if res_response:
+                res_split_msg, cmd_response, params_response = self.split_message(msg_response)
+                if res_split_msg:
+                    # res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
+                    if (cmd_response == "TARGET_NACK") or (cmd_response == "TARGET_ACK"):
+                        print("cmd is call(call target client)")
+                        client_username = params_response[0]
+                        response = self.handle_response_call_target(cmd_response)
+                        if response:  # if true = ASSIGN_ACK
+                            print("we can call target! he is assigned")
+
+                            # get target details
+                            # getting target details from server dict client_sockets_details
+                            # getting ip and port according to username
+
+                            cmd = "ASK_TARGET_DETAILS"
+                            tof = Pro.check_cmd(cmd)
+                            if tof:
+                                # sending to server
+                                cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()])
+                                self.my_socket.send(cmd_send)
+
+                            # get response from server
+                            # should i wait for response from server??? not assume i get it
+                            res_response, msg_response = self.get_response()
+                            if res_response:
+                                res_split_msg1, cmd_response1, params_response1 = self.split_message(msg_response)
+                                if res_split_msg1:
+                                    # res_response = True: got cmd and params
+                                    if (cmd_response1 == "SEND_TARGET_DETAILS"):
+                                        print("cmd is SEND_TARGET_DETAILS")
+                                        client_socket_details = params_response1
+                                        print("got the client details params!!!:", client_socket_details)
+                            pass
+
+                        else:  # REGISTER_NACK- Maybe user already exist!!! try different username
+                            print("couldn't call target!")
+                            print("call another person: (from contacts)")
+
+
+        else:
+            self.try_again_label2 = Label(call_window, text="It's Empty! Write again")
+            self.try_again_label2.pack()
+
+
+    def contact_button(self):
+        newWindow1 = Toplevel(self.root)
+        # sets the title of the
+        # Toplevel widget
+        newWindow1.title("New Window")
+
+        # sets the geometry of toplevel
+        newWindow1.geometry("500x500")
+
+        # the label for user_name
+        self.user_name = Label(newWindow1, text="Your Contacts Are:")
+        self.user_name.place(x=180, y=60)
+
+        def item_clicked(item):
+            print(f"Clicked item: {item}")
+
+        # רשימת הפריטים
+        items = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
+
+        # יצירת כפתורים לכל פריט ברשימה
+        for item in items:
+            button = Tk.Button(newWindow1, text=item, command=lambda i=item: item_clicked(i), bd=0, relief="flat",
+                               bg=newWindow1.cget("bg"))
+            button.pack(pady=5, padx=10, fill="x")
+
+
 
 class Cli:
     def __init__(self):
