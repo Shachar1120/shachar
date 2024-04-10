@@ -1,9 +1,10 @@
 from tkinter import *
-from tkinter.ttk import *
+import tkinter.ttk as ttk
+
 import socket
 import pickle
 from new_protocol import Pro
-
+from pathlib import Path
 
 
 
@@ -168,7 +169,7 @@ class RegisterPanel:
         self.register_panel_window.title("Register")
 
         # sets the geometry of toplevel
-        self.register_panel_window.geometry("500x500")
+        self.register_panel_window.geometry("300x200")
 
         # the label for user_name
         self.user_name = Label(self.register_panel_window, text="Username")
@@ -587,7 +588,7 @@ class LoggedInPanel:
 
 
         else:
-            self.try_again_label2 = Label(call_window, text="It's Empty! Write again")
+            self.try_again_label2 = Label(self.root, text="It's Empty! Write again")
             self.try_again_label2.pack()
 
 
@@ -611,9 +612,10 @@ class LoggedInPanel:
         items = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
 
         # יצירת כפתורים לכל פריט ברשימה
+        cget_bg = newWindow1.cget("bg")
+        print(f"lets see: {cget_bg}")
         for item in items:
-            button = Tk.Button(newWindow1, text=item, command=lambda i=item: item_clicked(i), bd=0, relief="flat",
-                               bg=newWindow1.cget("bg"))
+            button = ttk.Button(newWindow1, text=item, command=lambda i=item: item_clicked(i))
             button.pack(pady=5, padx=10, fill="x")
 
 
