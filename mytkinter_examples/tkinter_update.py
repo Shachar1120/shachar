@@ -150,7 +150,8 @@ class RegisterPanel:
                                 # client already exists! we need to continue to assign too
                                 pass
                             else:
-                                self.complete_func()
+                                self.complete_func() #RegisterComplete function
+                                #self.move_to_home_screen()
                                 print("you registered successfully")
 
 
@@ -160,8 +161,8 @@ class RegisterPanel:
             self.try_again_label = Label(self.register_panel_window, text="Username or password are empty! Try again.")
             self.try_again_label.pack()
 
-    #def move_to_home_screen(self):
-        #self.init_panel_destroy()
+    def move_to_home_screen(self):
+        self.init_panel_destroy()
         #self.home_screen_obj = self.init_panel_create()
         #self.home_screen_obj.init_panel_create()
 
@@ -211,8 +212,8 @@ class RegisterPanel:
             # Assign not succeeded!!
             self.try_again_label1 = None
             self.try_again_label1.pack()
-        self.register_panel_window.destroy()
-        self.register_panel_window = None
+        #self.register_panel_window.destroy()
+        #self.register_panel_window = None
 
 
     def Register_not_succeeded(self):
@@ -853,14 +854,21 @@ class Cli:
 
     def move_to_register(self):
         self.destroy_panel()
+        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete)
         self.register_obj.init_panel_create()
 
+    def recreate_panel(self):
+        self.label = Label(self.root, text="Welcome again")
+        self.label.place(x=40, y=50)
+
     def init_panel_create(self):
-        self.label_welcome = Label(self.root, text="Welcome to VidPal!")
-        self.label_welcome.pack()
+
         self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete)
         self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
         self.logged_in_obj =LoggedInPanel(self)
+
+        self.welcome_label = Label(self.root, text="Welcome to VidPal!")
+        self.welcome_label.place(x=40, y=50)
 
         # Create a Button
         self.btn_reg = Button(self.root, text='Register', command=self.move_to_register)
@@ -871,7 +879,7 @@ class Cli:
         self.btn_assign.place(x=200, y=100)
 
     def destroy_panel(self):
-        self.label_welcome.destroy()
+        self.welcome_label.destroy()
 
         self.btn_reg.destroy()
 
