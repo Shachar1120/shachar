@@ -150,7 +150,7 @@ class RegisterPanel:
                                 # client already exists! we need to continue to assign too
                                 pass
                             else:
-                                self.complete_func() #RegisterComplete function
+                                self.complete_func() #RegisterComplete function in Cli class
                                 #self.move_to_home_screen()
                                 print("you registered successfully")
 
@@ -317,9 +317,8 @@ class AssignPanel:
         # Toplevel object which will
         # be treated as a new window
 
-        self.assign_panel_window = Toplevel(self.root)
+        self.assign_panel_window = self.root
         # sets the title of the
-        # Toplevel widget
         self.assign_panel_window.title("Log In")
 
         # sets the geometry of toplevel
@@ -354,7 +353,7 @@ class AssignPanel:
             self.try_again_label1 = None
             self.try_again_label1.pack()
 
-        self.assign_panel_window.destroy()
+        #self.assign_panel_window.destroy()
         #self.panel_window = None
 
 
@@ -389,9 +388,9 @@ class AssignPanel:
 
 
                 # get response from server
-
+                # user is assigned!!
                 #moving into Logged In panel
-                self.complete_func()
+                self.complete_func() #AssignComplete function in Cli class
                 #self.log_in_panel.init_panel_create()
 
 
@@ -470,6 +469,13 @@ class LoggedInPanel:
             return False
         elif response == "TARGET_ACK":
             return True
+
+
+    def move_to_call(self):
+        self.init_panel_destroy()
+        self.call_obj = CallPanel(self.root, self.my_socket)
+        self.call_obj.init_panel_create()
+
     def init_panel_create(self):
 
         self.Logged_In_window = self.root
@@ -484,7 +490,7 @@ class LoggedInPanel:
         self.call_obj = CallPanel(self.root, self.my_socket)
 
         # Create a Button
-        self.btn_call = Button(self.Logged_In_window, text='Call', command=self.call_obj.init_panel_create)
+        self.btn_call = Button(self.Logged_In_window, text='Call', command=self.move_to_call)
         self.btn_call.place(x=120, y=100)
 
         # Create a Button
@@ -494,16 +500,16 @@ class LoggedInPanel:
     def init_panel_destroy(self):
         self.btn_call.destroy()
         self.btn_contact.destroy()
-        self.LoggedIn_panel_window.destroy()
+        #self.LoggedIn_panel_window.destroy()
 
     def call_button(self):
-        call_window = Toplevel(self.root)
+        call_window = self.root
         # sets the title of the
         # Toplevel widget
         call_window.title("Call")
 
         # sets the geometry of toplevel
-        call_window.geometry("500x500")
+        #call_window.geometry("500x500")
 
         self.call_who = Label(call_window, text="Who Do You Want To Call To?")
         self.call_who.place(x=180, y=60)
@@ -673,7 +679,7 @@ class CallPanel:
         call_window.title("Call")
 
         # sets the geometry of toplevel
-        call_window.geometry("500x500")
+        #call_window.geometry("500x500")
 
         self.call_who = Label(call_window, text="Who Do You Want To Call To?")
         self.call_who.place(x=180, y=60)
@@ -727,6 +733,9 @@ class CallPanel:
                         response = self.handle_response_call_target(cmd_response)
                         if response:  # if true = ASSIGN_ACK
                             print("we can call target! he is assigned")
+
+                            self.can_call_client = Label(self.root, text="we can call client!")
+                            self.can_call_client.place(x=70, y=200)
 
                             # get target details
                             # getting target details from server dict client_sockets_details
@@ -857,9 +866,10 @@ class Cli:
         self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete)
         self.register_obj.init_panel_create()
 
-    def recreate_panel(self):
-        self.label = Label(self.root, text="Welcome again")
-        self.label.place(x=40, y=50)
+    def move_to_assign(self):
+        self.destroy_panel()
+        self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
+        self.assign_obj.init_panel_create()
 
     def init_panel_create(self):
 
@@ -875,7 +885,7 @@ class Cli:
         self.btn_reg.place(x=30, y=100)
 
         # Create a Button
-        self.btn_assign = Button(self.root, text='Log In', command=self.assign_obj.init_panel_create)
+        self.btn_assign = Button(self.root, text='Log In', command=self.move_to_assign)
         self.btn_assign.place(x=200, y=100)
 
     def destroy_panel(self):
