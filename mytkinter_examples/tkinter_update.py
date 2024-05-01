@@ -1,3 +1,4 @@
+import threading
 from tkinter import *
 import tkinter.ttk as ttk
 
@@ -416,11 +417,12 @@ class AssignPanel:
 
 
 class LoggedInPanel:
-    def __init__(self, cli):
-
+    def __init__(self, cli, server_port, connect_port):
+        self.server_port = server_port
         self.root = cli.root
         self.panel_window = None
         self.my_socket = cli.my_socket
+        self.connect_port = connect_port
 
 
     def get_response(self):
@@ -499,6 +501,13 @@ class LoggedInPanel:
         self.call_obj.init_panel_create()
 
     def init_panel_create(self):
+
+        call_obj = LoggedInNetwork(self.server_port, self.connect_port)
+        # יצירת תהליך חדש שיפעיל את הפונקציה print_numbers
+        thread = threading.Thread(target=call_obj.wait_for_call)
+
+        # הפעלת התהליך
+        thread.start()
 
         self.Logged_In_window = self.root
 
@@ -797,11 +806,36 @@ class CallPanel:
             self.try_again_label2.pack()
 
 
+class LoggedInNetwork:
+
+    def __init__(self, server_port, connect_port):
+        # open socket with the server
+        self.sock_initiate_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock_accept_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock_accept_call.bind(("0.0.0.0", server_port))
+        self.sock_accept_call.listen()
+        self.connect_port = connect_port
+
+    def accept_call(self):
+        self.sock_initiate_call, _ = self.sock_accept_call.accept()
+        return self.sock_initiate_call
+        print("Client connected")
+
+    def make_call(self):
+        #missing client details:
+        self.sock_initiate_call.connect(("127.0.0.1"), self.connect_port)
+
+    def wait_for_call(self):
+
+        self.sock_initiate_call = self.accept_call()
+        print("Client connected- wait_for_call")
+
 class Cli:
-    def __init__(self):
+    def __init__(self, my_port, your_port):
         # open socket with the server
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        self.server_port = my_port
+        self.connect_port = your_port
         self.assigned_client_details = {}  # Create the dictionary globally
 
         self.root = Tk()
@@ -901,7 +935,7 @@ class Cli:
 
         self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete)
         self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
-        self.logged_in_obj =LoggedInPanel(self)
+        self.logged_in_obj =LoggedInPanel(self, self.server_port, self.connect_port)
 
         self.welcome_label = Label(self.root, text="Welcome to VidPal!")
         self.welcome_label.place(x=40, y=50)
@@ -924,6 +958,8 @@ class Cli:
     def connect(self, ip, port):
         self.my_socket.connect((ip, port))
 
+
+
     # tkintern:
 
     def main_loop(self):
@@ -935,7 +971,15 @@ class Cli:
 
 
 def Main():
-    myclient = Cli()
+    print("1: for 2001, 2: for 2002")
+    if int(input()) == 1:
+        my_port = 2001
+        your_port = 2002
+
+    else:
+        my_port = 2002
+        your_port = 2001
+    myclient = Cli(my_port, your_port)
     myclient.connect("127.0.0.1", Pro.PORT)
     myclient.main_loop()
 
