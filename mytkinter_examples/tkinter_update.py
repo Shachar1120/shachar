@@ -415,6 +415,15 @@ class AssignPanel:
         # Create a button to close the window
         Button(self.assign_panel_window, text="Close", command=self.assign_panel_window.destroy).pack()
 
+class ButtonItem:
+    def __init__(self, item, call_obj):
+        self.item = item
+        self.call_obj = call_obj
+
+    def item_clicked(self):
+        print(f"Clicked item: {self.item}")
+        clicked_item = {self.item}
+        self.call_obj.make_call(self.item)
 
 class LoggedInPanel:
     def __init__(self, cli, server_port, connect_port):
@@ -423,6 +432,9 @@ class LoggedInPanel:
         self.panel_window = None
         self.my_socket = cli.my_socket
         self.connect_port = connect_port
+        self.item = None
+        self.button_objs = []
+        self.call_obj = None
 
 
     def get_response(self):
@@ -502,17 +514,16 @@ class LoggedInPanel:
 
     def init_panel_create(self):
 
-        call_obj = LoggedInNetwork(self.server_port, self.connect_port)
+        self.call_obj = LoggedInNetwork(self.server_port, self.connect_port)
         # יצירת תהליך חדש שיפעיל את הפונקציה print_numbers
-        thread = threading.Thread(target=call_obj.wait_for_call)
+        thread = threading.Thread(target=self.call_obj.wait_for_call)
 
         # הפעלת התהליך
         thread.start()
 
         self.Logged_In_window = self.root
 
-        self.label1 = Label(self.root,
-                                   text="Logged In!!")
+
 
 
         self.Logged_In_window.title("Your Contacts:")
@@ -541,9 +552,7 @@ class LoggedInPanel:
 
 
 
-        def item_clicked(item):
-            print(f"Clicked item: {item}")
-            clicked_item = {item}
+
 
         # רשימת הפריטים
         items = item_list
@@ -551,8 +560,10 @@ class LoggedInPanel:
         cget_bg = self.root.cget("bg")
         print(f"lets see: {cget_bg}")
         for item in items:
-            button = ttk.Button(self.root, text=item, command=lambda i=item: item_clicked(i))
+            obj = ButtonItem(item, self.call_obj)
+            button = ttk.Button(self.root, text=item, command=obj.item_clicked)
             button.pack(pady=5, padx=10, fill="x")
+            self.button_objs.append(obj)
 
 
     def init_panel_destroy(self):
@@ -646,9 +657,6 @@ class LoggedInPanel:
         else:
             self.try_again_label2 = Label(self.root, text="It's Empty! Write again")
             self.try_again_label2.pack()
-
-
-
 
 
 class CallPanel:
@@ -805,7 +813,6 @@ class CallPanel:
             self.try_again_label2 = Label(self.root, text="It's Empty! Write again")
             self.try_again_label2.pack()
 
-
 class LoggedInNetwork:
 
     def __init__(self, server_port, connect_port):
@@ -821,9 +828,19 @@ class LoggedInNetwork:
         return self.sock_initiate_call
         print("Client connected")
 
-    def make_call(self):
-        #missing client details:
-        self.sock_initiate_call.connect(("127.0.0.1"), self.connect_port)
+    def make_call(self, item):
+
+        #need to get client details dictionary
+        # item is username of wanted client
+        # need to get detailes of that client from dict
+        # make the connection
+        # point to point
+        try:
+            self.sock_initiate_call.connect(("127.0.0.1"), self.connect_port)
+            print("client connected")
+        except Exception as ex:
+            pass # missing exception handling
+
 
     def wait_for_call(self):
 
