@@ -515,7 +515,7 @@ class LoggedInPanel:
     def init_panel_create(self):
 
         self.call_obj = LoggedInNetwork(self.server_port, self.connect_port)
-        # יצירת תהליך חדש שיפעיל את הפונקציה print_numbers
+        # יצירת תהליך חדש שמחכה לפתיחת שיחה
         thread = threading.Thread(target=self.call_obj.wait_for_call)
 
         # הפעלת התהליך
@@ -538,6 +538,8 @@ class LoggedInPanel:
         self.send_cmd(cmd.encode(), params)
 
         # get response from server
+        # מקבל את הרשימת לקוחות הרשומים כדי להציג ללקוח
+        # צריכה למחוק את הלקוח שאני מהרשימת אנשי קשר
         res_response, msg_response = self.get_response()
         if res_response:
             res_split_msg, cmd_response, params_response = self.split_message(msg_response)
@@ -546,6 +548,7 @@ class LoggedInPanel:
                 # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
                 if (cmd_response == "ASSIGNED_CLIENTS"):
                     print("got the dict!!!", params_response)
+                    assigned_clients_dict = params_response
                     item_list = list(params_response.keys())
         if not res_response:
             print("didnt get message!!!")
