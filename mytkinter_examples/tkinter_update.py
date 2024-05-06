@@ -416,14 +416,15 @@ class AssignPanel:
         Button(self.assign_panel_window, text="Close", command=self.assign_panel_window.destroy).pack()
 
 class ButtonItem:
-    def __init__(self, item, call_obj):
+    def __init__(self, item, call_obj, dict):
         self.item = item
         self.call_obj = call_obj
+        self.dict = dict
 
     def item_clicked(self):
         print(f"Clicked item: {self.item}")
         clicked_item = {self.item}
-        self.call_obj.make_call(self.item)
+        self.call_obj.make_call(self.item, self.dict)
 
 class LoggedInPanel:
     def __init__(self, cli, server_port, connect_port):
@@ -435,6 +436,7 @@ class LoggedInPanel:
         self.item = None
         self.button_objs = []
         self.call_obj = None
+        self.assigned_clients_dict = None
 
 
     def get_response(self):
@@ -548,7 +550,7 @@ class LoggedInPanel:
                 # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
                 if (cmd_response == "ASSIGNED_CLIENTS"):
                     print("got the dict!!!", params_response)
-                    assigned_clients_dict = params_response
+                    self.assigned_clients_dict = params_response
                     item_list = list(params_response.keys())
         if not res_response:
             print("didnt get message!!!")
@@ -563,7 +565,7 @@ class LoggedInPanel:
         cget_bg = self.root.cget("bg")
         print(f"lets see: {cget_bg}")
         for item in items:
-            obj = ButtonItem(item, self.call_obj)
+            obj = ButtonItem(item, self.call_obj, self.assigned_clients_dict)
             button = ttk.Button(self.root, text=item, command=obj.item_clicked)
             button.pack(pady=5, padx=10, fill="x")
             self.button_objs.append(obj)
@@ -831,18 +833,30 @@ class LoggedInNetwork:
         return self.sock_initiate_call
         print("Client connected")
 
-    def make_call(self, item):
+    def handle_connection_failed(self):
+        pass
+
+    def make_call(self, item, dict):
 
         #need to get client details dictionary
         # item is username of wanted client
         # need to get detailes of that client from dict
+        self.assigned_clients_dict = dict
+        print("got the dict!!", self.assigned_clients_dict)
+
+        if item in self.assigned_clients_dict:
+            print(f"The value of '{item}' is: {self.assigned_clients_dict[item]}")
+        else:
+            print(f"'{item}' does not exist in the dictionary.")
         # make the connection
         # point to point
         try:
             self.sock_initiate_call.connect(("127.0.0.1"), self.connect_port)
             print("client connected")
+            # start ringing!!!!
         except Exception as ex:
-            pass # missing exception handling
+            print("client couldnt connect")
+            self.handle_connection_failed() # missing exception handling
 
 
     def wait_for_call(self):
