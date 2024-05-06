@@ -57,6 +57,9 @@ class Ser:
 
     def client_sockets_dict_details(self, params: [], client_socket):
         # get client socket details: ip and port
+        #לשנות את זה שבמקום לגלות את הפורט דרךgetpeername - כי זה הפורט של הלקוח מול השרת
+        #אני צריכה במקום לקבל את הפורט מהלקוח
+        # כלומר לשלוח ישר את הפורט בנוסף ליוזרניים וסיסמא
         ip = client_socket.getpeername()[0]
         port = client_socket.getpeername()[1]
         print(f"Username: {params[0]}, IP: {ip}, Port: {port}")
