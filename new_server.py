@@ -49,8 +49,9 @@ class Ser:
         self.client_details[params[0]] = params[1] #add client
         print("client details dict:", self.client_details)
 
-        # add client username and socket details
+        # get client username and socket details
         self.client_sockets_dict_details(params, client_socket)
+        print("client_sockets_dict_details!!", self.client_sockets_dict_details(params, client_socket))
 
         return Pro.cmds[Pro.REGISTER_ACK]
 
@@ -60,15 +61,21 @@ class Ser:
         port = client_socket.getpeername()[1]
         print(f"Username: {params[0]}, IP: {ip}, Port: {port}")
         # add client username and socket details
-        self.client_sockets_details[params[0]] = (ip, port) # add client
-        #print("this is the client_sockets_details dict!!!!")
-        print(self.client_sockets_details)
+        return ip, port
 
-    def handle_assigned(self, params: []) -> int:
+    def handle_assigned(self, params: [], client_socket) -> int:
         if self.check_password(params):
             print("Correct Password!!")
             # add user to dict of assigned
-            self.assigned_clients[params[0]] = params[1]  # add client
+            # param1 was password
+            # changed it to client details: ip and port
+
+            # get client username and socket details
+            ip, port = self.client_sockets_dict_details(params, client_socket)
+            print("client_sockets_dict_details!!", self.client_sockets_dict_details(params, client_socket))
+
+
+            self.assigned_clients[params[0]] = (ip, port) #self.client_sockets_dict_details # add client
             print("this is the dict!!", self.assigned_clients)
             return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
         else:
@@ -165,7 +172,7 @@ def main():
                     # if ASSIGNED:
                     elif cmd_res == Pro.cmds[Pro.ASSIGN]:
                         print("cmd is assign!!")
-                        res = myserver.handle_assigned(params_res)
+                        res = myserver.handle_assigned(params_res, current_socket)
                         # send response to the client
                         message = Pro.create_msg(res.encode(), [])
                         current_socket.send(message)
