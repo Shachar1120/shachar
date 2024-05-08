@@ -10,11 +10,12 @@ from pathlib import Path
 
 
 class RegisterPanel:
-    def __init__(self, root, my_socket, complete_func):
+    def __init__(self, root, my_socket, complete_func, my_port):
         self.root = root
         self.panel_window = None
         self.my_socket = my_socket
         self.complete_func = complete_func
+        self.my_port = my_port
 
     def handle_response_Register(self, response):
         if response == Pro.cmds[Pro.REGISTER_NACK]:
@@ -112,12 +113,14 @@ class RegisterPanel:
         cmd = "REGISTER"
         username = self.user_name_input_area.get()
         password = self.user_password_entry_area.get()
+        my_port = str(self.my_port)
+
 
         # Check if username and password are not empty
         if username.strip() and password.strip():
             print("the params:", username, password)
 
-            params = [username.encode(), password.encode()]
+            params = [username.encode(), password.encode(), my_port.encode()]
             if not Pro.check_cmd_and_params(cmd, params):
                 # Register_not_succeeded!!
                 self.try_again_label1 = Label(self.register_panel_window, text="Couldn't Register! Try Again.")
@@ -239,6 +242,7 @@ class AssignPanel:
         self.panel_window = None
         self.my_socket = my_socket
         self.complete_func = complete_func
+        self.assign_response = None
 
     def handle_response_assign(self, response):
         if response == "ASSIGN_NACK":
@@ -312,6 +316,16 @@ class AssignPanel:
         if not res:
             return False, message
         return True, message
+
+    def handle_assign_response(self, msg):
+        msg = msg.decode()
+        msg_parts = msg.split(" ")
+        print(msg_parts[0], "," , msg_parts[1])
+        if msg_parts[0] == "ASSIGN_ACK":
+            return True
+        else:
+            return False
+
 
     def init_panel_create(self):
         # before class it was Assign_Window function!!!
@@ -390,11 +404,18 @@ class AssignPanel:
 
                 # get response from server
                 res_response, msg_response = self.get_response()
-                print("this is the response!!", msg_response)
-                # user is assigned!!
-                #moving into Logged In panel
-                self.complete_func() #AssignComplete function in Cli class
-                #self.log_in_panel.init_panel_create()
+                if res_response:
+                    assign_response = self.handle_assign_response(msg_response)
+                    if assign_response: #ASSIGN_ACK
+                        print("this is the response!!", msg_response)
+                        # only if register Ack- user is assigned!!
+                        #moving into Logged In panel
+                        self.complete_func() #AssignComplete function in Cli class
+                        #self.log_in_panel.init_panel_create()
+                    else:
+                        if msg_response == "ASSIGN_NACK":
+                            print("password is incorrect???")
+                        # else- another error
 
 
         else:
@@ -957,7 +978,7 @@ class Cli:
 
     def move_to_register(self):
         self.destroy_panel()
-        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete)
+        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete, self.server_port)
         self.register_obj.init_panel_create()
 
     def move_to_assign(self):
@@ -967,7 +988,7 @@ class Cli:
 
     def init_panel_create(self):
 
-        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete)
+        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete, self.server_port)
         self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
         self.logged_in_obj =LoggedInPanel(self, self.server_port, self.connect_port)
 
