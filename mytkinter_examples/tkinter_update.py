@@ -866,18 +866,20 @@ class LoggedInNetwork:
         print("got the dict!!", self.assigned_clients_dict)
 
         if item in self.assigned_clients_dict:
-            print(f"The value of '{item}' is: {self.assigned_clients_dict[item]}")
+            print(f"item exists in dict: '{item}' is: {self.assigned_clients_dict[item]}")
+            try:
+                # make the connection
+                # point to point
+                self.other_client_port = self.assigned_clients_dict[item][1]
+                self.sock_initiate_call.connect(("127.0.0.1"), self.other_client_port) # self.connect_port
+                print("client connected")
+                # start ringing!!!!
+            except Exception as ex:
+                print("client couldnt connect")
+                self.handle_connection_failed()  # missing exception handling
         else:
-            print(f"'{item}' does not exist in the dictionary.")
-        # make the connection
-        # point to point
-        try:
-            self.sock_initiate_call.connect(("127.0.0.1"), self.connect_port)
-            print("client connected")
-            # start ringing!!!!
-        except Exception as ex:
-            print("client couldnt connect")
-            self.handle_connection_failed() # missing exception handling
+            print(f"cant call '{item}' , he doesnot exist in the dictionary.")
+
 
 
     def wait_for_call(self):
@@ -891,7 +893,7 @@ class Cli:
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_port = my_port
         self.connect_port = your_port
-        self.assigned_client_details = {}  # Create the dictionary globally
+        #self.assigned_client_details = {}  # Create the dictionary globally
 
         self.root = Tk()
 
