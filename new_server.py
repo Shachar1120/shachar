@@ -27,7 +27,7 @@ class Ser:
         #self.registered = False
 
         # {"username1": "password1", "username2": "password2",...}:
-        self.client_details = {} # dict of all the registered clients(all of the clients in the system)
+        self.client_details = {} # dict of all the registered clients(all of the clients in the system) Username: (password, port)
         self.assigned_clients = {} # dict of all usernames of assigned client(right now)
         self.client_sockets_details = {} #{"username1" : "(ip, port)" # i have to check there isnt a username already!!!
 
@@ -41,17 +41,22 @@ class Ser:
         print("Client disconnected")
 
     def handle_registration(self, params: [], client_socket) -> int:
+
+        # get client username and socket details
+        # the port of the client server(my_port in client)!!
+        client_server_port = int(params[2])  # client sends it in str, we need to change to int
+        print("the Port:", client_server_port)
+
         if params[0] in self.client_details.keys(): #if username exists in dictionary
             return Pro.cmds[Pro.REGISTER_NACK] # already registered
 
         # else: user is not registered yet
-        # registering:
-        self.client_details[params[0]] = params[1] #add client
+        # registering = adding client to dictionary
+        #Username: (password, port)
+        self.client_details[params[0]] = (params[1], client_server_port) #add client
         print("client details dict:", self.client_details)
 
-        # get client username and socket details
-        self.client_sockets_dict_details(params, client_socket)
-        print("client_sockets_dict_details!!", self.client_sockets_dict_details(params, client_socket))
+
 
         return Pro.cmds[Pro.REGISTER_ACK]
 
@@ -69,17 +74,7 @@ class Ser:
     def handle_assigned(self, params: [], client_socket) -> int:
         if self.check_password(params):
             print("Correct Password!!")
-            # add user to dict of assigned
-            # param1 was password
-            # changed it to client details: ip and port
 
-            # get client username and socket details
-            ip, port = self.client_sockets_dict_details(params, client_socket)
-            print("client_sockets_dict_details!!", self.client_sockets_dict_details(params, client_socket))
-
-
-            self.assigned_clients[params[0]] = (ip, port) #self.client_sockets_dict_details # add client
-            print("this is the dict!!", self.assigned_clients)
             return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
         else:
             print("Incorrect password!!")
@@ -87,11 +82,15 @@ class Ser:
 
 
     def check_password(self, params: []):
-        # check username already registered
-        if params[0] in self.client_details.keys():
+        username_value = params[0]
+        user_details_value = params[1] #(password, port)
+        username_in_dict = self.client_details[username_value] # username: (password, port)
+
+        # check username is even registered
+        if username_value in self.client_details.keys():
             #check if password fit
-            password_value = self.client_details[params[0]]
-            if password_value == params[1]: #if password of username in dict match password from params
+            # if (password in dictionary) == (password in params)
+            if username_in_dict[0] == user_details_value[0]: #if password of username in dict match password from params
                 return True
         return False
 
