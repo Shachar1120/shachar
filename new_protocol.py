@@ -143,7 +143,7 @@ class Pro:
         Check if the command is defined in the protocol, including all parameters
         For example, DELETE c:\work\file.txt is good, but DELETE alone is not
         """
-        if Pro.check_register_or_assign(cmd) and len(params) == 2:
+        if Pro.check_register_or_assign(cmd) and len(params) == 3:
             return True, "Valid cmd"
         elif Pro.check_contacts(cmd) and len(params) == 0:
             return True, "Valid cmd"
