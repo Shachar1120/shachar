@@ -849,6 +849,9 @@ class LoggedInNetwork:
         self.sock_accept_call.listen()
         self.connect_port = connect_port
 
+    def send_cmd_to_other_client(self, cmd: bytes, params):
+        msg_to_send = Pro.create_msg(cmd, params)
+        self.sock_initiate_call.send(msg_to_send)
     def accept_call(self):
         self.sock_initiate_call, _ = self.sock_accept_call.accept()
         return self.sock_initiate_call
@@ -871,12 +874,30 @@ class LoggedInNetwork:
                 # make the connection
                 # point to point
                 self.other_client_port = self.assigned_clients_dict[item][1]
-                self.sock_initiate_call.connect(("127.0.0.1"), self.other_client_port) # self.connect_port
+                self.sock_initiate_call.connect(("127.0.0.1", self.other_client_port)) # self.connect_port
                 print("client connected")
-                # start ringing!!!!
             except Exception as ex:
                 print("client couldnt connect")
                 self.handle_connection_failed()  # missing exception handling
+                return
+            try:
+                # start ringing!!!!
+                #self.ring_obj = CallConnectHandling()
+                # יצירת תהליך חדש שמחכה לפתיחת שיחה
+                #thread = threading.Thread(target=self.ring_obj.wait_for_ring)
+                # הפעלת התהליך
+                #thread.start()
+
+                cmd = "RING"
+                params = [item.encode(), self.assigned_clients_dict[item].encode()] # sends username: (password, port)
+
+                #send it to the other client
+                self.send_cmd_to_other_client(cmd.encode(), params)
+            except Exception as ex:
+                print(ex)
+
+
+
         else:
             print(f"cant call '{item}' , he doesnot exist in the dictionary.")
 
@@ -886,6 +907,39 @@ class LoggedInNetwork:
 
         self.sock_initiate_call = self.accept_call()
         print("Client connected- wait_for_call")
+
+        res, message = Pro.get_msg(self.sock_initiate_call)
+        if res:
+            print("the message is:", message)
+        else:
+            print("didnt get the message")
+
+class CallConnectHandling:
+    def __init__(self, root, my_socket):
+
+        self.root = root
+        self.panel_window = None
+        self.my_socket = my_socket
+
+    def init_panel_create(self):
+
+
+
+        ringing_window = self.root
+        # sets the title of the
+        # Toplevel widget
+        ringing_window.title("Someone is calling")
+
+        self.call_who = Label(ringing_window, text="Who Do You Want To Call To?")
+        self.call_who.place(x=180, y=60)
+
+        #obj = ButtonItem(item, self.call_obj, self.assigned_clients_dict)
+        #button = ttk.Button(self.root, text=item, command=obj.item_clicked)
+        #button.pack(pady=5, padx=10, fill="x")
+
+    def wait_for_ring(self):
+        pass
+
 
 class Cli:
     def __init__(self, my_port, your_port):
