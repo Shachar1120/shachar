@@ -530,10 +530,7 @@ class LoggedInPanel:
             return True, message_parts[0], message_parts[2:]  # return cmd, params
 
 
-    def move_to_call(self):
-        self.init_panel_destroy()
-        self.call_obj = CallPanel(self.root, self.my_socket)
-        self.call_obj.init_panel_create()
+
 
     def init_panel_create(self):
 
@@ -685,18 +682,46 @@ class LoggedInPanel:
             self.try_again_label2.pack()
 
 
-class CallPanel:
-    def __init__(self, root, my_socket):
 
-        self.root = root
-        self.panel_window = None
-        self.my_socket = my_socket
 
-    def get_response(self):
-        res, message = Pro.get_msg(self.my_socket)
-        if not res:
-            return False, message
-        return True, message
+class LoggedInNetwork:
+
+    def __init__(self, server_port, connect_port):
+        # open socket with the server
+        self.sock_initiate_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock_accept_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock_accept_call.bind(("0.0.0.0", server_port))
+        self.sock_accept_call.listen()
+        self.connect_port = connect_port
+
+
+
+    def move_to_call(self):
+        self.call_obj = CallConnectHandling(self.my_socket)
+        self.call_obj.init_panel_create()
+        print("moved to call!!")
+
+    def send_cmd_to_other_client(self, cmd: bytes, params):
+        msg_to_send = Pro.create_msg(cmd, params)
+        self.sock_initiate_call.send(msg_to_send)
+    def accept_call(self):
+        self.sock_initiate_call, _ = self.sock_accept_call.accept()
+        return self.sock_initiate_call
+        print("Client connected")
+
+    def handle_connection_failed(self):
+        pass
+
+    def check_if_pickle(self, msg):
+        try:
+            # Try to unpickle the message
+            pickle.loads(msg)
+            # If successful, the message is in pickle format
+            return True
+        except pickle.UnpicklingError:
+            # If unsuccessful, the message is not in pickle format
+            return False
+
 
     def split_message(self, message):
         if self.check_if_pickle(message):
@@ -717,148 +742,6 @@ class CallPanel:
             return False, message_parts[0], None  # return only cmd
         else:
             return True, message_parts[0], message_parts[2:]  # return cmd, params
-
-    def send_cmd(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.my_socket.send(msg_to_send)
-
-    def check_if_pickle(self, msg):
-        try:
-            # Try to unpickle the message
-            pickle.loads(msg)
-            # If successful, the message is in pickle format
-            return True
-        except pickle.UnpicklingError:
-            # If unsuccessful, the message is not in pickle format
-            return False
-
-    def handle_response_call_target(self, response):
-        if response == "TARGET_NACK":
-            # they need to call another client
-            print("the person you wanted to call to isn't assigned yet")
-            print("call another person(from contacts)")
-            return False
-        elif response == "TARGET_ACK":
-            return True
-    def init_panel_create(self):
-
-        call_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        call_window.title("Call")
-
-        # sets the geometry of toplevel
-        #call_window.geometry("500x500")
-
-        self.call_who = Label(call_window, text="Who Do You Want To Call To?")
-        self.call_who.place(x=180, y=60)
-
-        self.enter_username = Label(call_window, text="Enter Username:")
-        self.enter_username.place(x=40, y=100)
-
-        self.username_input_area = Entry(call_window, width=30)
-        self.username_input_area.place(x=130, y=100)
-
-        # Create a Button
-        self.btn_contact = Button(call_window, text='submit', command=self.submit_call)
-        self.btn_contact.place(x=150, y=150)
-
-
-    def init_panel_destroy(self):
-        self.call_who.destroy()
-        self.enter_username.destroy()
-        self.username_input_area.destroy()
-        self.btn_contact.destroy()
-        self.call_window.destroy()
-
-
-    def submit_call(self):
-        cmd = "CALL"
-        username = self.username_input_area.get()
-        # Check if username is not empty
-        if username.strip():
-            print("he wants to call:", username)
-            target_username = self.username_input_area.get()
-
-            params = [target_username.encode()]
-            if not Pro.check_cmd_and_params(cmd, params):
-                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
-                print("Invalid command! Try again!")
-
-                # user isnt registered!!!
-                self.try_again_label1 = Label(self.root, text="Invalid command! Try again!")
-                self.try_again_label1.pack()
-
-            self.send_cmd(cmd.encode(), params)
-
-            res_response, msg_response = self.get_response()
-            if res_response:
-                res_split_msg, cmd_response, params_response = self.split_message(msg_response)
-                if res_split_msg:
-                    # res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
-                    if (cmd_response == "TARGET_NACK") or (cmd_response == "TARGET_ACK"):
-                        print("cmd is call(call target client)")
-                        client_username = params_response[0]
-                        response = self.handle_response_call_target(cmd_response)
-                        if response:  # if true = ASSIGN_ACK
-                            print("we can call target! he is assigned")
-
-                            self.can_call_client = Label(self.root, text="we can call client!")
-                            self.can_call_client.place(x=70, y=200)
-
-                            # get target details
-                            # getting target details from server dict client_sockets_details
-                            # getting ip and port according to username
-
-                            cmd = "ASK_TARGET_DETAILS"
-                            tof = Pro.check_cmd(cmd)
-                            if tof:
-                                # sending to server
-                                cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()])
-                                self.my_socket.send(cmd_send)
-
-                            # get response from server
-                            # should i wait for response from server??? not assume i get it
-                            res_response, msg_response = self.get_response()
-                            if res_response:
-                                res_split_msg1, cmd_response1, params_response1 = self.split_message(msg_response)
-                                if res_split_msg1:
-                                    # res_response = True: got cmd and params
-                                    if (cmd_response1 == "SEND_TARGET_DETAILS"):
-                                        print("cmd is SEND_TARGET_DETAILS")
-                                        client_socket_details = params_response1
-                                        print("got the client details params!!!:", client_socket_details)
-                            pass
-
-                        else:  # REGISTER_NACK- Maybe user already exist!!! try different username
-                            print("couldn't call target!")
-                            print("call another person: (from contacts)")
-
-
-        else:
-            self.try_again_label2 = Label(self.root, text="It's Empty! Write again")
-            self.try_again_label2.pack()
-
-class LoggedInNetwork:
-
-    def __init__(self, server_port, connect_port):
-        # open socket with the server
-        self.sock_initiate_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock_accept_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock_accept_call.bind(("0.0.0.0", server_port))
-        self.sock_accept_call.listen()
-        self.connect_port = connect_port
-
-    def send_cmd_to_other_client(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.sock_initiate_call.send(msg_to_send)
-    def accept_call(self):
-        self.sock_initiate_call, _ = self.sock_accept_call.accept()
-        return self.sock_initiate_call
-        print("Client connected")
-
-    def handle_connection_failed(self):
-        pass
 
     def make_call(self, item, dict):
 
@@ -889,9 +772,11 @@ class LoggedInNetwork:
                 #thread.start()
 
                 cmd = "RING"
-                params = [item.encode(), self.assigned_clients_dict[item].encode()] # sends username: (password, port)
+                self.port_num_str = str(self.other_client_port)
+                params = [item.encode(), self.port_num_str.encode()] # sends username, port
 
-                #send it to the other client
+                #send it to the other client!!! not to server
+                #because the socket is between the 2 clients now
                 self.send_cmd_to_other_client(cmd.encode(), params)
             except Exception as ex:
                 print(ex)
@@ -911,6 +796,11 @@ class LoggedInNetwork:
         res, message = Pro.get_msg(self.sock_initiate_call)
         if res:
             print("the message is:", message)
+            res_split_msg, cmd_response, params_response = self.split_message(message)
+            if res_split_msg:
+                if cmd_response == "RING":
+                    self.move_to_call()
+
         else:
             print("didnt get the message")
 
@@ -921,21 +811,31 @@ class CallConnectHandling:
         self.panel_window = None
         self.my_socket = my_socket
 
+
+
     def init_panel_create(self):
-
-
-
         ringing_window = self.root
         # sets the title of the
         # Toplevel widget
         ringing_window.title("Someone is calling")
 
-        self.call_who = Label(ringing_window, text="Who Do You Want To Call To?")
+        self.call_who = Label(self.ringing_window, text="Who Do You Want To Call To?")
         self.call_who.place(x=180, y=60)
 
-        #obj = ButtonItem(item, self.call_obj, self.assigned_clients_dict)
-        #button = ttk.Button(self.root, text=item, command=obj.item_clicked)
-        #button.pack(pady=5, padx=10, fill="x")
+        # Create a Button
+        self.btn_contact = Button(self.ringing_window, text='submit', command=self.submit_call)
+        self.btn_contact.place(x=150, y=150)
+
+
+    def init_panel_destroy(self):
+        self.call_who.destroy()
+        self.enter_username.destroy()
+        self.username_input_area.destroy()
+        self.btn_contact.destroy()
+        self.call_window.destroy()
+
+
+
 
     def wait_for_ring(self):
         pass
