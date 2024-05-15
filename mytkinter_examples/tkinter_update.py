@@ -5,6 +5,9 @@ import tkinter.ttk as ttk
 import socket
 import pickle
 from new_protocol import Pro
+from Cli_manger import Cli
+import select
+from time import time
 from pathlib import Path
 
 
@@ -437,33 +440,33 @@ class AssignPanel:
         Button(self.assign_panel_window, text="Close", command=self.assign_panel_window.destroy).pack()
 
 class ButtonItem:
-    def __init__(self, item, call_handling, dict):
+    def __init__(self, item, call_func, dict):
         self.item = item
-        self.call_handling = call_handling
+        self.call_handling = None
         self.dict = dict
+        self.call_func = call_func
 
     def item_clicked(self):
         print(f"Clicked item: {self.item}")
         clicked_item = {self.item}
-        self.call_handling.make_call(self.item, self.dict)
+        self.call_func(self.item, self.dict) # call func is make call (of ContactsPanel class)
 
 class ContactsPanel:
-    def __init__(self, root, my_socket, complete_func, move_to_calling, server_port, connect_port):
+    def __init__(self, root, s_to_server, complete_func, move_to_calling, server_port, connect_port):
         self.server_port = server_port
         self.root = root
         self.panel_window = None
-        self.my_socket = my_socket
+        self.s_to_server = s_to_server
         self.connect_port = connect_port
         self.complete_func = complete_func
         self.item = None
         self.button_objs = []
-        self.call_handling = None
         self.assigned_clients_dict = None
         self.item_list = None
 
 
     def get_response(self):
-        res, message = Pro.get_msg(self.my_socket)
+        res, message = Pro.get_msg(self.s_to_server)
         if not res:
             return False, message
         return True, message
@@ -490,7 +493,7 @@ class ContactsPanel:
 
     def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
-        self.my_socket.send(msg_to_send)
+        self.s_to_server.send(msg_to_send)
 
     def check_if_pickle(self, msg):
         try:
@@ -536,9 +539,9 @@ class ContactsPanel:
 
     def init_panel_create(self):
 
-        self.call_handling = LoggedInNetwork(self.root, self.server_port, self.connect_port)
+        self.init_network()
         # יצירת תהליך חדש שמחכה לפתיחת שיחה
-        thread = threading.Thread(target=self.call_handling.wait_for_call)
+        thread = threading.Thread(target=self.wait_for_network)
 
         # הפעלת התהליך
         thread.start()
@@ -573,7 +576,7 @@ class ContactsPanel:
         cget_bg = self.root.cget("bg")
         print(f"lets see: {cget_bg}")
         for item in items:
-            obj = ButtonItem(item, self.call_handling, self.assigned_clients_dict)
+            obj = ButtonItem(item, self.make_call, self.assigned_clients_dict)
             button = ttk.Button(self.root, text=item, command=obj.item_clicked)
             button.pack(pady=5, padx=10, fill="x")
             self.button_objs.append(obj)
@@ -648,7 +651,7 @@ class ContactsPanel:
                             if tof:
                                 # sending to server
                                 cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()])
-                                self.my_socket.send(cmd_send)
+                                self.s_to_server.send(cmd_send)
 
                             # get response from server
                             # should i wait for response from server??? not assume i get it
@@ -673,35 +676,57 @@ class ContactsPanel:
             self.try_again_label2.pack()
 
 
+    ###################################
+    # network handling part:
+    ###################################
 
-
-class LoggedInNetwork:
-
-    def __init__(self, root, server_port, connect_port):
+    def init_network(self):
         # open socket with the server
         self.sock_initiate_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock_accept_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock_accept_call.bind(("0.0.0.0", server_port))
+        self.sock_accept_call.bind(("0.0.0.0", self.server_port))
         self.sock_accept_call.listen()
-        self.server_port = server_port
-        self.connect_port = connect_port
-        self.root = root
-        #self.call_obj = None
+
+        # self.call_obj = None
         self.loggedIn_obj = None
 
+    ################################
+    # network ==> responder ... secondary thread
+    ################################
+    def wait_for_network(self):
 
+        rlist, _, _ = select.select([self.s_to_server, self.sock_initiate_call, self.sock_accept_call], [], [])
 
+        for s in rlist:
+            if s == self.s_to_server: #connect with server
+                pass
+            elif s == self.sock_accept_call: #for call establishment
+                self.sock_initiate_call, _ = self.sock_accept_call.accept()
+                print("Client connected")
 
+            elif self.sock_initiate_call: # for call handling
 
+                res, message = Pro.get_msg(self.sock_initiate_call)
+                if res:
+                    print("the message is:", message)
+                    res_split_msg, cmd_response, params_response = self.split_message(message)
+                    if res_split_msg:
+                        if cmd_response == "RING":
+                            #tkinter after
+                            #move_to_call_reciving
+                            self.cli_obj = Cli(self.root, self.server_port)
+                            self.cli_obj.move_to_call_reciving()
+
+        else:
+            print("didnt get the message")
 
     def send_cmd_to_other_client(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
         self.sock_initiate_call.send(msg_to_send)
 
-    def accept_call(self):
-        self.sock_initiate_call, _ = self.sock_accept_call.accept()
-        return self.sock_initiate_call
-        print("Client connected")
+
+
+
 
     def handle_connection_failed(self):
         pass
@@ -737,6 +762,10 @@ class LoggedInNetwork:
         else:
             return True, message_parts[0], message_parts[2:]  # return cmd, params
 
+    ################################
+    # network ==> caller ... main thread
+    ################################
+
     def make_call(self, item, dict):
 
         #need to get client details dictionary
@@ -759,18 +788,15 @@ class LoggedInNetwork:
                 return
             try:
                 # start ringing!!!!
-                #self.ring_obj = CallConnectHandling()
-                # יצירת תהליך חדש שמחכה לפתיחת שיחה
-                #thread = threading.Thread(target=self.ring_obj.wait_for_ring)
-                # הפעלת התהליך
-                #thread.start()
 
                 cmd = "RING"
                 self.port_num_str = str(self.other_client_port)
                 params = [item.encode(), self.port_num_str.encode()] # sends username, port
 
                 #move to new panel
-                self.move_to_calling()
+                # sending root for my_socket and root
+                self.cli_obj = Cli(self.root, self.server_port)
+                self.cli_obj.move_to_calling()
 
                 #send it to the other client!!! not to server
                 #because the socket is between the 2 clients now
@@ -784,22 +810,137 @@ class LoggedInNetwork:
             print(f"cant call '{item}' , he doesnot exist in the dictionary.")
 
 
-
-    def wait_for_call(self):
-
-        self.sock_initiate_call = self.accept_call()
-        print("Client connected- wait_for_call")
-
-        res, message = Pro.get_msg(self.sock_initiate_call)
-        if res:
-            print("the message is:", message)
-            res_split_msg, cmd_response, params_response = self.split_message(message)
-            if res_split_msg:
-                if cmd_response == "RING":
-                    self.move_to_getting_called()
-
-        else:
-            print("didnt get the message")
+# merged with ContactsPanel
+#
+# class LoggedInNetwork:
+#
+#     def __init__(self, root, server_port, connect_port):
+#         # open socket with the server
+#         self.sock_initiate_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#         self.sock_accept_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#         self.sock_accept_call.bind(("0.0.0.0", server_port))
+#         self.sock_accept_call.listen()
+#
+#         #self.call_obj = None
+#         self.loggedIn_obj = None
+#
+#         self.server_port = server_port
+#         self.connect_port = connect_port
+#         self.root = root
+#
+#
+#
+#
+#
+#
+#     def send_cmd_to_other_client(self, cmd: bytes, params):
+#         msg_to_send = Pro.create_msg(cmd, params)
+#         self.sock_initiate_call.send(msg_to_send)
+#
+#     def accept_call(self):
+#         self.sock_initiate_call, _ = self.sock_accept_call.accept()
+#         return self.sock_initiate_call
+#         print("Client connected")
+#
+#     def handle_connection_failed(self):
+#         pass
+#
+#     def check_if_pickle(self, msg):
+#         try:
+#             # Try to unpickle the message
+#             pickle.loads(msg)
+#             # If successful, the message is in pickle format
+#             return True
+#         except pickle.UnpicklingError:
+#             # If unsuccessful, the message is not in pickle format
+#             return False
+#
+#
+#     def split_message(self, message):
+#         if self.check_if_pickle(message):
+#             # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+#             # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+#             print("got the dict!!!!")
+#             cmd = "ASSIGNED_CLIENTS"
+#             # load pickle and not decode to get msg!!
+#             received_dict = pickle.loads(message)
+#             return True, cmd, received_dict
+#             # msg = received_dict
+#         else:
+#             msg = message.decode()
+#         message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+#         print("0:" + message_parts[0] + "1:" + message_parts[1])
+#         if message_parts[1] == '0':
+#             print("False!! no params, only cmd")
+#             return False, message_parts[0], None  # return only cmd
+#         else:
+#             return True, message_parts[0], message_parts[2:]  # return cmd, params
+#
+#
+#     def make_call(self, item, dict):
+#
+#         #need to get client details dictionary
+#         # item is username of wanted client
+#         # need to get detailes of that client from dict
+#         self.assigned_clients_dict = dict
+#         print("got the dict!!", self.assigned_clients_dict)
+#
+#         if item in self.assigned_clients_dict:
+#             print(f"item exists in dict: '{item}' is: {self.assigned_clients_dict[item]}")
+#             try:
+#                 # make the connection
+#                 # point to point
+#                 self.other_client_port = self.assigned_clients_dict[item][1]
+#                 self.sock_initiate_call.connect(("127.0.0.1", self.other_client_port)) # self.connect_port
+#                 print("client connected")
+#             except Exception as ex:
+#                 print("client couldnt connect")
+#                 self.handle_connection_failed()  # missing exception handling
+#                 return
+#             try:
+#                 # start ringing!!!!
+#                 #self.ring_obj = CallConnectHandling()
+#                 # יצירת תהליך חדש שמחכה לפתיחת שיחה
+#                 #thread = threading.Thread(target=self.ring_obj.wait_for_ring)
+#                 # הפעלת התהליך
+#                 #thread.start()
+#
+#                 cmd = "RING"
+#                 self.port_num_str = str(self.other_client_port)
+#                 params = [item.encode(), self.port_num_str.encode()] # sends username, port
+#
+#                 #move to new panel
+#                 # sending root for my_socket and root
+#                 Cli.move_to_calling()
+#
+#                 #send it to the other client!!! not to server
+#                 #because the socket is between the 2 clients now
+#                 self.send_cmd_to_other_client(cmd.encode(), params)
+#             except Exception as ex:
+#                 print(ex)
+#
+#
+#
+#         else:
+#             print(f"cant call '{item}' , he doesnot exist in the dictionary.")
+#
+#
+#
+#     def wait_for_call(self):
+#
+#         self.sock_initiate_call = self.accept_call()
+#         print("Client connected- wait_for_call")
+#
+#         res, message = Pro.get_msg(self.sock_initiate_call)
+#         if res:
+#             print("the message is:", message)
+#             res_split_msg, cmd_response, params_response = self.split_message(message)
+#             if res_split_msg:
+#                 if cmd_response == "RING":
+#                     self.move_to_getting_called()
+#
+#         else:
+#             print("didnt get the message")
 
 class CallConnectHandling:
     def __init__(self, root, my_socket, complete_func):
@@ -823,7 +964,7 @@ class CallConnectHandling:
         #self.btn_contact = Button(self.ringing_window, text='submit', command=self.submit_call)
         #self.btn_contact.place(x=150, y=150)
 
-    def init_panel_create_getting_called(self):
+    def init_panel_create_call_reciving(self):
         self.ringing_window = self.root
         # sets the title of the
         # Toplevel widget
