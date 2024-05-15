@@ -110,17 +110,15 @@ class Cli:
         self.assign_obj.init_panel_create()
 
     def move_to_calling(self):
-        # self.loggedIn_obj = ContactsPanel(self.server_port, self.connect_port)
-        # self.loggedIn_obj.init_panel_destroy()
         self.destroy_enter_panel()
         self.make_call = CallConnectHandling(self.root, self.my_socket)
         self.make_call.init_panel_create_calling()
         print("moved to call!!")
 
-    def move_to_getting_called(self):
+    def move_to_call_reciving(self):
         self.destroy_enter_panel()
         self.call_obj = CallConnectHandling(self.root, self.my_socket)
-        self.call_obj.init_panel_create_getting_called()
+        self.call_obj.init_panel_create_call_reciving()
         print("moved to call!!")
 
     def init_panel_create(self):
