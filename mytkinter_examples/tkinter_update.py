@@ -451,8 +451,13 @@ class ButtonItem:
         clicked_item = {self.item}
         self.call_func(self.item, self.dict) # call func is make call (of ContactsPanel class)
 
+
+
 class ContactsPanel:
-    def __init__(self, root, s_to_server, complete_func, move_to_calling, server_port, connect_port):
+    INIT = 0
+    RINGING = 1
+
+    def __init__(self, root, s_to_server, complete_func, move_to_calling, move_to_call_receiving, server_port, connect_port):
         self.server_port = server_port
         self.root = root
         self.panel_window = None
@@ -461,8 +466,13 @@ class ContactsPanel:
         self.complete_func = complete_func
         self.item = None
         self.button_objs = []
+        self.button_widgets = []
         self.assigned_clients_dict = None
         self.item_list = None
+        self.move_to_calling = move_to_calling
+        self.move_to_call_receiving = move_to_call_receiving
+        self.state = ContactsPanel.INIT
+        self.transition = False
 
 
     def get_response(self):
@@ -505,6 +515,10 @@ class ContactsPanel:
             # If unsuccessful, the message is not in pickle format
             return False
 
+    def send_cmd_to_other_client(self, cmd: bytes, params):
+        msg_to_send = Pro.create_msg(cmd, params)
+        self.sock_initiate_call.send(msg_to_send)
+
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
             # they need to call another client
@@ -513,28 +527,6 @@ class ContactsPanel:
             return False
         elif response == "TARGET_ACK":
             return True
-
-    def split_message(self, message):
-        if self.check_if_pickle(message):
-            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-            print("got the dict!!!!")
-            cmd = "ASSIGNED_CLIENTS"
-            # load pickle and not decode to get msg!!
-            received_dict = pickle.loads(message)
-            return True, cmd, received_dict
-            # msg = received_dict
-        else:
-            msg = message.decode()
-        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        print("0:" + message_parts[0] + "1:" + message_parts[1])
-        if message_parts[1] == '0':
-            print("False!! no params, only cmd")
-            return False, message_parts[0], None  # return only cmd
-        else:
-            return True, message_parts[0], message_parts[2:]  # return cmd, params
-
-
 
 
     def init_panel_create(self):
@@ -580,12 +572,18 @@ class ContactsPanel:
             button = ttk.Button(self.root, text=item, command=obj.item_clicked)
             button.pack(pady=5, padx=10, fill="x")
             self.button_objs.append(obj)
+            self.button_widgets.append(button)
 
 
     def init_panel_destroy(self):
-        for button in self.button_objs:
+        for button in self.button_widgets:
+            print(f"type of button {type(button)}")
             button.destroy()
-        self.Logged_In_window.destroy()
+        self.button_objs = []
+        self.button_widgets = []
+            #self.button_objs = []
+        #self.Logged_In_window.destroy()
+
 
 
     def call_button(self):
@@ -690,42 +688,37 @@ class ContactsPanel:
         # self.call_obj = None
         self.loggedIn_obj = None
 
+
     ################################
     # network ==> responder ... secondary thread
     ################################
     def wait_for_network(self):
 
-        rlist, _, _ = select.select([self.s_to_server, self.sock_initiate_call, self.sock_accept_call], [], [])
+        while True:
+            rlist, _, _ = select.select([self.s_to_server, self.sock_initiate_call, self.sock_accept_call], [], [])
 
-        for s in rlist:
-            if s == self.s_to_server: #connect with server
-                pass
-            elif s == self.sock_accept_call: #for call establishment
-                self.sock_initiate_call, _ = self.sock_accept_call.accept()
-                print("Client connected")
+            for s in rlist:
+                if s == self.s_to_server: #connect with server
+                    pass
+                elif s == self.sock_accept_call: #for call establishment
+                    self.sock_initiate_call, _ = self.sock_accept_call.accept()
+                    print("Client connected")
 
-            elif self.sock_initiate_call: # for call handling
+                elif self.sock_initiate_call: # for call handling
 
-                res, message = Pro.get_msg(self.sock_initiate_call)
-                if res:
-                    print("the message is:", message)
-                    res_split_msg, cmd_response, params_response = self.split_message(message)
-                    if res_split_msg:
-                        if cmd_response == "RING":
-                            #tkinter after
-                            #move_to_call_reciving
-                            self.cli_obj = Cli(self.root, self.server_port)
-                            self.cli_obj.move_to_call_reciving()
+                    res, message = Pro.get_msg(self.sock_initiate_call)
+                    if res:
+                        print("the message is:", message)
+                        res_split_msg, cmd_response, params_response = self.split_message(message)
+                        if res_split_msg:
+                            if cmd_response == "RING":
+                                #tkinter after
+                                #move_to_call_receiving
+                                self.state = ContactsPanel.RINGING
+                                self.transition = True
 
-        else:
-            print("didnt get the message")
-
-    def send_cmd_to_other_client(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.sock_initiate_call.send(msg_to_send)
-
-
-
+                    else:
+                        print("didnt get the message")
 
 
     def handle_connection_failed(self):
@@ -795,8 +788,7 @@ class ContactsPanel:
 
                 #move to new panel
                 # sending root for my_socket and root
-                self.cli_obj = Cli(self.root, self.server_port)
-                self.cli_obj.move_to_calling()
+                self.move_to_calling()
 
                 #send it to the other client!!! not to server
                 #because the socket is between the 2 clients now
@@ -951,31 +943,7 @@ class CallConnectHandling:
         self.ringing_window = None
 
 
-    def init_panel_create_calling(self):
-        self.ringing_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        self.ringing_window.title("Someone is calling")
 
-        self.call_who = Label(self.ringing_window, text="Who Do You Want To Call To?")
-        self.call_who.place(x=180, y=60)
-
-        # Create a Button
-        #self.btn_contact = Button(self.ringing_window, text='submit', command=self.submit_call)
-        #self.btn_contact.place(x=150, y=150)
-
-    def init_panel_create_call_reciving(self):
-        self.ringing_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        self.ringing_window.title("Someone is calling")
-
-        self.call_who = Label(self.ringing_window, text="Who Do You Want To Call To?")
-        self.call_who.place(x=180, y=60)
-
-        # Create a Button
-        # self.btn_contact = Button(self.ringing_window, text='submit', command=self.submit_call)
-        # self.btn_contact.place(x=150, y=150)
 
 
 
