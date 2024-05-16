@@ -93,7 +93,7 @@ class Cli:
         self.contacts_obj.init_panel_create()
 
     def ContactsComplete(self):
-        self.contacts_obj.init_panel_destroy()
+        #self.contacts_obj.init_panel_destroy()
         self.call_obj.init_panel_create_calling()
 
     def CallComplete(self):
@@ -109,24 +109,16 @@ class Cli:
         self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
         self.assign_obj.init_panel_create()
 
-    def move_to_calling(self):
-        self.destroy_enter_panel()
-        self.make_call = CallConnectHandling(self.root, self.my_socket)
-        self.make_call.init_panel_create_calling()
-        print("moved to call!!")
 
-    def move_to_call_reciving(self):
-        self.destroy_enter_panel()
-        self.call_obj = CallConnectHandling(self.root, self.my_socket)
-        self.call_obj.init_panel_create_call_reciving()
-        print("moved to call!!")
+
+
 
     def init_panel_create(self):
 
         self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete, self.server_port)
         self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
         # sending root for my_socket and root
-        self.contacts_obj = ContactsPanel(self.root, self.my_socket, self.ContactsComplete, self.move_to_calling, self.server_port, self.connect_port )
+        self.contacts_obj = ContactsPanel(self.root, self.my_socket, self.ContactsComplete, self.move_to_calling, self.move_to_call_receiving, self.server_port, self.connect_port )
         self.call_obj = CallConnectHandling(self.root, self.my_socket, self.CallComplete)
 
         self.welcome_label = Label(self.root, text="Welcome to VidPal!")
@@ -140,11 +132,43 @@ class Cli:
         self.btn_assign = Button(self.root, text='Log In', command=self.move_to_assign)
         self.btn_assign.place(x=200, y=100)
 
+
+    def move_to_calling(self):
+        self.contacts_obj.init_panel_destroy()
+        self.init_panel_create_calling()
+        print("moved to call!!")
+
+    def move_to_call_receiving(self):
+        self.contacts_obj.init_panel_destroy()
+        self.init_panel_create_call_reciving()
+        print("moved to call!!")
+
+
+    def init_panel_create_calling(self):
+        self.ringing_window = self.root
+        # sets the title of the
+        # Toplevel widget
+        self.ringing_window.title("I am calling")
+
+        self.call_who = Label(self.ringing_window, text="I am calling")
+        self.call_who.place(x=180, y=60)
+
+
+
+    def init_panel_create_call_reciving(self):
+        self.ringing_window = self.root
+        # sets the title of the
+        # Toplevel widget
+        self.ringing_window.title("Someone is calling")
+
+        self.call_who = Label(self.ringing_window, text="Someone is calling")
+        self.call_who.place(x=180, y=60)
+
+
+
     def destroy_enter_panel(self):
         self.welcome_label.destroy()
-
         self.btn_reg.destroy()
-
         self.btn_assign.destroy()
 
     def connect(self, ip, port):
@@ -153,7 +177,17 @@ class Cli:
     # tkintern:
 
     def main_loop(self):
+        self.root.after(40, self.check_network_answers)
         self.root.mainloop()
+
+    def check_network_answers(self):
+        # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_call שזה הthread הראשי
+        # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
+        if ContactsPanel.RINGING == self.contacts_obj.state and self.contacts_obj.transition:
+            self.move_to_call_receiving()
+            self.contacts_obj.transition = False
+
+        self.root.after(40, self.check_network_answers)
 
 
 def Main():
