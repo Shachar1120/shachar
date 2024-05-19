@@ -205,6 +205,7 @@ def main():
                         current_socket.send(message)
 
 
+                
                 else:
                     #res_response = False: only got cmd (cmd = CONTACTS)
 
