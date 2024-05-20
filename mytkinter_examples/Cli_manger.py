@@ -140,8 +140,17 @@ class Cli:
 
     def move_to_call_receiving(self):
         self.contacts_obj.init_panel_destroy()
-        self.init_panel_create_call_reciving()
+        self.init_panel_create_call_receiving()
         print("moved to call!!")
+
+    def move_to_start_streaming(self):
+        self.call_receiving_panel_destroy()
+        self.init_panel_create_start_streaming()
+
+        # send call ACK to other client so he can change panel too
+
+
+
 
 
     def init_panel_create_calling(self):
@@ -153,9 +162,23 @@ class Cli:
         self.call_who = Label(self.ringing_window, text="I am calling")
         self.call_who.place(x=180, y=60)
 
+        # Create a Button
+        photo = PhotoImage(file=r"..\images\ringing1.png")
+        photoimage1 = photo.subsample(3, 3)
+        photo = PhotoImage(file=r"..\images\ringing2.png")
+        photoimage2 = photo.subsample(3, 3)
+        photo = PhotoImage(file=r"..\images\ringing1.png")
+        photoimage3 = photo.subsample(3, 3)
+
+        button_array = [photoimage1, photoimage2, photoimage3]
+        self.btn_calling1 = Button(self.ringing_window, image=button_array[0], command=self.move_to_start_streaming,
+                                  relief="flat")
+        self.btn_calling1.place(x=200, y=100)
+        self.btn_calling1.image = button_array
+        self.btn_calling1.image_id = 0
 
 
-    def init_panel_create_call_reciving(self):
+    def init_panel_create_call_receiving(self):
         self.ringing_window = self.root
         # sets the title of the
         # Toplevel widget
@@ -174,10 +197,24 @@ class Cli:
         photoimage3 = photo.subsample(3, 3)
 
         button_array = [photoimage1, photoimage2, photoimage3]
-        self.btn_calling = Button(self.ringing_window, image=button_array[0], command=self.move_to_register)
+        self.btn_calling = Button(self.ringing_window, image=button_array[0], command=self.move_to_start_streaming, relief="flat")
         self.btn_calling.place(x=200, y=100)
         self.btn_calling.image = button_array
         self.btn_calling.image_id = 0
+
+        #if pushed- client accepted call! we can start streaming
+
+
+
+    def init_panel_create_start_streaming(self):
+        self.streaming_window = self.root
+        # sets the title of the
+        # Toplevel widget
+        self.ringing_window.title("call window!!")
+
+    def call_receiving_panel_destroy(self):
+        self.call_who.destroy()
+        self.btn_calling.destroy()
 
 
 
@@ -201,10 +238,14 @@ class Cli:
         if ContactsPanel.RINGING == self.contacts_obj.state:
             if self.contacts_obj.transition:
                 self.move_to_call_receiving()
+                self.move_to_calling()
                 self.contacts_obj.transition = False
 
             self.btn_calling.image_id = (self.btn_calling.image_id + 1) % 6
             self.btn_calling.config(image=self.btn_calling.image[self.btn_calling.image_id//3])
+
+            self.btn_calling1.image_id = (self.btn_calling1.image_id + 1) % 6
+            self.btn_calling1.config(image=self.btn_calling1.image[self.btn_calling.image_id // 3])
 
 
         self.root.after(40, self.check_network_answers)
