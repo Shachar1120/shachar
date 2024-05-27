@@ -116,6 +116,8 @@ class Cli:
             image = image.resize(size, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(image)
 
+
+
     def RegisterComplete(self):
         self.register_obj.init_panel_destroy()
         self.init_panel_create()
@@ -224,9 +226,9 @@ class Cli:
 
 
         # Create a Button
-        photo = PhotoImage(file=r"..\images\ringing1.png")
+        photo = PhotoImage(file=r"..\images\ring1.png")
         photoimage1 = photo.subsample(3, 3)
-        photo = PhotoImage(file=r"..\images\ringing2.png")
+        photo = PhotoImage(file=r"..\images\ring2.png")
         photoimage2 = photo.subsample(3, 3)
         photo = PhotoImage(file=r"..\images\ringing1.png")
         photoimage3 = photo.subsample(3, 3)
@@ -237,11 +239,28 @@ class Cli:
         self.btn_calling.image = button_array
         self.btn_calling.image_id = 0
 
-        self.btn_answer = Button(self.ringing_window, text= "answer", command=self.move_to_call_reciving)
-        self.btn_answer.place(x=120, y=200)
+        self.call_who = Label(self.ringing_window, text="... is calling")
+        self.call_who.pack(pady=20)
 
-        self.btn_hang_up = Button(self.ringing_window, text="hang up", command=self.move_to_call_reciving)
-        self.btn_hang_up.place(x=200, y=200)
+        self.ringing_window.title("Incoming Call")
+
+        self.photo_answer = PhotoImage(file=r"..\images\answer.png").subsample(3, 3)
+        self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
+
+        # Create buttons
+        self.btn_hang_up = Button(self.ringing_window, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
+        self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
+        self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
+
+        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_reciving, borderwidth=0)
+        self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
+        self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
+
+    #self.btn_answer = Button(self.ringing_window, text= "answer", command=self.move_to_call_reciving)
+        #self.btn_answer.place(x=120, y=200)
+
+        #self.btn_hang_up = Button(self.ringing_window, text="hang up", command=self.hang_up_call)
+        #self.btn_hang_up.place(x=200, y=200)
 
     def destroy_panel_ringing(self):
         self.call_who.destroy()
@@ -259,9 +278,14 @@ class Cli:
         self.destroy_panel_ring_reciever()
         self.init_panel_call_receiver()
 
+        cmd = Pro.cmds[Pro.IN_CALL]
         # send IN_CALL message to the caller = ACK/NACK
+        #sending_cmd = Pro.create_msg(cmd.encode(), [])
+        #self.server_port.send(sending_cmd) # send to my socket
         # then react to it
 
+    def hang_up_call(self):
+        pass
     def init_panel_calling(self):
         self.call_window = self.root
         # sets the title of the
