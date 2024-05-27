@@ -8,7 +8,7 @@ def select_microphone(index):
       print(f"Selected Microphone: {device_info.get('name')}")
     else:
       print(f"No microphone at index {index}")
-    #
+
 
 # Select a microphone with a specific index
 

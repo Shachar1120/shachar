@@ -18,7 +18,7 @@ class Cli:
         # root window
         self.root.geometry("600x400")
         self.root.title("Home Page")
-        #
+
 
         self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete, self.server_port)
         self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
