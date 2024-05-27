@@ -185,8 +185,7 @@ class RegisterPanel:
         # Toplevel widget
         self.register_panel_window.title("Register")
 
-        # sets the geometry of toplevel
-        #self.register_panel_window.geometry("300x200")
+
 
 
         # the label for user_name
@@ -340,7 +339,7 @@ class AssignPanel:
         self.assign_panel_window.title("Log In")
 
         # sets the geometry of toplevel
-        self.assign_panel_window.geometry("500x500")
+        self.assign_panel_window.geometry("600x400")
 
         # the label for user_name
         self.user_name = Label(self.assign_panel_window, text="Username")
@@ -456,6 +455,7 @@ class ButtonItem:
 class ContactsPanel:
     INIT = 0
     RINGING = 1
+    IN_CALL = 2
 
     def __init__(self, root, s_to_server, complete_func, move_to_calling, move_to_call_receiving, server_port, connect_port):
         self.server_port = server_port
@@ -592,8 +592,6 @@ class ContactsPanel:
         # Toplevel widget
         call_window.title("Call")
 
-        # sets the geometry of toplevel
-        #call_window.geometry("500x500")
 
         self.call_who = Label(call_window, text="Who Do You Want To Call To?")
         self.call_who.place(x=180, y=60)
