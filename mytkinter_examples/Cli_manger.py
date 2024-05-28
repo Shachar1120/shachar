@@ -7,9 +7,9 @@ from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
 class Cli:
     def __init__(self, my_port, your_port):
         # open socket with the server
-        self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_port = my_port
-        self.connect_port = your_port
+        self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.call_accept_port = my_port
+        self.call_initiate_port = your_port
         # self.assigned_client_details = {}  # Create the dictionary globally
 
         self.root = Tk()
@@ -20,12 +20,12 @@ class Cli:
         self.root.title("Home Page")
 
 
-        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete, self.server_port)
-        self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
-        # sending root for my_socket and root
-        self.contacts_obj = ContactsPanel(self.root, self.my_socket, self.ContactsComplete, self.move_to_ringing,
-                                          self.move_to_ring_receiving, self.server_port, self.connect_port)
-        self.call_obj = CallConnectHandling(self.root, self.my_socket, self.CallComplete)
+        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.call_accept_port)
+        self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
+        # sending root for socket_to_server and root
+        self.contacts_obj = ContactsPanel(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ringing,
+                                          self.move_to_ring_receiving, self.call_accept_port, self.call_initiate_port)
+        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.CallComplete)
 
         self.images = {}
         self.init_images_dict()
@@ -46,10 +46,10 @@ class Cli:
 
     def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
-        self.my_socket.send(msg_to_send)
+        self.socket_to_server.send(msg_to_send)
 
     def get_response(self):
-        res, message = Pro.get_msg(self.my_socket)
+        res, message = Pro.get_msg(self.socket_to_server)
         if not res:
             return False, message
         return True, message
@@ -98,7 +98,7 @@ class Cli:
         if tof:
             # sending to server
             sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.my_socket.send(sending_cmd)
+            self.socket_to_server.send(sending_cmd)
 
             # receiving from server
             # self.handle_server_response(cmd, None)
@@ -138,12 +138,12 @@ class Cli:
 
     def move_to_register(self):
         self.destroy_enter_panel()
-        self.register_obj = RegisterPanel(self.root, self.my_socket, self.RegisterComplete, self.server_port)
+        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.call_accept_port)
         self.register_obj.init_panel_create()
 
     def move_to_assign(self):
         self.destroy_enter_panel()
-        self.assign_obj = AssignPanel(self.root, self.my_socket, self.AssignComplete)
+        self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
         self.assign_obj.init_panel_create()
 
 
@@ -204,8 +204,6 @@ class Cli:
         self.init_panel_create_ring_reciving()
         print("moved to ring receiving!!")
 
-
-
     def init_panel_create_ringing(self):
         self.ringing_window = self.root
         # sets the title of the
@@ -214,6 +212,17 @@ class Cli:
 
         self.call_who = Label(self.ringing_window, text="I am ringing")
         self.call_who.place(x=180, y=60)
+
+        # get message of CALL ACK
+
+        res_response, msg_response = self.get_response()
+        if res_response:
+            if msg_response == Pro.cmds[Pro.IN_CALL]:
+                print("IN CALL")
+                #self.call_label = Label(self.ringing_window, text="IN CALL!!")
+                #self.call_label.place(x=200, y=70)
+        else:
+            print("not in call!!!")
 
     def init_panel_create_ring_reciving(self):
         self.ringing_window = self.root
@@ -275,13 +284,17 @@ class Cli:
 
     def move_to_call_reciving(self):
         self.contacts_obj.state = ContactsPanel.IN_CALL
+
+        cmd = Pro.cmds[Pro.IN_CALL]
+        # send IN_CALL message to the caller = CALL ACK
+        sending_cmd = Pro.create_msg(cmd.encode(), [])
+        # ContactsPanel
+        self.call_initiate_socket.send(sending_cmd)  # send to my socket
+
         self.destroy_panel_ring_reciever()
         self.init_panel_call_receiver()
 
-        cmd = Pro.cmds[Pro.IN_CALL]
-        # send IN_CALL message to the caller = ACK/NACK
-        #sending_cmd = Pro.create_msg(cmd.encode(), [])
-        #self.server_port.send(sending_cmd) # send to my socket
+
         # then react to it
 
     def hang_up_call(self):
@@ -303,7 +316,7 @@ class Cli:
         self.call_who.place(x=180, y=60)
 
     def connect(self, ip, port):
-        self.my_socket.connect((ip, port))
+        self.socket_to_server.connect((ip, port))
 
     # tkintern:
 
@@ -323,7 +336,7 @@ class Cli:
             self.btn_calling.image_id = (self.btn_calling.image_id + 1) % 6
             self.btn_calling.config(image=self.btn_calling.image[self.btn_calling.image_id//3])
 
-        if ContactsPanel.IN_CALL == self.contacts_obj.state:
+        if CallStates.IN_CALL == self.contacts_obj.state:
             if self.contacts_obj.transition:
                 self.move_to_calling()
                 self.contacts_obj.transition = False
