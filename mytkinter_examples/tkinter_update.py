@@ -10,13 +10,17 @@ import select
 from time import time
 from pathlib import Path
 
+class CallStates:
+    INIT = 0
+    RINGING = 1
+    IN_CALL = 2
 
 
 class RegisterPanel:
-    def __init__(self, root, my_socket, complete_func, my_port):
+    def __init__(self, root, socket_to_server, complete_func, my_port):
         self.root = root
         self.panel_window = None
-        self.my_socket = my_socket
+        self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.my_port = my_port
 
@@ -39,7 +43,7 @@ class RegisterPanel:
 
     def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
-        self.my_socket.send(msg_to_send)
+        self.socket_to_server.send(msg_to_send)
 
     def check_if_pickle(self, msg):
         try:
@@ -85,7 +89,7 @@ class RegisterPanel:
         if tof:
             # sending to server
             sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.my_socket.send(sending_cmd)
+            self.socket_to_server.send(sending_cmd)
 
             # receiving from server
             # self.handle_server_response(cmd, None)
@@ -96,7 +100,7 @@ class RegisterPanel:
 
         return True
     def get_response(self):
-        res, message = Pro.get_msg(self.my_socket)
+        res, message = Pro.get_msg(self.socket_to_server)
         if not res:
             return False, message
         return True, message
@@ -238,11 +242,11 @@ class RegisterPanel:
 
 
 class AssignPanel:
-    def __init__(self, root, my_socket, complete_func):
+    def __init__(self, root, socket_to_server, complete_func):
 
         self.root = root
         self.panel_window = None
-        self.my_socket = my_socket
+        self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.assign_response = None
 
@@ -257,7 +261,7 @@ class AssignPanel:
 
     def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
-        self.my_socket.send(msg_to_send)
+        self.socket_to_server.send(msg_to_send)
 
     def check_if_pickle(self, msg):
         try:
@@ -303,7 +307,7 @@ class AssignPanel:
         if tof:
             # sending to server
             sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.my_socket.send(sending_cmd)
+            self.socket_to_server.send(sending_cmd)
 
             # receiving from server
             # self.handle_server_response(cmd, None)
@@ -314,7 +318,7 @@ class AssignPanel:
 
         return True
     def get_response(self):
-        res, message = Pro.get_msg(self.my_socket)
+        res, message = Pro.get_msg(self.socket_to_server)
         if not res:
             return False, message
         return True, message
@@ -458,26 +462,26 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, s_to_server, complete_func, move_to_calling, move_to_call_receiving, server_port, connect_port):
-        self.server_port = server_port
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, call_accept_port, call_initiate_port):
+        self.call_accept_port = call_accept_port
         self.root = root
         self.panel_window = None
-        self.s_to_server = s_to_server
-        self.connect_port = connect_port
+        self.socket_to_server = socket_to_server
+        self.call_initiate_port = call_initiate_port
         self.complete_func = complete_func
         self.item = None
         self.button_objs = []
         self.button_widgets = []
         self.assigned_clients_dict = None
         self.item_list = None
-        self.move_to_calling = move_to_calling
+        self.move_to_ringing = move_to_ringing
         self.move_to_call_receiving = move_to_call_receiving
-        self.state = ContactsPanel.INIT
+        self.state = CallStates.INIT
         self.transition = False
 
 
     def get_response(self):
-        res, message = Pro.get_msg(self.s_to_server)
+        res, message = Pro.get_msg(self.socket_to_server)
         if not res:
             return False, message
         return True, message
@@ -504,7 +508,7 @@ class ContactsPanel:
 
     def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
-        self.s_to_server.send(msg_to_send)
+        self.socket_to_server.send(msg_to_send)
 
     def check_if_pickle(self, msg):
         try:
@@ -518,7 +522,7 @@ class ContactsPanel:
 
     def send_cmd_to_other_client(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
-        self.sock_initiate_call.send(msg_to_send)
+        self.call_initiate_socket.send(msg_to_send)
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -648,7 +652,7 @@ class ContactsPanel:
                             if tof:
                                 # sending to server
                                 cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()])
-                                self.s_to_server.send(cmd_send)
+                                self.socket_to_server.send(cmd_send)
 
                             # get response from server
                             # should i wait for response from server??? not assume i get it
@@ -679,10 +683,10 @@ class ContactsPanel:
 
     def init_network(self):
         # open socket with the server
-        self.sock_initiate_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock_accept_call = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock_accept_call.bind(("0.0.0.0", self.server_port))
-        self.sock_accept_call.listen()
+        self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.call_accept_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.call_accept_socket.bind(("0.0.0.0", self.call_accept_port))
+        self.call_accept_socket.listen()
 
         # self.call_obj = None
         self.loggedIn_obj = None
@@ -694,18 +698,18 @@ class ContactsPanel:
     def wait_for_network(self):
 
         while True:
-            rlist, _, _ = select.select([self.s_to_server, self.sock_initiate_call, self.sock_accept_call], [], [])
+            rlist, _, _ = select.select([self.socket_to_server, self.call_initiate_socket, self.call_accept_socket], [], [])
 
             for s in rlist:
-                if s == self.s_to_server: #connect with server
+                if s == self.socket_to_server: #connect with server
                     pass
-                elif s == self.sock_accept_call: #for call establishment
-                    self.sock_initiate_call, _ = self.sock_accept_call.accept()
+                elif s == self.call_accept_socket: #for call establishment
+                    self.call_initiate_socket, _ = self.call_accept_socket.accept()
                     print("Client connected")
 
-                elif self.sock_initiate_call: # for call handling
+                elif self.call_initiate_socket: # for call handling
 
-                    res, message = Pro.get_msg(self.sock_initiate_call)
+                    res, message = Pro.get_msg(self.call_initiate_socket)
                     if res:
                         print("the message is:", message)
                         res_split_msg, cmd_response, params_response = self.split_message(message)
@@ -713,7 +717,7 @@ class ContactsPanel:
                             if cmd_response == "RING":
                                 #tkinter after
                                 #move_to_call_receiving
-                                self.state = ContactsPanel.RINGING
+                                self.state = CallStates.RINGING
                                 self.transition = True
 
                     else:
@@ -772,7 +776,7 @@ class ContactsPanel:
                 # make the connection
                 # point to point
                 self.other_client_port = self.assigned_clients_dict[item][1]
-                self.sock_initiate_call.connect(("127.0.0.1", self.other_client_port)) # self.connect_port
+                self.call_initiate_socket.connect(("127.0.0.1", self.other_client_port)) # self.call_initiate_port
                 print("client connected")
             except Exception as ex:
                 print("client couldnt connect")
@@ -786,8 +790,8 @@ class ContactsPanel:
                 params = [item.encode(), self.port_num_str.encode()] # sends username, port
 
                 #move to new panel
-                # sending root for my_socket and root
-                self.move_to_calling()
+                # sending root for socket_to_server and root
+                self.move_to_ringing()
 
                 #send it to the other client!!! not to server
                 #because the socket is between the 2 clients now
@@ -803,11 +807,11 @@ class ContactsPanel:
 
 
 class CallConnectHandling:
-    def __init__(self, root, my_socket, complete_func):
+    def __init__(self, root, socket_to_server, complete_func):
 
         self.root = root
         self.panel_window = None
-        self.my_socket = my_socket
+        self.socket_to_server = socket_to_server
         self.ringing_window = None
 
 
@@ -823,5 +827,3 @@ class CallConnectHandling:
 
     def wait_for_ring(self):
         pass
-
-
