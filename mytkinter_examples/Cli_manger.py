@@ -8,6 +8,7 @@ class Cli:
     def __init__(self, my_port, your_port):
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.call_accept_port = my_port
         self.call_initiate_port = your_port
         # self.assigned_client_details = {}  # Create the dictionary globally
@@ -24,7 +25,7 @@ class Cli:
         self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
         # sending root for socket_to_server and root
         self.contacts_obj = ContactsPanel(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ringing,
-                                          self.move_to_ring_receiving, self.call_accept_port, self.call_initiate_port)
+                                          self.move_to_ring_receiving, self.call_accept_port, self.call_initiate_port, self.call_initiate_socket)
         self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.CallComplete)
 
         self.images = {}
@@ -53,6 +54,31 @@ class Cli:
         if not res:
             return False, message
         return True, message
+
+    def get_response_from_other_client(self):
+        try:
+            # Attempt to receive a message using Pro.get_msg
+            res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
+            print(f"Response: {res}, Message: {message}")
+
+            if not res:
+                print(f"Failed to receive message. Response: {res}")
+                return False, message
+
+            print(f"Successfully received message: {message}")
+            return True, message
+
+        except socket.timeout:
+            print("Socket timed out while waiting for a response.")
+            return False, "Socket timeout"
+
+        except socket.error as e:
+            print(f"Socket error occurred: {e}")
+            return False, f"Socket error: {e}"
+
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return False, f"Unexpected error: {e}"
 
     def check_if_pickle(self, msg):
         try:
@@ -213,16 +239,38 @@ class Cli:
         self.call_who = Label(self.ringing_window, text="I am ringing")
         self.call_who.place(x=180, y=60)
 
-        # get message of CALL ACK
+        # get the message!!!
 
-        res_response, msg_response = self.get_response()
-        if res_response:
-            if msg_response == Pro.cmds[Pro.IN_CALL]:
-                print("IN CALL")
+            #if msg_response == Pro.cmds[Pro.IN_CALL]:
+                #print("IN CALL")
                 #self.call_label = Label(self.ringing_window, text="IN CALL!!")
                 #self.call_label.place(x=200, y=70)
+            #else:
+                #print("Received unexpected message: ", msg_response)
+        #else:
+            #print("not in call!!!")
+
+        #res_response, msg_response = self.get_response_from_other_client()
+        #if res_response:
+            #print("got the in call message!!!!")
+            #if msg_response == Pro.cmds[Pro.IN_CALL]:
+                #print("IN CALL")
+                #self.call_label = Label(self.ringing_window, text="IN CALL!!")
+                #self.call_label.place(x=200, y=70)
+        #else:
+            #print("not in call!!!")
+
+    def check_if_got_msg(self):
+        # get message of CALL ACK
+        res_response, msg_response = self.get_response_from_other_client()
+
+        if res_response:
+            print("got the in call message!!!!")
+            return True
         else:
-            print("not in call!!!")
+            print("didnt get the message!!")
+            return False
+
 
     def init_panel_create_ring_reciving(self):
         self.ringing_window = self.root
@@ -243,7 +291,7 @@ class Cli:
         photoimage3 = photo.subsample(3, 3)
 
         button_array = [photoimage1, photoimage2, photoimage3]
-        self.btn_calling = Button(self.ringing_window, image=button_array[0], command=self.move_to_call_reciving)
+        self.btn_calling = Button(self.ringing_window, image=button_array[0], command=self.move_to_call_receiving)
         self.btn_calling.place(x=200, y=100)
         self.btn_calling.image = button_array
         self.btn_calling.image_id = 0
@@ -261,20 +309,15 @@ class Cli:
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
 
-        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_reciving, borderwidth=0)
+        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_receiving, borderwidth=0)
         self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
         self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
 
-    #self.btn_answer = Button(self.ringing_window, text= "answer", command=self.move_to_call_reciving)
-        #self.btn_answer.place(x=120, y=200)
-
-        #self.btn_hang_up = Button(self.ringing_window, text="hang up", command=self.hang_up_call)
-        #self.btn_hang_up.place(x=200, y=200)
 
     def destroy_panel_ringing(self):
         self.call_who.destroy()
 
-    def destroy_panel_ring_reciever(self):
+    def destroy_panel_ring_receiver(self):
         self.call_who.destroy()
         self.btn_calling.destroy()
 
@@ -282,16 +325,20 @@ class Cli:
         self.destroy_panel_ringing()
         self.init_panel_calling()
 
-    def move_to_call_reciving(self):
+    def move_to_call_receiving(self):
         self.contacts_obj.state = ContactsPanel.IN_CALL
 
         cmd = Pro.cmds[Pro.IN_CALL]
         # send IN_CALL message to the caller = CALL ACK
-        sending_cmd = Pro.create_msg(cmd.encode(), [])
-        # ContactsPanel
-        self.call_initiate_socket.send(sending_cmd)  # send to my socket
+        try:
+            sending_cmd = Pro.create_msg(cmd.encode(), [])
+            self.contacts_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+            print("IN_CALL message sent successfully")
+        except Exception as e:
+            print(f"Failed to send IN_CALL message: {e}")
 
-        self.destroy_panel_ring_reciever()
+
+        self.destroy_panel_ring_receiver()
         self.init_panel_call_receiver()
 
 
