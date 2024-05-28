@@ -44,8 +44,8 @@ class Ser:
 
         # get client username and socket details
         # the port of the client server(my_port in client)!!
-        client_server_port = int(params[2])  # client sends it in str, we need to change to int
-        print("the Port:", client_server_port)
+        call_accept_port = int(params[2])  # client sends it in str, we need to change to int
+        print("the Port:", call_accept_port)
 
         if params[0] in self.client_details.keys(): #if username exists in dictionary
             return Pro.cmds[Pro.REGISTER_NACK] # already registered
@@ -53,7 +53,7 @@ class Ser:
         # else: user is not registered yet
         # registering = adding client to dictionary
         #Username: (password, port)
-        self.client_details[params[0]] = (params[1], client_server_port) #add client
+        self.client_details[params[0]] = (params[1], call_accept_port) #add client
         print("client details dict:", self.client_details)
 
 
