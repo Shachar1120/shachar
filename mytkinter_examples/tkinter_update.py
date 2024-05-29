@@ -9,6 +9,7 @@ from Cli_manger import Cli
 import select
 from time import time
 from pathlib import Path
+import pyaudio
 
 class CallStates:
     INIT = 0
@@ -707,7 +708,26 @@ class ContactsPanel:
                             print("got in call!!")
                             self.state = CallStates.IN_CALL
                             self.transition = True
+                            CHUNK = 4096
+                            FORMAT = pyaudio.paInt16
+                            CHANNELS = 1
+                            RATE = 44100
+                            RECORD_SECONDS = 10
+                            self.stream_output = p.open(format=FORMAT,
+                                                        channels=CHANNELS,
+                                                        rate=RATE,
+                                                        input=True,
+                                                        output=True,  # for speaker
+                                                        input_device_index=output_index,
+                                                        frames_per_buffer=CHUNK)
 
+                        elif opcode == "FRAME":
+                            #accept frame and play
+                            data = params[0]
+                            pass
+
+                        else:
+                            pass
 
                     else:
                         print("didnt get the message")
