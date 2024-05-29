@@ -56,24 +56,11 @@ class RegisterPanel:
             return False
 
     def split_message(self, message):
-        if self.check_if_pickle(message):
-            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-            print("got the dict!!!!")
-            cmd = "ASSIGNED_CLIENTS"
-            # load pickle and not decode to get msg!!
-            received_dict = pickle.loads(message)
-            return True, cmd, received_dict
-            # msg = received_dict
-        else:
-            msg = message.decode()
-        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        print("0:" + message_parts[0] + "1:" + message_parts[1])
-        if message_parts[1] == '0':
-            print("False!! no params, only cmd")
-            return False, message_parts[0], None  # return only cmd
-        else:
-            return True, message_parts[0], message_parts[2:]  # return cmd, params
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:]
+        return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -141,32 +128,33 @@ class RegisterPanel:
                 # get response from server
                 res_response, msg_response = self.get_response()
                 if res_response:
-                    res_split_msg, cmd_response, params_response = self.split_message(msg_response)
-                    if not res_split_msg:
-                        # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
-                        if (cmd_response == "REGISTER_NACK") or (cmd_response == "REGISTER_ACK"):
-                            print("cmd is register")
-                            response = self.handle_response_Register(cmd_response)
+                    opcode, nof_params, params = self.split_message(msg_response)
+                    #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
 
-                            if not response:  # if false = REGISTER_NACK
-                                # checking if the lable already exists
-                                if not hasattr(self, 'already_registered_try_again'):
-                                    self.already_registered_try_again = Label(self.register_panel_window,
-                                                                              text="User Already Registered! Try To Log Inq Use Differente Username")
-                                    self.already_registered_try_again.pack()
+                    # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
+                    if (opcode == "REGISTER_NACK") or (opcode == "REGISTER_ACK"):
+                        print("cmd is register")
+                        response = self.handle_response_Register(opcode)
 
-                                print(
-                                    "couldn't register (client already registered)")  # couldn't register/ client exists
-                                print("continue to assign")
-                                # client already exists! we need to continue to assign too
-                                pass
-                            else:
-                                self.complete_func() #RegisterComplete function in Cli class
-                                #self.move_to_home_screen()
-                                print("you registered successfully")
+                        if not response:  # if false = REGISTER_NACK
+                            # checking if the lable already exists
+                            if not hasattr(self, 'already_registered_try_again'):
+                                self.already_registered_try_again = Label(self.register_panel_window,
+                                                                          text="User Already Registered! Try To Log Inq Use Differente Username")
+                                self.already_registered_try_again.pack()
+
+                            print(
+                                "couldn't register (client already registered)")  # couldn't register/ client exists
+                            print("continue to assign")
+                            # client already exists! we need to continue to assign too
+                            pass
+                        else:
+                            self.complete_func() #RegisterComplete function in Cli class
+                            #self.move_to_home_screen()
+                            print("you registered successfully")
 
 
-                                pass
+                            pass
 
         else:
             self.try_again_label = Label(self.register_panel_window, text="Username or password are empty! Try again.")
@@ -274,24 +262,11 @@ class AssignPanel:
             return False
 
     def split_message(self, message):
-        if self.check_if_pickle(message):
-            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-            print("got the dict!!!!")
-            cmd = "ASSIGNED_CLIENTS"
-            # load pickle and not decode to get msg!!
-            received_dict = pickle.loads(message)
-            return True, cmd, received_dict
-            # msg = received_dict
-        else:
-            msg = message.decode()
-        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        print("0:" + message_parts[0] + "1:" + message_parts[1])
-        if message_parts[1] == '0':
-            print("False!! no params, only cmd")
-            return False, message_parts[0], None  # return only cmd
-        else:
-            return True, message_parts[0], message_parts[2:]  # return cmd, params
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:]
+        return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -462,7 +437,7 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, call_accept_port, call_initiate_port):
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, call_accept_port, call_initiate_port, call_initiate_socket):
         self.call_accept_port = call_accept_port
         self.root = root
         self.panel_window = None
@@ -479,6 +454,8 @@ class ContactsPanel:
         self.state = CallStates.INIT
         self.transition = False
 
+        self.call_initiate_socket = call_initiate_socket
+
 
     def get_response(self):
         res, message = Pro.get_msg(self.socket_to_server)
@@ -487,24 +464,23 @@ class ContactsPanel:
         return True, message
 
     def split_message(self, message):
-        if self.check_if_pickle(message):
-            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-            print("got the dict!!!!")
-            cmd = "ASSIGNED_CLIENTS"
-            # load pickle and not decode to get msg!!
-            received_dict = pickle.loads(message)
-            return True, cmd, received_dict
-            # msg = received_dict
-        else:
-            msg = message.decode()
-        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        print("0:" + message_parts[0] + "1:" + message_parts[1])
-        if message_parts[1] == '0':
-            print("False!! no params, only cmd")
-            return False, message_parts[0], None  # return only cmd
-        else:
-            return True, message_parts[0], message_parts[2:]  # return cmd, params
+        # if self.check_if_pickle(message):
+        #     # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+        #     # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+        #     print("got the dict!!!!")
+        #     cmd = "ASSIGNED_CLIENTS"
+        #     # load pickle and not decode to get msg!!
+        #     received_dict = pickle.loads(message)
+        #     return True, cmd, received_dict
+        #     # msg = received_dict
+        # else:
+        #     msg = message.decode()
+
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:]
+        return opcode, nof_params, params
 
     def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
@@ -556,28 +532,30 @@ class ContactsPanel:
         # צריכה למחוק את הלקוח שאני מהרשימת אנשי קשר
         res_response, msg_response = self.get_response()
         if res_response:
-            res_split_msg, cmd_response, params_response = self.split_message(msg_response)
-            print("dict??", params_response)
-            if res_split_msg:
-                # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
-                if (cmd_response == "ASSIGNED_CLIENTS"):
-                    print("got the dict!!!", params_response)
-                    self.assigned_clients_dict = params_response
-                    self.item_list = list(params_response.keys())
-        if not res_response:
-            print("didnt get message!!!")
+            opcode, nof_params, params = self.split_message(msg_response)
 
-        # רשימת הפריטים
-        items = self.item_list
-        # יצירת כפתורים לכל פריט ברשימה
-        cget_bg = self.root.cget("bg")
-        print(f"lets see: {cget_bg}")
-        for item in items:
-            obj = ButtonItem(item, self.make_call, self.assigned_clients_dict)
-            button = ttk.Button(self.root, text=item, command=obj.item_clicked)
-            button.pack(pady=5, padx=10, fill="x")
-            self.button_objs.append(obj)
-            self.button_widgets.append(button)
+            #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
+            #print("dict??", params_response)
+
+            # opcode = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
+            if (opcode == "ASSIGNED_CLIENTS"):
+                print("got the dict!!!", params[0])
+                self.assigned_clients_dict = pickle.loads(params[0])
+                self.item_list = list(self.assigned_clients_dict.keys())
+
+
+
+                # רשימת הפריטים
+                items = self.item_list
+                # יצירת כפתורים לכל פריט ברשימה
+                cget_bg = self.root.cget("bg")
+                print(f"lets see: {cget_bg}")
+                for item in items:
+                    obj = ButtonItem(item, self.make_call, self.assigned_clients_dict)
+                    button = ttk.Button(self.root, text=item, command=obj.item_clicked)
+                    button.pack(pady=5, padx=10, fill="x")
+                    self.button_objs.append(obj)
+                    self.button_widgets.append(button)
 
 
     def init_panel_destroy(self):
@@ -633,43 +611,44 @@ class ContactsPanel:
 
             res_response, msg_response = self.get_response()
             if res_response:
-                res_split_msg, cmd_response, params_response = self.split_message(msg_response)
-                if res_split_msg:
-                    # res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
-                    if (cmd_response == "TARGET_NACK") or (cmd_response == "TARGET_ACK"):
-                        print("cmd is call(call target client)")
-                        client_username = params_response[0]
-                        response = self.handle_response_call_target(cmd_response)
-                        if response:  # if true = ASSIGN_ACK
-                            print("we can call target! he is assigned")
+                opcode, nof_params, params = self.split_message(msg_response)
+                #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
+                # res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
+                if (opcode == "TARGET_NACK") or (opcode == "TARGET_ACK"):
+                    print("cmd is call(call target client)")
+                    client_username = params[0].decode()
+                    response = self.handle_response_call_target(opcode)
+                    if response:  # if true = ASSIGN_ACK
+                        print("we can call target! he is assigned")
 
-                            # get target details
-                            # getting target details from server dict client_sockets_details
-                            # getting ip and port according to username
+                        # get target details
+                        # getting target details from server dict client_sockets_details
+                        # getting ip and port according to username
 
-                            cmd = "ASK_TARGET_DETAILS"
-                            tof = Pro.check_cmd(cmd)
-                            if tof:
-                                # sending to server
-                                cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()])
-                                self.socket_to_server.send(cmd_send)
+                        cmd = "ASK_TARGET_DETAILS"
+                        tof = Pro.check_cmd(cmd)
+                        if tof:
+                            # sending to server
+                            cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()])
+                            self.socket_to_server.send(cmd_send)
 
-                            # get response from server
-                            # should i wait for response from server??? not assume i get it
-                            res_response, msg_response = self.get_response()
-                            if res_response:
-                                res_split_msg1, cmd_response1, params_response1 = self.split_message(msg_response)
-                                if res_split_msg1:
-                                    # res_response = True: got cmd and params
-                                    if (cmd_response1 == "SEND_TARGET_DETAILS"):
-                                        print("cmd is SEND_TARGET_DETAILS")
-                                        client_socket_details = params_response1
-                                        print("got the client details params!!!:", client_socket_details)
-                            pass
+                        # get response from server
+                        # should i wait for response from server??? not assume i get it
+                        res_response, msg_response = self.get_response()
+                        if res_response:
+                            opcode, nof_params, params = self.split_message(msg_response)
+                            #res_split_msg1, cmd_response1, params_response1 = self.split_message(msg_response)
 
-                        else:  # REGISTER_NACK- Maybe user already exist!!! try different username
-                            print("couldn't call target!")
-                            print("call another person: (from contacts)")
+                            # res_response = True: got cmd and params
+                            if (opcode == "SEND_TARGET_DETAILS"):
+                                print("cmd is SEND_TARGET_DETAILS")
+                                client_socket_details = (params[0].decode(), params[1].decode())
+                                print("got the client details params!!!:", client_socket_details)
+                        pass
+
+                    else:  # REGISTER_NACK- Maybe user already exist!!! try different username
+                        print("couldn't call target!")
+                        print("call another person: (from contacts)")
 
 
         else:
@@ -692,6 +671,8 @@ class ContactsPanel:
         self.loggedIn_obj = None
 
 
+
+
     ################################
     # network ==> responder ... secondary thread
     ################################
@@ -710,15 +691,23 @@ class ContactsPanel:
                 elif self.call_initiate_socket: # for call handling
 
                     res, message = Pro.get_msg(self.call_initiate_socket)
+                    print(f"wait_for_network: {message}")
                     if res:
                         print("the message is:", message)
-                        res_split_msg, cmd_response, params_response = self.split_message(message)
-                        if res_split_msg:
-                            if cmd_response == "RING":
-                                #tkinter after
-                                #move_to_call_receiving
-                                self.state = CallStates.RINGING
-                                self.transition = True
+                        opcode, nof_params, params = self.split_message(message)
+                        #res_split_msg, cmd_response, params_response = self.split_message(message)
+
+                        if opcode == "RING":
+                            print("received call")
+                            #tkinter after
+                            #move_to_call_receiving
+                            self.state = CallStates.RINGING
+                            self.transition = True
+                        elif opcode == "IN_CALL":
+                            print("got in call!!")
+                            self.state = CallStates.IN_CALL
+                            self.transition = True
+
 
                     else:
                         print("didnt get the message")
@@ -739,24 +728,29 @@ class ContactsPanel:
 
 
     def split_message(self, message):
-        if self.check_if_pickle(message):
-            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-            print("got the dict!!!!")
-            cmd = "ASSIGNED_CLIENTS"
-            # load pickle and not decode to get msg!!
-            received_dict = pickle.loads(message)
-            return True, cmd, received_dict
-            # msg = received_dict
-        else:
-            msg = message.decode()
-        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        print("0:" + message_parts[0] + "1:" + message_parts[1])
-        if message_parts[1] == '0':
-            print("False!! no params, only cmd")
-            return False, message_parts[0], None  # return only cmd
-        else:
-            return True, message_parts[0], message_parts[2:]  # return cmd, params
+
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:]
+        return opcode, nof_params, params
+        # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
+        #     # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
+        #     print("got the dict!!!!")
+        #     cmd = "ASSIGNED_CLIENTS"
+        #     # load pickle and not decode to get msg!!
+        #     received_dict = pickle.loads(message)
+        #     return True, cmd, received_dict
+        #     # msg = received_dict
+        # else:
+        #     msg = message.decode()
+        # message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+        # print("0:" + message_parts[0] + "1:" + message_parts[1])
+        # if message_parts[1] == '0':
+        #     print("False!! no params, only cmd")
+        #     return False, message_parts[0], None  # return only cmd
+        # else:
+        #     return True, message_parts[0], message_parts[2:]  # return cmd, params
 
     ################################
     # network ==> caller ... main thread
@@ -789,13 +783,15 @@ class ContactsPanel:
                 self.port_num_str = str(self.other_client_port)
                 params = [item.encode(), self.port_num_str.encode()] # sends username, port
 
-                #move to new panel
-                # sending root for socket_to_server and root
-                self.move_to_ringing()
+
 
                 #send it to the other client!!! not to server
                 #because the socket is between the 2 clients now
                 self.send_cmd_to_other_client(cmd.encode(), params)
+
+                # move to new panel
+                # sending root for socket_to_server and root
+                self.move_to_ringing()
             except Exception as ex:
                 print(ex)
 
