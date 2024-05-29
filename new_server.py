@@ -217,7 +217,7 @@ def main():
                         cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
                         print("this is the dict!!!:", myserver.assigned_clients)
                         send_dict = pickle.dumps(myserver.assigned_clients)
-                        message = Pro.create_msg(send_dict, [])
+                        message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
                         current_socket.send(message)
 
 
