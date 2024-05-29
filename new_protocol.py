@@ -95,16 +95,17 @@ class Pro:
     SEND_TARGET_DETAILS = 12
     RING = 13
     IN_CALL = 14
-    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "CONTACTS", "ASSIGNED_CLIENTS", "CALL", "TARGET_ACK", "TARGET_NACK", "ASK_TARGET_DETAILS", "SEND_TARGET_DETAILS", "RING", "IN_CALL"]
+    FRAME = 15
+    cmds = ["REGISTER", "REGISTER_ACK", "REGISTER_NACK", "ASSIGN", "ASSIGN_ACK", "ASSIGN_NACK", "CONTACTS", "ASSIGNED_CLIENTS", "CALL", "TARGET_ACK", "TARGET_NACK", "ASK_TARGET_DETAILS", "SEND_TARGET_DETAILS", "RING", "IN_CALL", "FRAME"]
 
     @staticmethod
-    def get_msg(my_socket: socket) -> (bool, str):
+    def get_msg(socket_to_server: socket) -> (bool, str):
         """
         Extract message from protocol, without the length field
         If length field does not include a number, returns False, "Error"
         """
 
-        msg_len_before_valid_bytes = my_socket.recv(Pro.LENGTH_FIELD_SIZE)
+        msg_len_before_valid_bytes = socket_to_server.recv(Pro.LENGTH_FIELD_SIZE)
         if msg_len_before_valid_bytes == None or msg_len_before_valid_bytes == b'':
             return False, "ERROR_SOCEKT_DISCONNECTED"
 
@@ -113,7 +114,7 @@ class Pro:
             return False, "ERROR_WRONG_PROTOCOL"
 
         msg_len = int(msg_len_before_valid)
-        message_bytes = my_socket.recv(msg_len)
+        message_bytes = socket_to_server.recv(msg_len)
         message = message_bytes.decode()
         return True, message # message is string
 
@@ -168,16 +169,18 @@ class Pro:
         return str(msg_len).zfill(Pro.LENGTH_FIELD_SIZE).encode() + msg_to_send
 
     @staticmethod
-    def get_msg(my_socket):
+    def get_msg(socket_to_server):
         """
         Extract message from protocol, without the length field
         If length field does not include a number, returns False, "Error"
         """
-        msg_len_before_valid = my_socket.recv(Pro.LENGTH_FIELD_SIZE)
+        msg_len_before_valid = socket_to_server.recv(Pro.LENGTH_FIELD_SIZE)
         msg_len_before_valid = msg_len_before_valid.decode()
         if not msg_len_before_valid.isdecimal():
             return False, "ERROR"
 
         msg_len = int(msg_len_before_valid)
-        message = my_socket.recv(msg_len)
+        message = socket_to_server.recv(msg_len)
         return True, message
+
+
