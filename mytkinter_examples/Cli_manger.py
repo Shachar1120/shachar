@@ -2,15 +2,17 @@ from tkinter_update import *
 import socket
 from tkinter import *  # ייבוא כל הפונקציות והמחלקות מ-tkinter
 from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
+import pyaudio
 
 
 class Cli:
-    def __init__(self, my_port, your_port):
+    def __init__(self, profile):
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.call_accept_port = my_port
-        self.call_initiate_port = your_port
+        self.profile = profile
+        self.call_accept_port = profile.my_port
+        self.call_initiate_port = profile.your_port
         # self.assigned_client_details = {}  # Create the dictionary globally
 
         self.root = Tk()
@@ -355,6 +357,88 @@ class Cli:
         self.call_label = Label(self.ringing_window, text="In call! as caller")
         self.call_label.place(x=180, y=60)
 
+    def select_microphone(self, index, p):
+        # Select a microphone with a specific index
+        print(f"please select a microphone")
+        # Get the device info
+        device_info = p.get_device_info_by_index(index)
+        # Check if this device is a microphone (an input device)
+        if device_info.get('maxInputChannels') > 0:
+            print(f"Selected Microphone: {device_info.get('name')}")
+            return device_info.get('name')
+        else:
+            print(f"No microphone at index {index}")
+
+    def list_microphones(self, devices, p):
+        # Iterate through all devices
+        for i in range(devices):
+            # Get the device info
+            device_info = p.get_device_info_by_index(i)
+            # Check if this device is a microphone (an input device)
+            if device_info.get('maxInputChannels') > 0:
+                print(f"Microphone: {device_info.get('name')} , Device Index: {device_info.get('index')}")
+    def call_transmit(self):
+        # read audio and send
+
+        # Create an instance of PyAudio
+        p = pyaudio.PyAudio()
+
+        # Get the number of audio I/O devices
+        devices = p.get_device_count()
+
+        # List all microphones
+        self.list_microphones(devices, p)
+
+
+        print("enter mic index: ", end="")
+        input_index = int(input())
+        self.select_microphone(input_index, p)
+        print("enter speaker index: ", end="")
+        output_index = int(input())
+        self.select_microphone(output_index, p)
+
+        #in my computer- 0, 18
+        # in lab computer- 0, 17
+
+        sound = True
+        CHUNK = 4096
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 1
+        RATE = 44100
+        RECORD_SECONDS = 10
+
+
+        stream_input = p.open(format=FORMAT,
+                              channels=CHANNELS,
+                              rate=RATE,
+                              input=True,  # for mic
+                              output=True,
+                              input_device_index=input_index,
+                              frames_per_buffer=CHUNK)
+        print("* recording")
+        frames = []
+        for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+            data = stream_input.read(CHUNK)
+            frames.append(data)
+
+            cmd = Pro.cmds["FRAME"]
+            params = data
+            msg_to_send = Pro.create_msg(cmd, params)
+            self.call_initiate_socket.send(msg_to_send)
+
+        print("* done recording")
+        # stream_input.stop_stream()
+        # stream_input.close()
+        stream_output = p.open(format=FORMAT,
+                               channels=CHANNELS,
+                               rate=RATE,
+                               output=True,  # for speaker
+                               input_device_index=output_index,
+                               frames_per_buffer=CHUNK)
+        for f in frames:
+            stream_input.write(f)  # digital to analog
+
+        p.terminate()
 
     def init_panel_call_receiver(self):
         # in call
@@ -363,6 +447,8 @@ class Cli:
         # Toplevel widget
         self.call_who = Label(self.ringing_window, text="In call! as call reciever")
         self.call_who.place(x=180, y=60)
+
+        thread = threading.Thread(target=self.call_transmit).start()
 
     def connect(self, ip, port):
         self.socket_to_server.connect((ip, port))
@@ -393,18 +479,23 @@ class Cli:
         self.root.after(40, self.check_network_answers)
 
 
+class UserProfile:
+    def __init__(self, my_port, your_port, my_mic, my_speaker):
+        self.my_port = my_port
+        self.your_port = your_port
+        self.my_mic = my_mic
+        self.my_speaker = my_speaker
+
+
 def Main():
     print("1: for 2001, 2: for 2002")
-    if int(input()) == 1:
-        my_port = 2001
-        your_port = 2002
+    profiles = [ UserProfile(2001, 2002, 0, 17 ), UserProfile(2002, 2001, 0, 18)]
+    whoami = int(input()) == 1:
 
-    else:
-        my_port = 2002
-        your_port = 2001
-    myclient = Cli(my_port, your_port)
+    myclient = Cli(profiles[whoami-1]) # if I send 2 itll send 1, same with 1
     myclient.connect("127.0.0.1", Pro.PORT)
     myclient.main_loop()
+
 
 
 if __name__ == "__main__":
