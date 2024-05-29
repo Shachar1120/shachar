@@ -221,7 +221,7 @@ def main():
                         current_socket.send(message)
 
 
-
+ 
 
     # close sockets
     print("Closing connection")
