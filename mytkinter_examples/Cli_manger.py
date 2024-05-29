@@ -91,24 +91,11 @@ class Cli:
             return False
 
     def split_message(self, message):
-        if self.check_if_pickle(message):
-            # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-            # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-            print("got the dict!!!!")
-            cmd = "ASSIGNED_CLIENTS"
-            # load pickle and not decode to get msg!!
-            received_dict = pickle.loads(message)
-            return True, cmd, received_dict
-            # msg = received_dict
-        else:
-            msg = message.decode()
-        message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        print("0:" + message_parts[0] + "1:" + message_parts[1])
-        if message_parts[1] == '0':
-            print("False!! no params, only cmd")
-            return False, message_parts[0], None  # return only cmd
-        else:
-            return True, message_parts[0], message_parts[2:]  # return cmd, params
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:]
+        return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -240,6 +227,7 @@ class Cli:
         self.call_who.place(x=180, y=60)
 
         # get the message!!!
+        #self.check_if_got_msg()
 
             #if msg_response == Pro.cmds[Pro.IN_CALL]:
                 #print("IN CALL")
@@ -261,15 +249,29 @@ class Cli:
             #print("not in call!!!")
 
     def check_if_got_msg(self):
-        # get message of CALL ACK
-        res_response, msg_response = self.get_response_from_other_client()
+        try:
+            # Attempt to receive a message using Pro.get_msg
+            res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
+            print(f"Response: {res}, Message: {message}")
 
-        if res_response:
-            print("got the in call message!!!!")
-            return True
-        else:
-            print("didnt get the message!!")
-            return False
+            if not res:
+                print(f"Failed to receive message. Response: {res}")
+                return False, message
+
+            print(f"Successfully received message: {message}")
+            return True, message
+
+        except socket.timeout:
+            print("Socket timed out while waiting for a response.")
+            return False, "Socket timeout"
+
+        except socket.error as e:
+            print(f"Socket error occurred: {e}")
+            return False, f"Socket error: {e}"
+
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return False, f"Unexpected error: {e}"
 
 
     def init_panel_create_ring_reciving(self):
@@ -351,7 +353,7 @@ class Cli:
         # sets the title of the
         # Toplevel widget
         self.call_label = Label(self.ringing_window, text="In call! as caller")
-        self.call_who.place(x=180, y=60)
+        self.call_label.place(x=180, y=60)
 
 
     def init_panel_call_receiver(self):
