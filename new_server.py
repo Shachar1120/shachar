@@ -204,7 +204,7 @@ def main():
                         message = Pro.create_msg(cmd_to_send.encode(), [client_ip.encode(), client_port.encode()])
                         current_socket.send(message)
 
-
+ 
                 
                 else:
                     #res_response = False: only got cmd (cmd = CONTACTS)
@@ -221,7 +221,7 @@ def main():
                         current_socket.send(message)
 
 
- 
+
 
     # close sockets
     print("Closing connection")
