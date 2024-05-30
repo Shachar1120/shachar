@@ -9,10 +9,10 @@ class Cli:
     def __init__(self, profile):
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
-        self.call_accept_port = profile.my_port
-        self.call_initiate_port = profile.your_port
+        self.call_accept_port = profile.call_accept_port
+        self.call_initiate_port = profile.call_initiate_port
         # self.assigned_client_details = {}  # Create the dictionary globally
 
         self.root = Tk()
@@ -27,7 +27,7 @@ class Cli:
         self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
         # sending root for socket_to_server and root
         self.contacts_obj = ContactsPanel(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ringing,
-                                          self.move_to_ring_receiving, self.call_accept_port, self.call_initiate_port, self.call_initiate_socket)
+                                          self.move_to_ring_receiving, self.profile, call_initiate_socket)
         self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.CallComplete)
 
         self.images = {}
@@ -379,27 +379,6 @@ class Cli:
                 print(f"Microphone: {device_info.get('name')} , Device Index: {device_info.get('index')}")
     def call_transmit(self):
         # read audio and send
-
-        # Create an instance of PyAudio
-        p = pyaudio.PyAudio()
-
-        # Get the number of audio I/O devices
-        devices = p.get_device_count()
-
-        # List all microphones
-        self.list_microphones(devices, p)
-
-
-        print("enter mic index: ", end="")
-        input_index = int(input())
-        self.select_microphone(input_index, p)
-        print("enter speaker index: ", end="")
-        output_index = int(input())
-        self.select_microphone(output_index, p)
-
-        #in my computer- 0, 18
-        # in lab computer- 0, 17
-
         sound = True
         CHUNK = 4096
         FORMAT = pyaudio.paInt16
@@ -407,36 +386,29 @@ class Cli:
         RATE = 44100
         RECORD_SECONDS = 10
 
-
+        p = pyaudio.PyAudio()
         stream_input = p.open(format=FORMAT,
                               channels=CHANNELS,
                               rate=RATE,
-                              input=True,  # for mic
-                              output=True,
-                              input_device_index=input_index,
+                              input=True,
+                              input_device_index=self.profile.my_mic,
                               frames_per_buffer=CHUNK)
-        print("* recording")
-        frames = []
-        for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-            data = stream_input.read(CHUNK)
-            frames.append(data)
-
-            cmd = Pro.cmds["FRAME"]
-            params = data
-            msg_to_send = Pro.create_msg(cmd, params)
-            self.call_initiate_socket.send(msg_to_send)
-
-        print("* done recording")
-        # stream_input.stop_stream()
-        # stream_input.close()
         stream_output = p.open(format=FORMAT,
                                channels=CHANNELS,
                                rate=RATE,
                                output=True,  # for speaker
-                               input_device_index=output_index,
+                               input_device_index=self.profile.my_speaker,
                                frames_per_buffer=CHUNK)
-        for f in frames:
-            stream_input.write(f)  # digital to analog
+
+        while True:
+            data = stream_input.read(CHUNK)
+
+            cmd = Pro.cmds[Pro.FRAME].encode()
+            #params = [pickle.dumps(data)]
+            params = [data]
+            msg_to_send = Pro.create_msg(cmd, params)
+            self.contacts_obj.call_initiate_socket.send(msg_to_send)
+
 
         p.terminate()
 
@@ -480,19 +452,23 @@ class Cli:
 
 
 class UserProfile:
-    def __init__(self, my_port, your_port, my_mic, my_speaker):
-        self.my_port = my_port
-        self.your_port = your_port
+    # your_port == call_initiate_port
+    # my_port == call_accept_port
+    def __init__(self, call_accept_port, call_initiate_port, my_mic, my_speaker):
+        self.call_accept_port = call_accept_port
+        self.call_initiate_port = call_initiate_port
         self.my_mic = my_mic
         self.my_speaker = my_speaker
 
 
 def Main():
     print("1: for 2001, 2: for 2002")
-    profiles = [ UserProfile(2001, 2002, 0, 17 ), UserProfile(2002, 2001, 0, 18)]
-    whoami = int(input()) == 1:
+    profiles = [ UserProfile(2001, 2002, 0, 18 ), UserProfile(2002, 2001, 0, 18)]
+    print("input 1 or 2 to choose user profile")
+    whoami = int(input())
+    #if whoami== 1: #profile1 = profiles[0]
 
-    myclient = Cli(profiles[whoami-1]) # if I send 2 itll send 1, same with 1
+    myclient = Cli(profiles[whoami-1]) # if I write 2 -profiles[1], and if I write 1-profiles[0]
     myclient.connect("127.0.0.1", Pro.PORT)
     myclient.main_loop()
 
