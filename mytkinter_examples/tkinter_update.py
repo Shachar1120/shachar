@@ -438,12 +438,11 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, call_accept_port, call_initiate_port, call_initiate_socket):
-        self.call_accept_port = call_accept_port
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, profile, call_initiate_socket):
+        self.profile = profile
         self.root = root
         self.panel_window = None
         self.socket_to_server = socket_to_server
-        self.call_initiate_port = call_initiate_port
         self.complete_func = complete_func
         self.item = None
         self.button_objs = []
@@ -665,7 +664,7 @@ class ContactsPanel:
         # open socket with the server
         self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.call_accept_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.call_accept_socket.bind(("0.0.0.0", self.call_accept_port))
+        self.call_accept_socket.bind(("0.0.0.0", self.profile.call_accept_port))
         self.call_accept_socket.listen()
 
         # self.call_obj = None
@@ -713,17 +712,28 @@ class ContactsPanel:
                             CHANNELS = 1
                             RATE = 44100
                             RECORD_SECONDS = 10
-                            self.stream_output = p.open(format=FORMAT,
+                            self.p = pyaudio.PyAudio()
+                            self.stream_input = self.p.open(format=FORMAT,
                                                         channels=CHANNELS,
                                                         rate=RATE,
                                                         input=True,
-                                                        output=True,  # for speaker
-                                                        input_device_index=output_index,
+                                                        input_device_index=self.profile.my_mic,
                                                         frames_per_buffer=CHUNK)
+                            self.stream_output = self.p.open(format=FORMAT,
+                                                        channels=CHANNELS,
+                                                        rate=RATE,
+                                                        output=True,  # for speaker
+                                                        input_device_index=self.profile.my_speaker,
+                                                        frames_per_buffer=CHUNK)
+
+
 
                         elif opcode == "FRAME":
                             #accept frame and play
-                            data = params[0]
+                            data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
+                            #data = pickle.loads(data)
+                            print(f"got frame: {data}")
+                            self.stream_output.write(data)
                             pass
 
                         else:
