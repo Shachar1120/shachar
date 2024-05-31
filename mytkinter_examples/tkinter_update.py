@@ -464,17 +464,6 @@ class ContactsPanel:
         return True, message
 
     def split_message(self, message):
-        # if self.check_if_pickle(message):
-        #     # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-        #     # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-        #     print("got the dict!!!!")
-        #     cmd = "ASSIGNED_CLIENTS"
-        #     # load pickle and not decode to get msg!!
-        #     received_dict = pickle.loads(message)
-        #     return True, cmd, received_dict
-        #     # msg = received_dict
-        # else:
-        #     msg = message.decode()
 
         message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
         opcode = message_parts[0].decode()
@@ -551,7 +540,7 @@ class ContactsPanel:
                 cget_bg = self.root.cget("bg")
                 print(f"lets see: {cget_bg}")
                 for item in items:
-                    obj = ButtonItem(item, self.make_call, self.assigned_clients_dict)
+                    obj = ButtonItem(item, self.make_ring, self.assigned_clients_dict)
                     button = ttk.Button(self.root, text=item, command=obj.item_clicked)
                     button.pack(pady=5, padx=10, fill="x")
                     self.button_objs.append(obj)
@@ -569,93 +558,6 @@ class ContactsPanel:
 
 
 
-    def call_button(self):
-        call_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        call_window.title("Call")
-
-
-        self.call_who = Label(call_window, text="Who Do You Want To Call To?")
-        self.call_who.place(x=180, y=60)
-
-        self.enter_username = Label(call_window, text="Enter Username:")
-        self.enter_username.place(x=40, y=100)
-
-        self.username_input_area = Entry(call_window, width=30)
-        self.username_input_area.place(x=130, y=100)
-
-        # Create a Button
-        self.btn_contact = Button(call_window, text='submit', command=self.submit_call)
-        self.btn_contact.place(x=150, y=150)
-
-
-    def submit_call(self):
-        cmd = "CALL"
-        username = self.username_input_area.get()
-        # Check if username is not empty
-        if username.strip():
-            print("he wants to call:", username)
-            target_username = self.username_input_area.get()
-
-            params = [target_username.encode()]
-            if not Pro.check_cmd_and_params(cmd, params):
-                # in this phase only REGISTER or ASSIGN is required with [username, password] as params
-                print("Invalid command! Try again!")
-
-                # user isnt registered!!!
-                self.try_again_label1 = Label(self.root, text="Invalid command! Try again!")
-                self.try_again_label1.pack()
-
-            self.send_cmd(cmd.encode(), params)
-
-            res_response, msg_response = self.get_response()
-            if res_response:
-                opcode, nof_params, params = self.split_message(msg_response)
-                #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
-                # res_response = True: got cmd and params (meaning cmd = ASSIGNED_CLIENTS)
-                if (opcode == "TARGET_NACK") or (opcode == "TARGET_ACK"):
-                    print("cmd is call(call target client)")
-                    client_username = params[0].decode()
-                    response = self.handle_response_call_target(opcode)
-                    if response:  # if true = ASSIGN_ACK
-                        print("we can call target! he is assigned")
-
-                        # get target details
-                        # getting target details from server dict client_sockets_details
-                        # getting ip and port according to username
-
-                        cmd = "ASK_TARGET_DETAILS"
-                        tof = Pro.check_cmd(cmd)
-                        if tof:
-                            # sending to server
-                            cmd_send = Pro.create_msg(cmd.encode(), [client_username.encode()])
-                            self.socket_to_server.send(cmd_send)
-
-                        # get response from server
-                        # should i wait for response from server??? not assume i get it
-                        res_response, msg_response = self.get_response()
-                        if res_response:
-                            opcode, nof_params, params = self.split_message(msg_response)
-                            #res_split_msg1, cmd_response1, params_response1 = self.split_message(msg_response)
-
-                            # res_response = True: got cmd and params
-                            if (opcode == "SEND_TARGET_DETAILS"):
-                                print("cmd is SEND_TARGET_DETAILS")
-                                client_socket_details = (params[0].decode(), params[1].decode())
-                                print("got the client details params!!!:", client_socket_details)
-                        pass
-
-                    else:  # REGISTER_NACK- Maybe user already exist!!! try different username
-                        print("couldn't call target!")
-                        print("call another person: (from contacts)")
-
-
-        else:
-            self.try_again_label2 = Label(self.root, text="It's Empty! Write again")
-            self.try_again_label2.pack()
-
-
     ###################################
     # network handling part:
     ###################################
@@ -669,8 +571,6 @@ class ContactsPanel:
 
         # self.call_obj = None
         self.loggedIn_obj = None
-
-
 
 
     ################################
@@ -746,47 +646,13 @@ class ContactsPanel:
     def handle_connection_failed(self):
         pass
 
-    def check_if_pickle(self, msg):
-        try:
-            # Try to unpickle the message
-            pickle.loads(msg)
-            # If successful, the message is in pickle format
-            return True
-        except pickle.UnpicklingError:
-            # If unsuccessful, the message is not in pickle format
-            return False
 
-
-    def split_message(self, message):
-
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
-        opcode = message_parts[0].decode()
-        nof_params = int(message_parts[1].decode())
-        params = message_parts[2:]
-        return opcode, nof_params, params
-        # עובד רק נכון לכרגע, אני מניחה כרגע שהדבר היחיד שאני מקבלת בפיקל הוא המילון, אני לא שולחת את הפקודה אלא יוצרת אותה
-        #     # אם בעתיד אשלח עוד דברים בפיקל אצטרך להבדיל ביניהם!!!
-        #     print("got the dict!!!!")
-        #     cmd = "ASSIGNED_CLIENTS"
-        #     # load pickle and not decode to get msg!!
-        #     received_dict = pickle.loads(message)
-        #     return True, cmd, received_dict
-        #     # msg = received_dict
-        # else:
-        #     msg = message.decode()
-        # message_parts = msg.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        # print("0:" + message_parts[0] + "1:" + message_parts[1])
-        # if message_parts[1] == '0':
-        #     print("False!! no params, only cmd")
-        #     return False, message_parts[0], None  # return only cmd
-        # else:
-        #     return True, message_parts[0], message_parts[2:]  # return cmd, params
 
     ################################
     # network ==> caller ... main thread
     ################################
 
-    def make_call(self, item, dict):
+    def make_ring(self, item, dict):
 
         #need to get client details dictionary
         # item is username of wanted client
@@ -824,21 +690,27 @@ class ContactsPanel:
                 self.move_to_ringing()
             except Exception as ex:
                 print(ex)
-
-
-
         else:
             print(f"cant call '{item}' , he doesnot exist in the dictionary.")
 
 
-
 class CallConnectHandling:
-    def __init__(self, root, socket_to_server, complete_func):
-
+    def __init__(self, root, socket_to_server, complete_func, move_to_call_receiving, profile, call_initiate_socket):
+        self.profile = profile
         self.root = root
         self.panel_window = None
         self.socket_to_server = socket_to_server
-        self.ringing_window = None
+        self.complete_func = complete_func
+        self.item = None
+        self.button_objs = []
+        self.button_widgets = []
+        self.assigned_clients_dict = None
+        self.item_list = None
+        self.move_to_call_receiving = move_to_call_receiving
+        self.state = CallStates.INIT
+        self.transition = False
+
+        self.call_initiate_socket = call_initiate_socket
 
 
     def init_panel_destroy(self):
