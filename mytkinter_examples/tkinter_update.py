@@ -713,6 +713,9 @@ class CallConnectHandling:
         self.call_initiate_socket = call_initiate_socket
 
 
+
+
+
     def init_panel_destroy(self):
         self.call_who.destroy()
         self.enter_username.destroy()

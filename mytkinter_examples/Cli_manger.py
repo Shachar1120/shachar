@@ -228,27 +228,6 @@ class Cli:
         self.call_who = Label(self.ringing_window, text="I am ringing")
         self.call_who.place(x=180, y=60)
 
-        # get the message!!!
-        #self.check_if_got_msg()
-
-            #if msg_response == Pro.cmds[Pro.IN_CALL]:
-                #print("IN CALL")
-                #self.call_label = Label(self.ringing_window, text="IN CALL!!")
-                #self.call_label.place(x=200, y=70)
-            #else:
-                #print("Received unexpected message: ", msg_response)
-        #else:
-            #print("not in call!!!")
-
-        #res_response, msg_response = self.get_response_from_other_client()
-        #if res_response:
-            #print("got the in call message!!!!")
-            #if msg_response == Pro.cmds[Pro.IN_CALL]:
-                #print("IN CALL")
-                #self.call_label = Label(self.ringing_window, text="IN CALL!!")
-                #self.call_label.place(x=200, y=70)
-        #else:
-            #print("not in call!!!")
 
     def check_if_got_msg(self):
         try:
