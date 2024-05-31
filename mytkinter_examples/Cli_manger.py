@@ -301,6 +301,7 @@ class Cli:
         self.call_who.destroy()
 
     def destroy_panel_ring_receiver(self):
+
         self.call_who.destroy()
         self.btn_calling.destroy()
 
