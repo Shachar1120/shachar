@@ -115,7 +115,7 @@ class Pro:
 
         msg_len = int(msg_len_before_valid)
         message_bytes = socket_to_server.recv(msg_len)
-        message = message_bytes.decode()
+        message = message_bytes
         return True, message # message is string
 
     @staticmethod

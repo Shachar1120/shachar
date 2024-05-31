@@ -87,11 +87,7 @@ class RegisterPanel:
         # print("Not a valid command, or missing parameters\n")
 
         return True
-    def get_response(self):
-        res, message = Pro.get_msg(self.socket_to_server)
-        if not res:
-            return False, message
-        return True, message
+
     def submit_register(self):
 
         # hasattr is a python function that checks if a value exists
@@ -127,7 +123,7 @@ class RegisterPanel:
                 # send cmd and params(username, password) to server
                 self.send_cmd(cmd.encode(), params)
                 # get response from server
-                res_response, msg_response = self.get_response()
+                res_response, msg_response = Pro.get_msg(self.socket_to_server)
                 if res_response:
                     opcode, nof_params, params = self.split_message(msg_response)
                     #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
@@ -293,17 +289,12 @@ class AssignPanel:
         # print("Not a valid command, or missing parameters\n")
 
         return True
-    def get_response(self):
-        res, message = Pro.get_msg(self.socket_to_server)
-        if not res:
-            return False, message
-        return True, message
 
     def handle_assign_response(self, msg):
-        msg = msg.decode()
-        msg_parts = msg.split(" ")
+        #msg = msg.decode()
+        msg_parts = msg.split(Pro.PARAMETERS_DELIMITER.encode())
         print(msg_parts[0], "," , msg_parts[1])
-        if msg_parts[0] == "ASSIGN_ACK":
+        if msg_parts[0] == b"ASSIGN_ACK":
             return True
         else:
             return False
@@ -385,7 +376,7 @@ class AssignPanel:
 
 
                 # get response from server
-                res_response, msg_response = self.get_response()
+                res_response, msg_response = Pro.get_msg(self.socket_to_server)
                 if res_response:
                     assign_response = self.handle_assign_response(msg_response)
                     if assign_response: #ASSIGN_ACK
@@ -454,14 +445,13 @@ class ContactsPanel:
         self.state = CallStates.INIT
         self.transition = False
 
+        self.contact_update = False
+        self.contact_params = []
+
         self.call_initiate_socket = call_initiate_socket
 
+        self.init_network()
 
-    def get_response(self):
-        res, message = Pro.get_msg(self.socket_to_server)
-        if not res:
-            return False, message
-        return True, message
 
     def split_message(self, message):
 
@@ -501,7 +491,6 @@ class ContactsPanel:
 
     def init_panel_create(self):
 
-        self.init_network()
         # יצירת תהליך חדש שמחכה לפתיחת שיחה
         thread = threading.Thread(target=self.wait_for_network)
 
@@ -515,37 +504,31 @@ class ContactsPanel:
         params = []
         # send cmd and params(username, password) to server
         self.send_cmd(cmd.encode(), params)
+        self.root.after(40, self.update_contact_list)
+        print("wait for contact list")
 
-        # get response from server
-        # מקבל את הרשימת לקוחות הרשומים כדי להציג ללקוח
-        # צריכה למחוק את הלקוח שאני מהרשימת אנשי קשר
-        res_response, msg_response = self.get_response()
-        if res_response:
-            opcode, nof_params, params = self.split_message(msg_response)
+    def update_contact_list(self):
+        if self.contact_update:
+            print("got the dict!!!", self.contact_params[0])
+            self.assigned_clients_dict = pickle.loads(self.contact_params[0])
+            self.item_list = list(self.assigned_clients_dict.keys())
 
-            #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
-            #print("dict??", params_response)
+            # רשימת הפריטים
+            items = self.item_list
+            # יצירת כפתורים לכל פריט ברשימה
+            cget_bg = self.root.cget("bg")
+            print(f"lets see: {cget_bg}")
+            for item in items:
+                obj = ButtonItem(item, self.make_ring, self.assigned_clients_dict)
+                button = ttk.Button(self.root, text=item, command=obj.item_clicked)
+                button.pack(pady=5, padx=10, fill="x")
+                self.button_objs.append(obj)
+                self.button_widgets.append(button)
 
-            # opcode = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
-            if (opcode == "ASSIGNED_CLIENTS"):
-                print("got the dict!!!", params[0])
-                self.assigned_clients_dict = pickle.loads(params[0])
-                self.item_list = list(self.assigned_clients_dict.keys())
+            self.contact_update = False
 
-
-
-                # רשימת הפריטים
-                items = self.item_list
-                # יצירת כפתורים לכל פריט ברשימה
-                cget_bg = self.root.cget("bg")
-                print(f"lets see: {cget_bg}")
-                for item in items:
-                    obj = ButtonItem(item, self.make_ring, self.assigned_clients_dict)
-                    button = ttk.Button(self.root, text=item, command=obj.item_clicked)
-                    button.pack(pady=5, padx=10, fill="x")
-                    self.button_objs.append(obj)
-                    self.button_widgets.append(button)
-
+        else:  # wait for self.contact_update mark from network thread
+            self.root.after(40, self.update_contact_list)
 
     def init_panel_destroy(self):
         for button in self.button_widgets:
@@ -583,7 +566,23 @@ class ContactsPanel:
 
             for s in rlist:
                 if s == self.socket_to_server: #connect with server
-                    pass
+                    # TODO: separate to select (in wait_for_network) pick the message and mark for continue function
+                    # get response from server
+                    # מקבל את הרשימת לקוחות הרשומים כדי להציג ללקוח
+                    # צריכה למחוק את הלקוח שאני מהרשימת אנשי קשר
+                    res_response, msg_response = Pro.get_msg(self.socket_to_server)
+                    print(f"wait_for_network {msg_response}")
+                    if res_response:
+                        opcode, nof_params, params = self.split_message(msg_response)
+
+                        # res_split_msg, cmd_response, params_response = self.split_message(msg_response)
+                        # print("dict??", params_response)
+
+                        # opcode = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
+                        if (opcode == "ASSIGNED_CLIENTS"):
+                            self.contact_update = True
+                            self.contact_params = params
+
                 elif s == self.call_accept_socket: #for call establishment
                     self.call_initiate_socket, _ = self.call_accept_socket.accept()
                     print("Client connected")
@@ -666,7 +665,7 @@ class ContactsPanel:
                 # make the connection
                 # point to point
                 self.other_client_port = self.assigned_clients_dict[item][1]
-                self.call_initiate_socket.connect(("172.16.9.233", self.other_client_port)) # self.call_initiate_port
+                self.call_initiate_socket.connect(("127.0.0.1", self.other_client_port)) # self.call_initiate_port
                 print("client connected")
             except Exception as ex:
                 print("client couldnt connect")
