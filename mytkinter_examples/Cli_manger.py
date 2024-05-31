@@ -357,6 +357,7 @@ class Cli:
             if device_info.get('maxInputChannels') > 0:
                 print(f"Microphone: {device_info.get('name')} , Device Index: {device_info.get('index')}")
     def call_transmit(self):
+
         # read audio and send
         sound = True
         CHUNK = 4096
