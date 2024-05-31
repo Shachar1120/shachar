@@ -666,7 +666,7 @@ class ContactsPanel:
                 # make the connection
                 # point to point
                 self.other_client_port = self.assigned_clients_dict[item][1]
-                self.call_initiate_socket.connect(("127.0.0.1", self.other_client_port)) # self.call_initiate_port
+                self.call_initiate_socket.connect(("172.16.9.233", self.other_client_port)) # self.call_initiate_port
                 print("client connected")
             except Exception as ex:
                 print("client couldnt connect")
