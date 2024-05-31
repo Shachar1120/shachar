@@ -168,7 +168,7 @@ class Pro:
         msg_len = len(msg_to_send)
         return str(msg_len).zfill(Pro.LENGTH_FIELD_SIZE).encode() + msg_to_send
 
-    @staticmethod
+    @staticmethod 
     def get_msg(socket_to_server):
         """
         Extract message from protocol, without the length field
