@@ -28,7 +28,7 @@ class Cli:
         # sending root for socket_to_server and root
         self.contacts_obj = ContactsPanel(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ringing,
                                           self.move_to_ring_receiving, self.profile, call_initiate_socket)
-        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.CallComplete)
+        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ring_receiving, self.profile, call_initiate_socket)
 
         self.images = {}
         self.init_images_dict()
@@ -432,7 +432,7 @@ class Cli:
         self.root.mainloop()
 
     def check_network_answers(self):
-        # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_call שזה הthread הראשי
+        # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_ring שזה הthread הראשי
         # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
         if ContactsPanel.RINGING == self.contacts_obj.state:
             if self.contacts_obj.transition:
