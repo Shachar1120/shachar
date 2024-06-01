@@ -15,7 +15,7 @@ import time
 
 
 class Ser:
-    IP = "0.0.0.0" #IP = "0.0.0.0"
+    IP = "0.0.0.0"
 
     def __init__(self, ip, port):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -110,14 +110,18 @@ class Ser:
         elif command == 'STOP_STREAMING':
             pass
 
-    def split_msg(self, message):
-        message = message.decode()
+    def split_message(self, message):
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  #.encode() # message: cmd + len(params) + params
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:]
+        return opcode, nof_params, params
+    def split_cmd_params_msg(self, message):
         message_parts = message.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        if message_parts[1] == '0':  # len(params) == 0
-            # no params, only cmd
-            return False, message_parts[0], None  # return cmd only
-        else:
-            return True, message_parts[0], message_parts[2:]  # return cmd, params
+        opcode = message_parts[0]
+        nof_params = int(message_parts[1]) # number of params
+        params = message_parts[2:]
+        return opcode, nof_params, params
 
     def handle_call(self, username_param):
         res = self.check_client_assigned(username_param)
@@ -154,69 +158,119 @@ def main():
             else:
                 # client handling: current_socket is one of the self.client_sockets
                 res, message = Pro.get_msg(current_socket)
+                message = message.decode()
                 if not res:
                     myserver.client_disconnected()
 
                 # check if you have cmd + params or only cmd
-                else:
-                    print(message)
-                    res_split, cmd_res, params_res = myserver.split_msg(message)
-                    if res_split:
-                        # res_response = True: got both cmd and params (like in REGISTER , ASSIGN)
+                cmd_res, nof_res, params_res = myserver.split_cmd_params_msg(message)
 
-                        # if REGISTER:
-                        if cmd_res == Pro.cmds[Pro.REGISTER]:
-                            res = myserver.handle_registration(params_res,
-                                                               current_socket)  # return REGISTER_NACK or REGISTER_ACK
-                            # send response to the client
-                            message = Pro.create_msg(res.encode(), [])
-                            current_socket.send(message)
+                # if REGISTER:
+                if cmd_res == Pro.cmds[Pro.REGISTER]:
+                    res = myserver.handle_registration(params_res,
+                                                       current_socket)  # return REGISTER_NACK or REGISTER_ACK
+                    # send response to the client
+                    message = Pro.create_msg(res.encode(), [])
+                    current_socket.send(message)
 
-                        # if ASSIGNED:
-                        elif cmd_res == Pro.cmds[Pro.ASSIGN]:
-                            print("cmd is assign!!")
-                            res = myserver.handle_assigned(params_res, current_socket)
-                            # send response to the client
-                            message = Pro.create_msg(res.encode(), [])
-                            current_socket.send(message)
+                    # if ASSIGNED:
+                elif cmd_res == Pro.cmds[Pro.ASSIGN]:
+                    print("cmd is assign!!")
+                    res = myserver.handle_assigned(params_res, current_socket)
+                    # send response to the client
+                    message = Pro.create_msg(res.encode(), [])
+                    current_socket.send(message)
 
-                        elif cmd_res == Pro.cmds[Pro.CALL]:
-                            print("cmd is call!!")
-                            res = myserver.handle_call(params_res)
-                            # send response to the client
-                            client_username = params_res[0]
-                            message = Pro.create_msg(res.encode(), [client_username.encode()])
-                            current_socket.send(message)
+                elif cmd_res == Pro.cmds[Pro.CALL]:
+                    print("cmd is call!!")
+                    res = myserver.handle_call(params_res)
+                    # send response to the client
+                    client_username = params_res[0]
+                    message = Pro.create_msg(res.encode(), [client_username.encode()])
+                    current_socket.send(message)
 
-                        elif cmd_res == Pro.cmds[Pro.ASK_TARGET_DETAILS]:
-                            print("cmd is ASK_TARGET_DETAILS!!")
-                            client_username = params_res[0]
-                            # get client details(ip and port) from client_sockets_details dict
-                            print("client_sockets_details!!:", myserver.client_sockets_details[client_username])
-                            client_ip, client_port = myserver.client_sockets_details[client_username]  # tuple (ip, port)
-                            client_port = str(client_port)
+                elif cmd_res == Pro.cmds[Pro.ASK_TARGET_DETAILS]:
+                    print("cmd is ASK_TARGET_DETAILS!!")
+                    client_username = params_res[0]
+                    # get client details(ip and port) from client_sockets_details dict
+                    print("client_sockets_details!!:", myserver.client_sockets_details[client_username])
+                    client_ip, client_port = myserver.client_sockets_details[client_username]  # tuple (ip, port)
+                    client_port = str(client_port)
 
-                            # send details to the client
-                            cmd_to_send = Pro.cmds[Pro.SEND_TARGET_DETAILS]
-                            message = Pro.create_msg(cmd_to_send.encode(), [client_ip.encode(), client_port.encode()])
-                            current_socket.send(message)
+                    # send details to the client
+                    cmd_to_send = Pro.cmds[Pro.SEND_TARGET_DETAILS]
+                    message = Pro.create_msg(cmd_to_send.encode(), [client_ip.encode(), client_port.encode()])
+                    current_socket.send(message)
+
+                # client asks for assigned clients dict
+                elif cmd_res == Pro.cmds[Pro.CONTACTS]:
+                    print("got the message contacts!!!!!")
+
+                    # send response to the client
+                    cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
+                    print("this is the dict!!!:", myserver.assigned_clients)
+                    send_dict = pickle.dumps(myserver.assigned_clients)
+                    message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
+                    current_socket.send(message)
 
 
-
-
-                        # res_response = False: only got cmd (cmd = CONTACTS)
-
-                        # client asks for assigned clients dict
-                        elif cmd_res == Pro.cmds[Pro.CONTACTS]:
-                            print("got the message contacts!!!!!")
-
-                            # send response to the client
-                            cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
-                            print("this is the dict!!!:", myserver.assigned_clients)
-                            send_dict = pickle.dumps(myserver.assigned_clients)
-                            message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
-                            current_socket.send(message)
-
+                # #if res_split:
+                #     # res_response = True: got both cmd and params (like in REGISTER , ASSIGN)
+                #
+                #     # if REGISTER:
+                #     if cmd_res == Pro.cmds[Pro.REGISTER]:
+                #         res = myserver.handle_registration(params_res,
+                #                                            current_socket)  # return REGISTER_NACK or REGISTER_ACK
+                #         # send response to the client
+                #         message = Pro.create_msg(res.encode(), [])
+                #         current_socket.send(message)
+                #
+                #     # if ASSIGNED:
+                #     elif cmd_res == Pro.cmds[Pro.ASSIGN]:
+                #         print("cmd is assign!!")
+                #         res = myserver.handle_assigned(params_res, current_socket)
+                #         # send response to the client
+                #         message = Pro.create_msg(res.encode(), [])
+                #         current_socket.send(message)
+                #
+                #     elif cmd_res == Pro.cmds[Pro.CALL]:
+                #         print("cmd is call!!")
+                #         res = myserver.handle_call(params_res)
+                #         # send response to the client
+                #         client_username = params_res[0]
+                #         message = Pro.create_msg(res.encode(), [client_username.encode()])
+                #         current_socket.send(message)
+                #
+                #     elif cmd_res == Pro.cmds[Pro.ASK_TARGET_DETAILS]:
+                #         print("cmd is ASK_TARGET_DETAILS!!")
+                #         client_username = params_res[0]
+                #         # get client details(ip and port) from client_sockets_details dict
+                #         print("client_sockets_details!!:", myserver.client_sockets_details[client_username])
+                #         client_ip, client_port = myserver.client_sockets_details[client_username]  # tuple (ip, port)
+                #         client_port = str(client_port)
+                #
+                #         # send details to the client
+                #         cmd_to_send = Pro.cmds[Pro.SEND_TARGET_DETAILS]
+                #         message = Pro.create_msg(cmd_to_send.encode(), [client_ip.encode(), client_port.encode()])
+                #         current_socket.send(message)
+                #
+                #
+                #
+                #
+                #
+                # else:
+                #     # res_response = False: only got cmd (cmd = CONTACTS)
+                #
+                #     # client asks for assigned clients dict
+                #     if cmd_res == Pro.cmds[Pro.CONTACTS]:
+                #         print("got the message contacts!!!!!")
+                #
+                #         # send response to the client
+                #         cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
+                #         print("this is the dict!!!:", myserver.assigned_clients)
+                #         send_dict = pickle.dumps(myserver.assigned_clients)
+                #         message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
+                #         current_socket.send(message)
     # close sockets
     print("Closing connection")
     myserver.close()

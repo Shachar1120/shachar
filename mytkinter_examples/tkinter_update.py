@@ -56,10 +56,10 @@ class RegisterPanel:
             # If unsuccessful, the message is not in pickle format
             return False
 
-    def split_message(self, message):
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
-        opcode = message_parts[0].decode()
-        nof_params = int(message_parts[1].decode())
+    def split_message1(self, message):
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER)  #.encode() # message: cmd + len(params) + params
+        opcode = message_parts[0]
+        nof_params = int(message_parts[1])
         params = message_parts[2:]
         return opcode, nof_params, params
 
@@ -124,8 +124,9 @@ class RegisterPanel:
                 self.send_cmd(cmd.encode(), params)
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
+                msg_response = msg_response.decode()
                 if res_response:
-                    opcode, nof_params, params = self.split_message(msg_response)
+                    opcode, nof_params, params = self.split_message1(msg_response)
                     #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
 
                     # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
@@ -290,11 +291,12 @@ class AssignPanel:
 
         return True
 
+
     def handle_assign_response(self, msg):
         #msg = msg.decode()
-        msg_parts = msg.split(Pro.PARAMETERS_DELIMITER.encode())
+        msg_parts = msg.split(Pro.PARAMETERS_DELIMITER)
         print(msg_parts[0], "," , msg_parts[1])
-        if msg_parts[0] == b"ASSIGN_ACK":
+        if msg_parts[0] == "ASSIGN_ACK":
             return True
         else:
             return False
@@ -377,6 +379,7 @@ class AssignPanel:
 
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
+                msg_response = msg_response.decode()
                 if res_response:
                     assign_response = self.handle_assign_response(msg_response)
                     if assign_response: #ASSIGN_ACK
@@ -445,19 +448,14 @@ class ContactsPanel:
         self.state = CallStates.INIT
         self.transition = False
 
-        self.contact_update = False
-        self.contact_params = []
-
         self.call_initiate_socket = call_initiate_socket
 
-        self.init_network()
 
+    def split_message2(self, message):
 
-    def split_message(self, message):
-
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
-        opcode = message_parts[0].decode()
-        nof_params = int(message_parts[1].decode())
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+        opcode = message_parts[0]
+        nof_params = int(message_parts[1])
         params = message_parts[2:]
         return opcode, nof_params, params
 
@@ -488,9 +486,26 @@ class ContactsPanel:
         elif response == "TARGET_ACK":
             return True
 
+    def split_assigned_clients_msg(self, message):
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
+        opcode = message_parts[0].decode
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:][0]
+        # params in this case is the pickle dict!!!
+        print("split_assigned_clients_msg:", params)
+        return opcode, nof_params, params
+    def split_message3(self, message):
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
+        opcode = message_parts[0]
+        nof_params = int(message_parts[1])
+        params = message_parts[2:]
+        # params in this case is the pickle dict!!!
+        print("split_message3:", opcode, nof_params, params)
+        return opcode, nof_params, params
 
     def init_panel_create(self):
 
+        self.init_network()
         # יצירת תהליך חדש שמחכה לפתיחת שיחה
         thread = threading.Thread(target=self.wait_for_network)
 
@@ -504,14 +519,19 @@ class ContactsPanel:
         params = []
         # send cmd and params(username, password) to server
         self.send_cmd(cmd.encode(), params)
-        self.root.after(40, self.update_contact_list)
-        print("wait for contact list")
 
-    def update_contact_list(self):
-        if self.contact_update:
-            print("got the dict!!!", self.contact_params[0])
-            self.assigned_clients_dict = pickle.loads(self.contact_params[0])
+        # get response from server
+        # מקבל את הרשימת לקוחות הרשומים כדי להציג ללקוח
+        # צריכה למחוק את הלקוח שאני מהרשימת אנשי קשר
+        res_response, msg_response = Pro.get_msg(self.socket_to_server) # getting msg: b"ASSIGNED_CLIENTS ! /x80...(dict in pickle)"
+        if res_response:
+            #opcode is ASSIGNED_CLIENTS
+            opcode, nof_params, params = self.split_assigned_clients_msg(msg_response)
+            self.assigned_clients_dict = pickle.loads(params)
+            print("got the dict!!!", self.assigned_clients_dict)
             self.item_list = list(self.assigned_clients_dict.keys())
+
+
 
             # רשימת הפריטים
             items = self.item_list
@@ -525,10 +545,6 @@ class ContactsPanel:
                 self.button_objs.append(obj)
                 self.button_widgets.append(button)
 
-            self.contact_update = False
-
-        else:  # wait for self.contact_update mark from network thread
-            self.root.after(40, self.update_contact_list)
 
     def init_panel_destroy(self):
         for button in self.button_widgets:
@@ -538,6 +554,7 @@ class ContactsPanel:
         self.button_widgets = []
             #self.button_objs = []
         #self.Logged_In_window.destroy()
+
 
 
 
@@ -566,23 +583,7 @@ class ContactsPanel:
 
             for s in rlist:
                 if s == self.socket_to_server: #connect with server
-                    # TODO: separate to select (in wait_for_network) pick the message and mark for continue function
-                    # get response from server
-                    # מקבל את הרשימת לקוחות הרשומים כדי להציג ללקוח
-                    # צריכה למחוק את הלקוח שאני מהרשימת אנשי קשר
-                    res_response, msg_response = Pro.get_msg(self.socket_to_server)
-                    print(f"wait_for_network {msg_response}")
-                    if res_response:
-                        opcode, nof_params, params = self.split_message(msg_response)
-
-                        # res_split_msg, cmd_response, params_response = self.split_message(msg_response)
-                        # print("dict??", params_response)
-
-                        # opcode = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
-                        if (opcode == "ASSIGNED_CLIENTS"):
-                            self.contact_update = True
-                            self.contact_params = params
-
+                    pass
                 elif s == self.call_accept_socket: #for call establishment
                     self.call_initiate_socket, _ = self.call_accept_socket.accept()
                     print("Client connected")
@@ -590,19 +591,21 @@ class ContactsPanel:
                 elif self.call_initiate_socket: # for call handling
 
                     res, message = Pro.get_msg(self.call_initiate_socket)
+                    opcode, nof_params, params = self.split_message3(message)
+                    opcode = opcode.decode()
                     print(f"wait_for_network: {message}")
                     if res:
-                        print("the message is:", message)
-                        opcode, nof_params, params = self.split_message(message)
-                        #res_split_msg, cmd_response, params_response = self.split_message(message)
+                        print("the message is:", opcode, nof_params, params)
 
                         if opcode == "RING":
+                            params = params[0].decode()
                             print("received call")
                             #tkinter after
                             #move_to_call_receiving
                             self.state = CallStates.RINGING
                             self.transition = True
                         elif opcode == "IN_CALL":
+                            #params = params[0].decode()
                             print("got in call!!")
                             self.state = CallStates.IN_CALL
                             self.transition = True
@@ -628,9 +631,11 @@ class ContactsPanel:
 
 
                         elif opcode == "FRAME":
+                            data = params[0]
+                            print("FRAME params!!! (data)", params)
                             #accept frame and play
-                            data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
-                            #data = pickle.loads(data)
+                            #data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
+                            data = pickle.loads(data)
                             print(f"got frame: {data}")
                             self.stream_output.write(data)
                             pass

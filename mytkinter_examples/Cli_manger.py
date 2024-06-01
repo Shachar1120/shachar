@@ -51,6 +51,38 @@ class Cli:
         msg_to_send = Pro.create_msg(cmd, params)
         self.socket_to_server.send(msg_to_send)
 
+    def get_response(self):
+        res, message = Pro.get_msg(self.socket_to_server)
+        message = message.decode()
+        if not res:
+            return False, message
+        return True, message
+
+    def get_response_from_other_client(self):
+        try:
+            # Attempt to receive a message using Pro.get_msg
+            res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
+            message = message.decode()
+            print(f"Response: {res}, Message: {message}")
+
+            if not res:
+                print(f"Failed to receive message. Response: {res}")
+                return False, message
+
+            print(f"Successfully received message: {message}")
+            return True, message
+
+        except socket.timeout:
+            print("Socket timed out while waiting for a response.")
+            return False, "Socket timeout"
+
+        except socket.error as e:
+            print(f"Socket error occurred: {e}")
+            return False, f"Socket error: {e}"
+
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return False, f"Unexpected error: {e}"
 
     def check_if_pickle(self, msg):
         try:
@@ -66,7 +98,7 @@ class Cli:
         message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
         opcode = message_parts[0].decode()
         nof_params = int(message_parts[1].decode())
-        params = message_parts[2:]
+        params = message_parts[2:][0]
         return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
@@ -197,6 +229,33 @@ class Cli:
 
         self.call_who = Label(self.ringing_window, text="I am ringing")
         self.call_who.place(x=180, y=60)
+
+
+    def check_if_got_msg(self):
+        try:
+            # Attempt to receive a message using Pro.get_msg
+            res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
+            message = message.decode()
+            print(f"Response: {res}, Message: {message}")
+
+            if not res:
+                print(f"Failed to receive message. Response: {res}")
+                return False, message
+
+            print(f"Successfully received message: {message}")
+            return True, message
+
+        except socket.timeout:
+            print("Socket timed out while waiting for a response.")
+            return False, "Socket timeout"
+
+        except socket.error as e:
+            print(f"Socket error occurred: {e}")
+            return False, f"Socket error: {e}"
+
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return False, f"Unexpected error: {e}"
 
 
     def init_panel_create_ring_reciving(self):

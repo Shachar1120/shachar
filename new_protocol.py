@@ -115,8 +115,23 @@ class Pro:
 
         msg_len = int(msg_len_before_valid)
         message_bytes = socket_to_server.recv(msg_len)
-        message = message_bytes
-        return True, message # message is string
+        #message = message_bytes.decode()
+        return True, message_bytes # message is still bytes
+
+
+    # def get_msg(socket_to_server):
+    #     """
+    #     Extract message from protocol, without the length field
+    #     If length field does not include a number, returns False, "Error"
+    #     """
+    #     msg_len_before_valid = socket_to_server.recv(Pro.LENGTH_FIELD_SIZE)
+    #     msg_len_before_valid = msg_len_before_valid.decode()
+    #     if not msg_len_before_valid.isdecimal():
+    #         return False, "ERROR"
+    #
+    #     msg_len = int(msg_len_before_valid)
+    #     message = socket_to_server.recv(msg_len)
+    #     return True, message
 
     @staticmethod
     def check_cmd(cmd: str):
