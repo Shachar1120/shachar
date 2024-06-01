@@ -80,6 +80,9 @@ class Ser:
                 print("assigned_clients dict:", self.assigned_clients)
                 return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
 
+        else:
+            print("check password failed!!!")
+
     def check_password(self, params: []):
         username_value = params[0]
         user_details_value = params[1]  # (password, port)
@@ -89,8 +92,7 @@ class Ser:
         if username_value in self.client_details.keys():
             # check if password fit
             # if (password in dictionary) == (password in params)
-            if username_in_dict[0] == user_details_value[
-                0]:  # if password of username in dict match password from params
+            if username_in_dict[0] == user_details_value:  # if password of username in dict match password from params
                 return True
         return False
 
@@ -177,6 +179,7 @@ def main():
                 elif cmd_res == Pro.cmds[Pro.ASSIGN]:
                     print("cmd is assign!!")
                     res = myserver.handle_assigned(params_res, current_socket)
+                    print("res!!!", res)
                     # send response to the client
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)

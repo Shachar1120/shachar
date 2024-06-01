@@ -223,12 +223,21 @@ class Cli:
 
     def init_panel_create_ringing(self):
         self.ringing_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        self.ringing_window.title("I am ringing")
 
-        self.call_who = Label(self.ringing_window, text="I am ringing")
-        self.call_who.place(x=180, y=60)
+        self.root.configure(bg='#2f2f2f')
+
+        # Label for "calling..." text
+        self.calling_label = Label(self.root, text="calling...", font=("Garet", 24), bg='#2f2f2f', fg='white')
+        self.calling_label.pack(pady=40)
+
+        # Load and place the image
+        photo = PhotoImage(file=r"..\images\ring1.png").subsample(2, 2)  # Adjust the subsample as needed
+        self.image_label = Label(self.root, image=photo, bg='#2f2f2f')
+        self.image_label.image = photo  # Keep a reference to avoid garbage collection
+        self.image_label.pack(pady=20)
+
+
+
 
 
     def check_if_got_msg(self):

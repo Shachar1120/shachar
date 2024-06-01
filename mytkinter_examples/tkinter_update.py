@@ -462,7 +462,10 @@ class AssignPanel:
 
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
-                msg_response = msg_response.decode()
+                # if str- dont need to decode
+                if isinstance(msg_response, bytes):
+                    # retruns True if its in byter
+                    msg_response = msg_response.decode()
                 if res_response:
                     assign_response = self.handle_assign_response(msg_response)
                     if assign_response: #ASSIGN_ACK
