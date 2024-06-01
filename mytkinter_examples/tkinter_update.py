@@ -628,7 +628,7 @@ class ContactsPanel:
                                                         input_device_index=self.profile.my_speaker,
                                                         frames_per_buffer=CHUNK)
 
- 
+
 
                         elif opcode == "FRAME":
                             data = params[0]
