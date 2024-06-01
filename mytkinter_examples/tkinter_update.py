@@ -1,6 +1,7 @@
 import threading
 from tkinter import *
 import tkinter.ttk as ttk
+from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
 
 import socket
 import pickle
@@ -24,6 +25,9 @@ class RegisterPanel:
         self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.my_port = my_port
+
+        self.images = {}
+
 
     def handle_response_Register(self, response):
         if response == Pro.cmds[Pro.REGISTER_NACK]:
@@ -71,6 +75,13 @@ class RegisterPanel:
             return False
         elif response == "TARGET_ACK":
             return True
+
+    def load_image(self, path, size=None):
+        # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
+        image = Image.open(path)
+        if size:
+            image = image.resize(size, Image.Resampling.LANCZOS)
+        return ImageTk.PhotoImage(image)
 
     def handle_cmd(self, cmd):
         tof = Pro.check_cmd(cmd)
@@ -166,34 +177,64 @@ class RegisterPanel:
 
 
     def init_panel_create(self):
-        # before class it was Register_window function!!!
-        # Toplevel object which will
-        # be treated as a new window
+
         self.register_panel_window = self.root
 
-        # sets the title of the
-        # Toplevel widget
-        self.register_panel_window.title("Register")
+        # Define font sizes and colors
+        label_font = ("Garet", 14, "bold")
+        entry_font = ("Arial", 12)
+        label_color = "#5271FF"  # New blue color
 
+        # Paths to images
+        submit_button_image_path = r"..\images\submit.png"
 
+        # Load the submit button image
+        self.images['submit_button_image'] = self.load_image(submit_button_image_path)
 
+        self.register_panel_window.title("Log In")
 
-        # the label for user_name
-        self.user_name = Label(self.register_panel_window, text="Username")
+        # Create labels with larger font size and new blue color
+        self.user_name = Label(self.register_panel_window, text="Username", font=label_font, fg=label_color)
         self.user_name.place(x=40, y=60)
 
-        # the label for user_password
-        self.user_password = Label(self.register_panel_window, text="Password")
+        self.user_password = Label(self.register_panel_window, text="Password", font=label_font, fg=label_color)
         self.user_password.place(x=40, y=100)
 
-        self.user_name_input_area = Entry(self.register_panel_window, width=30)
-        self.user_name_input_area.place(x=110, y=60)
+        # Create entry fields with larger font size
+        self.user_name_input_area = Entry(self.register_panel_window, width=30, font=entry_font)
+        self.user_name_input_area.place(x=160, y=60)
 
-        self.user_password_entry_area = Entry(self.register_panel_window, width=30)
-        self.user_password_entry_area.place(x=110, y=100)
+        self.user_password_entry_area = Entry(self.register_panel_window, width=30, font=entry_font)
+        self.user_password_entry_area.place(x=160, y=100)
 
-        self.submit_button = Button(self.register_panel_window, text="Submit", command=self.submit_register)
-        self.submit_button.place(x=40, y=130)
+        # Create the submit button with an image and adjust its position
+        self.submit_button = Button(self.register_panel_window, image=self.images['submit_button_image'], command=self.submit_register,
+                                    bd=0)
+        self.submit_button.place(x=170, y=140)  # Adjusted position
+        # # before class it was Register_window function!!!
+        # # Toplevel object which will
+        # # be treated as a new window
+        # self.register_panel_window = self.root
+        #
+        # # sets the title of the
+        # # Toplevel widget
+        # self.register_panel_window.title("Register")
+        # # the label for user_name
+        # self.user_name = Label(self.register_panel_window, text="Username")
+        # self.user_name.place(x=40, y=60)
+        #
+        # # the label for user_password
+        # self.user_password = Label(self.register_panel_window, text="Password")
+        # self.user_password.place(x=40, y=100)
+        #
+        # self.user_name_input_area = Entry(self.register_panel_window, width=30)
+        # self.user_name_input_area.place(x=110, y=60)
+        #
+        # self.user_password_entry_area = Entry(self.register_panel_window, width=30)
+        # self.user_password_entry_area.place(x=110, y=100)
+        #
+        # self.submit_button = Button(self.register_panel_window, text="Submit", command=self.submit_register)
+        # self.submit_button.place(x=40, y=130)
 
 
 
@@ -235,6 +276,8 @@ class AssignPanel:
         self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.assign_response = None
+
+        self.images = {}
 
     def handle_response_assign(self, response):
         if response == "ASSIGN_NACK":
@@ -301,35 +344,75 @@ class AssignPanel:
         else:
             return False
 
+    def load_image(self, path, size=None):
+        image = Image.open(path)
+        if size:
+            image = image.resize(size, Image.Resampling.LANCZOS)
+        return ImageTk.PhotoImage(image)
 
     def init_panel_create(self):
-        # before class it was Assign_Window function!!!
-        # Toplevel object which will
-        # be treated as a new window
 
         self.assign_panel_window = self.root
-        # sets the title of the
+
+        # Define font sizes and colors
+        label_font = ("Garet", 14, "bold")
+        entry_font = ("Arial", 12)
+        label_color = "#5271FF"  # New blue color
+
+        # Paths to images
+        submit_button_image_path = r"..\images\submit.png"
+
+        # Load the submit button image
+        self.images['submit_button_image'] = self.load_image(submit_button_image_path)
+
         self.assign_panel_window.title("Log In")
 
-        # sets the geometry of toplevel
-        self.assign_panel_window.geometry("600x400")
-
-        # the label for user_name
-        self.user_name = Label(self.assign_panel_window, text="Username")
+        # Create labels with larger font size and new blue color
+        self.user_name = Label(self.assign_panel_window, text="Username", font=label_font, fg=label_color)
         self.user_name.place(x=40, y=60)
 
-        # the label for user_password
-        self.user_password = Label(self.assign_panel_window, text="Password")
+        self.user_password = Label(self.assign_panel_window, text="Password", font=label_font, fg=label_color)
         self.user_password.place(x=40, y=100)
 
-        self.user_name_input_area = Entry(self.assign_panel_window, width=30)
-        self.user_name_input_area.place(x=110, y=60)
+        # Create entry fields with larger font size
+        self.user_name_input_area = Entry(self.assign_panel_window, width=30, font=entry_font)
+        self.user_name_input_area.place(x=160, y=60)
 
-        self.user_password_entry_area = Entry(self.assign_panel_window, width=30)
-        self.user_password_entry_area.place(x=110, y=100)
+        self.user_password_entry_area = Entry(self.assign_panel_window, width=30, font=entry_font)
+        self.user_password_entry_area.place(x=160, y=100)
 
-        self.submit_button = Button(self.assign_panel_window, text="Submit", command=self.submit_assign)
-        self.submit_button.place(x=40, y=130)
+        # Create the submit button with an image and adjust its position
+        self.submit_button = Button(self.assign_panel_window, image=self.images['submit_button_image'],
+                                    command=self.submit_assign,
+                                    bd=0)
+        self.submit_button.place(x=170, y=140)  # Adjusted position
+        # # before class it was Assign_Window function!!!
+        # # Toplevel object which will
+        # # be treated as a new window
+        #
+        # self.assign_panel_window = self.root
+        # # sets the title of the
+        # self.assign_panel_window.title("Log In")
+        #
+        # # sets the geometry of toplevel
+        # self.assign_panel_window.geometry("600x400")
+        #
+        # # the label for user_name
+        # self.user_name = Label(self.assign_panel_window, text="Username")
+        # self.user_name.place(x=40, y=60)
+        #
+        # # the label for user_password
+        # self.user_password = Label(self.assign_panel_window, text="Password")
+        # self.user_password.place(x=40, y=100)
+        #
+        # self.user_name_input_area = Entry(self.assign_panel_window, width=30)
+        # self.user_name_input_area.place(x=110, y=60)
+        #
+        # self.user_password_entry_area = Entry(self.assign_panel_window, width=30)
+        # self.user_password_entry_area.place(x=110, y=100)
+        #
+        # self.submit_button = Button(self.assign_panel_window, text="Submit", command=self.submit_assign)
+        # self.submit_button.place(x=40, y=130)
 
     def init_panel_destroy(self):
         self.submit_button.destroy()
