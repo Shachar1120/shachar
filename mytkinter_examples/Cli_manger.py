@@ -27,7 +27,7 @@ class Cli:
         self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
         # sending root for socket_to_server and root
         self.contacts_obj = ContactsPanel(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ringing,
-                                          self.move_to_ring_receiving, self.profile, call_initiate_socket)
+                                          self.move_to_ring_receiving, self.profile, call_initiate_socket, self.init_panel_create_ring_reciving)
         self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ring_receiving, self.profile, call_initiate_socket)
 
         self.images = {}
@@ -223,21 +223,42 @@ class Cli:
 
     def init_panel_create_ringing(self):
         self.ringing_window = self.root
+        self.ringing_window.title("Log In")
 
         self.root.configure(bg='#2f2f2f')
 
         # Label for "calling..." text
-        self.calling_label = Label(self.root, text="calling...", font=("Garet", 24), bg='#2f2f2f', fg='white')
-        self.calling_label.pack(pady=40)
+        self.call_who = Label(self.root, text="calling...", font=("Garet", 24), bg='#2f2f2f', fg='white')
+        self.call_who.pack(pady=40)
 
-        # Load and place the image
-        photo = PhotoImage(file=r"..\images\ring1.png").subsample(2, 2)  # Adjust the subsample as needed
-        self.image_label = Label(self.root, image=photo, bg='#2f2f2f')
-        self.image_label.image = photo  # Keep a reference to avoid garbage collection
-        self.image_label.pack(pady=20)
+        # Paths to images
+        ring_image_path = r"..\images\ring1.png"
+
+        # Load the submit button image
+        self.images['ring_image_path'] = self.load_image(ring_image_path)
 
 
+        #self.image_label = Label(self.root, image=self.images['ring_image_path'], bg='#2f2f2f')
+        #self.image_label.image = self.images['ring_image_path']  # Keep a reference to avoid garbage collection
+        #self.image_label.pack(pady=20)
 
+        # Create a Button
+        photo = PhotoImage(file=r"..\images\ring1.png")
+        photoimage1 = photo.subsample(3, 3)
+        photo = PhotoImage(file=r"..\images\ring2.png")
+        photoimage2 = photo.subsample(3, 3)
+        photo = PhotoImage(file=r"..\images\ringing1.png")
+        photoimage3 = photo.subsample(3, 3)
+
+
+        button_array = [photoimage1, photoimage2, photoimage3]
+        self.calling_button = Button(self.ringing_window, image=button_array[0], command=self.move_to_call_receiving)
+        self.calling_button.place(x=200, y=100)
+        self.calling_button.image = button_array
+        self.calling_button.image_id = 0
+
+        self.contacts_obj.state = CallStates.RINGING
+        self.contacts_obj.transition = True
 
 
     def check_if_got_msg(self):
@@ -277,6 +298,7 @@ class Cli:
         self.call_who.place(x=180, y=60)
 
 
+
         # Create a Button
         photo = PhotoImage(file=r"..\images\ring1.png")
         photoimage1 = photo.subsample(3, 3)
@@ -291,11 +313,13 @@ class Cli:
         self.btn_calling.image = button_array
         self.btn_calling.image_id = 0
 
+
         self.call_who = Label(self.ringing_window, text="... is calling")
         self.call_who.pack(pady=20)
 
         self.ringing_window.title("Incoming Call")
 
+    def init_answer_and_hangup_buttons(self):
         self.photo_answer = PhotoImage(file=r"..\images\answer.png").subsample(3, 3)
         self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
 
@@ -311,6 +335,9 @@ class Cli:
 
     def destroy_panel_ringing(self):
         self.call_who.destroy()
+        #self.image_label.destroy()
+        #self.image_label = None
+        self.btn_calling1.destroy()
 
     def destroy_panel_ring_receiver(self):
 
@@ -427,14 +454,18 @@ class Cli:
     def check_network_answers(self):
         # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_ring שזה הthread הראשי
         # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
-        if ContactsPanel.RINGING == self.contacts_obj.state:
+        if CallStates.RINGING == self.contacts_obj.state:
             if self.contacts_obj.transition:
                 self.move_to_ring_receiving()
+                self.move_to_ringing()
                 self.contacts_obj.transition = False
 
 
             self.btn_calling.image_id = (self.btn_calling.image_id + 1) % 6
             self.btn_calling.config(image=self.btn_calling.image[self.btn_calling.image_id//3])
+
+            self.calling_button.image_id = (self.calling_button.image_id + 1) % 6
+            self.calling_button.config(image=self.calling_button.image[self.calling_button.image_id // 3])
 
         if CallStates.IN_CALL == self.contacts_obj.state:
             if self.contacts_obj.transition:

@@ -518,7 +518,7 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, profile, call_initiate_socket):
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, profile, call_initiate_socket, init_panel_create_ring_reciving):
         self.profile = profile
         self.root = root
         self.panel_window = None
@@ -535,6 +535,7 @@ class ContactsPanel:
         self.transition = False
 
         self.call_initiate_socket = call_initiate_socket
+        self.init_panel_create_ring_reciving = init_panel_create_ring_reciving
 
 
     def split_message2(self, message):
@@ -690,6 +691,7 @@ class ContactsPanel:
                             #move_to_call_receiving
                             self.state = CallStates.RINGING
                             self.transition = True
+                            self.init_panel_create_ring_reciving()
                         elif opcode == "IN_CALL":
                             #params = params[0].decode()
                             print("got in call!!")
