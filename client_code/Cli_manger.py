@@ -1,4 +1,4 @@
-from tkinter_update import *
+
 import socket
 from tkinter import *  # ייבוא כל הפונקציות והמחלקות מ-tkinter
 from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
@@ -7,6 +7,7 @@ from RegisterPanel import RegisterPanel
 from AssignPanel import AssignPanel
 from ContactsPanel import ContactsPanel
 from CallConnectHandling import CallConnectHandling
+from new_protocol import Pro
 from call_utilities import *
 
 class Cli:
@@ -32,10 +33,14 @@ class Cli:
                                       self.socket_to_server,
                                       self.AssignComplete)
         # sending root for socket_to_server and root
-        self.contacts_obj = ContactsPanel(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ringing,
-                                          self.move_to_ring_receiving, self.profile, call_initiate_socket, self.init_panel_create_ring_reciving)
-        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ring_receiving, self.profile, call_initiate_socket)
 
+        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.ContactsComplete, self.profile, call_initiate_socket)
+        self.contacts_obj = ContactsPanel(self.root,
+                                          self.socket_to_server,
+                                          self.ContactsComplete,
+                                          self.move_to_ringing_initiator,
+                                          self.profile,
+                                          call_initiate_socket)
         self.images = {}
         self.init_images_dict()
 
@@ -168,7 +173,6 @@ class Cli:
         self.contacts_obj.init_panel_create()
 
     def ContactsComplete(self):
-        pass
         self.contacts_obj.init_panel_destroy()
         self.call_obj.init_panel_create_ringing()
 
@@ -185,28 +189,50 @@ class Cli:
         self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
         self.assign_obj.init_panel_create()
 
+    def move_to_ringing_initiator(self):
+        self.contacts_obj.init_panel_destroy()
+        self.call_obj.init_panel_initiator_create()
+        #self.call_obj.init_panel_acceptor_create()
+        print("moved to ringing as initiator!!")
+
+    def move_to_ringing_acceptor(self):
+        self.contacts_obj.init_panel_destroy()
+        self.call_obj.init_panel_acceptor_create()
+        print("moved to ringing as acceptor!!")
+
+    # def move_to_ring_receiving(self):
+    #     self.contacts_obj.init_panel_destroy()
+    #     self.init_panel_create_ring_reciving()
+    #     print("moved to ring receiving!!")
+
+    def move_to_calling(self):
+        self.destroy_panel_ringing()
+        self.init_panel_calling()
+
+    def move_to_call_receiving(self):
+        self.contacts_obj.state = ContactsPanel.IN_CALL
+
+        cmd = Pro.cmds[Pro.IN_CALL]
+        # send IN_CALL message to the caller = CALL ACK
+        try:
+            sending_cmd = Pro.create_msg(cmd.encode(), [])
+            self.contacts_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+            print("IN_CALL message sent successfully")
+        except Exception as e:
+            print(f"Failed to send IN_CALL message: {e}")
 
 
+        self.destroy_panel_ring_receiver()
+        self.init_panel_call_receiver()
 
 
-
-
+        # then react to it
 
     def destroy_enter_panel(self):
         self.button_register.destroy()
         self.button_assign.destroy()
         self.main_image_label.destroy()
         self.button_frame.destroy()
-
-    def move_to_ringing(self):
-        self.contacts_obj.init_panel_destroy()
-        self.init_panel_create_ringing()
-        print("moved to ringing!!")
-
-    def move_to_ring_receiving(self):
-        self.contacts_obj.init_panel_destroy()
-        self.init_panel_create_ring_reciving()
-        print("moved to ring receiving!!")
 
     def init_panel_create_ringing(self):
         self.ringing_window = self.root
@@ -362,28 +388,7 @@ class Cli:
         self.call_who.destroy()
         self.btn_calling.destroy()
 
-    def move_to_calling(self):
-        self.destroy_panel_ringing()
-        self.init_panel_calling()
 
-    def move_to_call_receiving(self):
-        self.contacts_obj.state = ContactsPanel.IN_CALL
-
-        cmd = Pro.cmds[Pro.IN_CALL]
-        # send IN_CALL message to the caller = CALL ACK
-        try:
-            sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.contacts_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
-            print("IN_CALL message sent successfully")
-        except Exception as e:
-            print(f"Failed to send IN_CALL message: {e}")
-
-
-        self.destroy_panel_ring_receiver()
-        self.init_panel_call_receiver()
-
-
-        # then react to it
 
     def hang_up_call(self):
         pass
@@ -474,16 +479,12 @@ class Cli:
         # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
         if CallStates.RINGING == self.contacts_obj.state:
             if self.contacts_obj.transition:
-                self.move_to_ring_receiving()
-                self.move_to_ringing()
+                self.move_to_ringing_acceptor()
+                #self.move_to_ringing()
                 self.contacts_obj.transition = False
 
 
-            self.btn_calling.image_id = (self.btn_calling.image_id + 1) % 6
-            self.btn_calling.config(image=self.btn_calling.image[self.btn_calling.image_id//3])
-
-            self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
-            self.calling_image.config(image=self.calling_image.image[self.calling_image.image_id // 3])
+            self.call_obj.animate_handle()
 
         if CallStates.IN_CALL == self.contacts_obj.state:
             if self.contacts_obj.transition:

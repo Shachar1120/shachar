@@ -30,7 +30,7 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing, move_to_call_receiving, profile, call_initiate_socket, init_answer_and_hangup_buttons):
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, call_initiate_socket):
         self.profile = profile
         self.root = root
         self.panel_window = None
@@ -41,13 +41,11 @@ class ContactsPanel:
         self.button_widgets = []
         self.assigned_clients_dict = None
         self.item_list = None
-        self.move_to_ringing = move_to_ringing
-        self.move_to_call_receiving = move_to_call_receiving
+        self.move_to_ringing_initiator = move_to_ringing_initiator
         self.state = CallStates.INIT
         self.transition = False
 
         self.call_initiate_socket = call_initiate_socket
-        self.init_answer_and_hangup_buttons = init_answer_and_hangup_buttons
 
 
     # def split_message2(self, message):
@@ -200,7 +198,7 @@ class ContactsPanel:
                             print("received call")
                             #tkinter after
                             #move_to_call_receiving
-                            self.init_answer_and_hangup_buttons()
+                            #self.init_panel_acceptor_create()
                             self.state = CallStates.RINGING
                             self.transition = True
                         elif opcode == "IN_CALL":
@@ -290,7 +288,7 @@ class ContactsPanel:
 
                 # move to new panel
                 # sending root for socket_to_server and root
-                self.move_to_ringing()
+                self.move_to_ringing_initiator()
             except Exception as ex:
                 print(ex)
         else:
