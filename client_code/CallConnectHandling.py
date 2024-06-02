@@ -6,27 +6,15 @@ from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
 import socket
 import pickle
 from new_protocol import Pro
-from Cli_manger import Cli
 import select
 from time import time
 from pathlib import Path
 import pyaudio
 
-
-
-class ButtonItem:
-    def __init__(self, item, call_func, dict):
-        self.item = item
-        self.call_handling = None
-        self.dict = dict
-        self.call_func = call_func
-
-    def item_clicked(self):
-        print(f"Clicked item: {self.item}")
-        clicked_item = {self.item}
-        self.call_func(self.item, self.dict) # call func is make call (of ContactsPanel class)
-
-
+class CallStates:
+    INIT = 0
+    RINGING = 1
+    IN_CALL = 2
 class CallConnectHandling:
     def __init__(self, root, socket_to_server, complete_func, move_to_call_receiving, profile, call_initiate_socket):
         self.profile = profile

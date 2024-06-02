@@ -3,8 +3,15 @@ import socket
 from tkinter import *  # ייבוא כל הפונקציות והמחלקות מ-tkinter
 from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
 import pyaudio
+from RegisterPanel import RegisterPanel
+from AssignPanel import AssignPanel
+from ContactsPanel import ContactsPanel
+from CallConnectHandling import CallConnectHandling
 
-
+class CallStates:
+    INIT = 0
+    RINGING = 1
+    IN_CALL = 2
 class Cli:
     def __init__(self, profile):
         # open socket with the server
