@@ -10,11 +10,7 @@ import select
 from time import time
 from pathlib import Path
 import pyaudio
-
-class CallStates:
-    INIT = 0
-    RINGING = 1
-    IN_CALL = 2
+from call_utilities import *
 
 class ButtonItem:
     def __init__(self, item, call_func, dict):
@@ -54,13 +50,13 @@ class ContactsPanel:
         self.init_answer_and_hangup_buttons = init_answer_and_hangup_buttons
 
 
-    def split_message2(self, message):
-
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-        opcode = message_parts[0]
-        nof_params = int(message_parts[1])
-        params = message_parts[2:]
-        return opcode, nof_params, params
+    # def split_message2(self, message):
+    #
+    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
+    #     opcode = message_parts[0]
+    #     nof_params = int(message_parts[1])
+    #     params = message_parts[2:]
+    #     return opcode, nof_params, params
 
     def send_cmd(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
@@ -99,8 +95,8 @@ class ContactsPanel:
         return opcode, nof_params, params
     def split_message3(self, message):
         message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
-        opcode = message_parts[0]
-        nof_params = int(message_parts[1])
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
         params = message_parts[2:]
         # params in this case is the pickle dict!!!
         print("split_message3:", opcode, nof_params, params)
@@ -194,8 +190,7 @@ class ContactsPanel:
                 elif self.call_initiate_socket: # for call handling
 
                     res, message = Pro.get_msg(self.call_initiate_socket)
-                    opcode, nof_params, params = self.split_message3(message)
-                    opcode = opcode.decode()
+                    opcode, nof_params, params = Pro.split_message(message)
                     print(f"wait_for_network: {message}")
                     if res:
                         print("the message is:", opcode, nof_params, params)
@@ -205,9 +200,9 @@ class ContactsPanel:
                             print("received call")
                             #tkinter after
                             #move_to_call_receiving
+                            self.init_answer_and_hangup_buttons()
                             self.state = CallStates.RINGING
                             self.transition = True
-                            self.init_answer_and_hangup_buttons()
                         elif opcode == "IN_CALL":
                             #params = params[0].decode()
                             print("got in call!!")

@@ -45,12 +45,12 @@ class AssignPanel:
             # If unsuccessful, the message is not in pickle format
             return False
 
-    def split_message(self, message):
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
-        opcode = message_parts[0].decode()
-        nof_params = int(message_parts[1].decode())
-        params = message_parts[2:]
-        return opcode, nof_params, params
+    # def split_message(self, message):
+    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+    #     opcode = message_parts[0].decode()
+    #     nof_params = int(message_parts[1].decode())
+    #     params = message_parts[2:]
+    #     return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":

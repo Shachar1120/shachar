@@ -6,10 +6,6 @@ from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
 import socket
 import pickle
 from new_protocol import Pro
-import select
-from time import time
-from pathlib import Path
-import pyaudio
 
 class RegisterPanel:
     def __init__(self, root, socket_to_server, complete_func, my_port):
@@ -53,12 +49,12 @@ class RegisterPanel:
             # If unsuccessful, the message is not in pickle format
             return False
 
-    def split_message1(self, message):
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER)  #.encode() # message: cmd + len(params) + params
-        opcode = message_parts[0]
-        nof_params = int(message_parts[1])
-        params = message_parts[2:]
-        return opcode, nof_params, params
+    # def split_message1(self, message):
+    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  #.encode() # message: cmd + len(params) + params
+    #     opcode = message_parts[0].decode()
+    #     nof_params = int(message_parts[1].decode())
+    #     params = message_parts[2:]
+    #     return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -128,10 +124,9 @@ class RegisterPanel:
                 self.send_cmd(cmd.encode(), params)
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
-                msg_response = msg_response.decode()
+                msg_response = msg_response
                 if res_response:
-                    opcode, nof_params, params = self.split_message1(msg_response)
-                    #res_split_msg, cmd_response, params_response = self.split_message(msg_response)
+                    opcode, nof_params, params = Pro.split_message(msg_response)
 
                     # res_response = False: only got cmd (like in REGISTER N/ACK, ASSIGN N/ACK)
                     if (opcode == "REGISTER_NACK") or (opcode == "REGISTER_ACK"):

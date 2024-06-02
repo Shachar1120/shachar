@@ -10,11 +10,8 @@ import select
 from time import time
 from pathlib import Path
 import pyaudio
+from call_utilities import *
 
-class CallStates:
-    INIT = 0
-    RINGING = 1
-    IN_CALL = 2
 class CallConnectHandling:
     def __init__(self, root, socket_to_server, complete_func, move_to_call_receiving, profile, call_initiate_socket):
         self.profile = profile

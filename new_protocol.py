@@ -140,6 +140,13 @@ class Pro:
         return False
 
     @staticmethod
+    def split_message(message):
+        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+        opcode = message_parts[0].decode()
+        nof_params = int(message_parts[1].decode())
+        params = message_parts[2:]
+        return opcode, nof_params, params
+    @staticmethod
     def check_register_or_assign(cmd: str):
         return cmd == Pro.cmds[Pro.REGISTER] or cmd == Pro.cmds[Pro.ASSIGN]
 

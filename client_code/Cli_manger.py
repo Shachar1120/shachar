@@ -7,19 +7,14 @@ from RegisterPanel import RegisterPanel
 from AssignPanel import AssignPanel
 from ContactsPanel import ContactsPanel
 from CallConnectHandling import CallConnectHandling
+from call_utilities import *
 
-class CallStates:
-    INIT = 0
-    RINGING = 1
-    IN_CALL = 2
 class Cli:
     def __init__(self, profile):
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
-        self.call_accept_port = profile.call_accept_port
-        self.call_initiate_port = profile.call_initiate_port
         # self.assigned_client_details = {}  # Create the dictionary globally
 
         self.root = Tk()
@@ -29,9 +24,13 @@ class Cli:
         self.root.geometry("600x400")
         self.root.title("Home Page")
 
-
-        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.call_accept_port)
-        self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
+        self.register_obj = RegisterPanel(self.root,
+                                          self.socket_to_server,
+                                          self.RegisterComplete,
+                                          self.profile.call_accept_port)
+        self.assign_obj = AssignPanel(self.root,
+                                      self.socket_to_server,
+                                      self.AssignComplete)
         # sending root for socket_to_server and root
         self.contacts_obj = ContactsPanel(self.root, self.socket_to_server, self.ContactsComplete, self.move_to_ringing,
                                           self.move_to_ring_receiving, self.profile, call_initiate_socket, self.init_panel_create_ring_reciving)
@@ -42,6 +41,22 @@ class Cli:
 
         self.init_panel_create()
 
+    def init_panel_create(self):
+
+        # יצירת תווית והצבת התמונה הראשית בתוכה
+        self.main_image_label = Label(self.root, image=self.images['main_image'])
+        self.main_image_label.pack(pady=20)  # הצבת התמונה במרכז עם מרווח מעל ומתחת
+
+        # יצירת מסגרת עבור הכפתורים
+        self.button_frame = Frame(self.root)
+        self.button_frame.pack(pady=10)  # הצבת המסגרת עם מרווח מתחת
+
+        # יצירת כפתורים והצבתם במסגרת, הסתרת המסגרת כך שהתמונות יראו כחלק מהמסך
+        self.button_register = Button(self.button_frame, image=self.images['register_button_image'], command=self.move_to_register, bd=0)
+        self.button_register.pack(side=LEFT, padx=10)  # הצבת הכפתור הראשון עם מרווח מימין
+
+        self.button_assign = Button(self.button_frame, image=self.images['login_button_image'], command=self.move_to_assign, bd=0)
+        self.button_assign.pack(side=LEFT, padx=10)  # הצבת הכפתור השני עם מרווח מימין
 
     def init_images_dict(self):
         # נתיבים לתמונות
@@ -54,59 +69,59 @@ class Cli:
         self.images['register_button_image'] = self.load_image(register_button_image_path)
         self.images['login_button_image'] = self.load_image(login_button_image_path)
 
-    def send_cmd(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.socket_to_server.send(msg_to_send)
+    # def send_cmd(self, cmd: bytes, params):
+    #     msg_to_send = Pro.create_msg(cmd, params)
+    #     self.socket_to_server.send(msg_to_send)
 
-    def get_response(self):
-        res, message = Pro.get_msg(self.socket_to_server)
-        message = message.decode()
-        if not res:
-            return False, message
-        return True, message
+    # def get_response(self):
+    #     res, message = Pro.get_msg(self.socket_to_server)
+    #     message = message.decode()
+    #     if not res:
+    #         return False, message
+    #     return True, message
 
-    def get_response_from_other_client(self):
-        try:
-            # Attempt to receive a message using Pro.get_msg
-            res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
-            message = message.decode()
-            print(f"Response: {res}, Message: {message}")
+    # def get_response_from_other_client(self):
+    #     try:
+    #         # Attempt to receive a message using Pro.get_msg
+    #         res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
+    #         message = message.decode()
+    #         print(f"Response: {res}, Message: {message}")
+    #
+    #         if not res:
+    #             print(f"Failed to receive message. Response: {res}")
+    #             return False, message
+    #
+    #         print(f"Successfully received message: {message}")
+    #         return True, message
+    #
+    #     except socket.timeout:
+    #         print("Socket timed out while waiting for a response.")
+    #         return False, "Socket timeout"
+    #
+    #     except socket.error as e:
+    #         print(f"Socket error occurred: {e}")
+    #         return False, f"Socket error: {e}"
+    #
+    #     except Exception as e:
+    #         print(f"An unexpected error occurred: {e}")
+    #         return False, f"Unexpected error: {e}"
 
-            if not res:
-                print(f"Failed to receive message. Response: {res}")
-                return False, message
+    # def check_if_pickle(self, msg):
+    #     try:
+    #         # Try to unpickle the message
+    #         pickle.loads(msg)
+    #         # If successful, the message is in pickle format
+    #         return True
+    #     except pickle.UnpicklingError:
+    #         # If unsuccessful, the message is not in pickle format
+    #         return False
 
-            print(f"Successfully received message: {message}")
-            return True, message
-
-        except socket.timeout:
-            print("Socket timed out while waiting for a response.")
-            return False, "Socket timeout"
-
-        except socket.error as e:
-            print(f"Socket error occurred: {e}")
-            return False, f"Socket error: {e}"
-
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            return False, f"Unexpected error: {e}"
-
-    def check_if_pickle(self, msg):
-        try:
-            # Try to unpickle the message
-            pickle.loads(msg)
-            # If successful, the message is in pickle format
-            return True
-        except pickle.UnpicklingError:
-            # If unsuccessful, the message is not in pickle format
-            return False
-
-    def split_message(self, message):
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
-        opcode = message_parts[0].decode()
-        nof_params = int(message_parts[1].decode())
-        params = message_parts[2:][0]
-        return opcode, nof_params, params
+    # def split_message(self, message):
+    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
+    #     opcode = message_parts[0].decode()
+    #     nof_params = int(message_parts[1].decode())
+    #     params = message_parts[2:]
+    #     return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -162,7 +177,7 @@ class Cli:
 
     def move_to_register(self):
         self.destroy_enter_panel()
-        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.call_accept_port)
+        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.profile.call_accept_port)
         self.register_obj.init_panel_create()
 
     def move_to_assign(self):
@@ -172,44 +187,9 @@ class Cli:
 
 
 
-    def init_panel_create(self):
-
-        # יצירת תווית והצבת התמונה הראשית בתוכה
-        self.main_image_label = Label(self.root, image=self.images['main_image'])
-        self.main_image_label.pack(pady=20)  # הצבת התמונה במרכז עם מרווח מעל ומתחת
-
-        # יצירת מסגרת עבור הכפתורים
-        self.button_frame = Frame(self.root)
-        self.button_frame.pack(pady=10)  # הצבת המסגרת עם מרווח מתחת
-
-        # יצירת כפתורים והצבתם במסגרת, הסתרת המסגרת כך שהתמונות יראו כחלק מהמסך
-        self.button_register = Button(self.button_frame, image=self.images['register_button_image'], command=self.move_to_register, bd=0)
-        self.button_register.pack(side=LEFT, padx=10)  # הצבת הכפתור הראשון עם מרווח מימין
-
-        self.button_assign = Button(self.button_frame, image=self.images['login_button_image'], command=self.move_to_assign, bd=0)
-        self.button_assign.pack(side=LEFT, padx=10)  # הצבת הכפתור השני עם מרווח מימין
-
-        #############
-        #self.welcome_label = Label(self.root, text="Welcome to VidPal!")
-        #self.welcome_label.place(x=40, y=50)
 
 
-        # Import the image using PhotoImage function
-        #click_btn = PhotoImage(file=r"..\images\register icon.png")
 
-        # Let us create a label for button event
-        #img_label = Label(image=click_btn)
-        # Let us create a dummy button and pass the image
-        #button = Button(self.root, image=click_btn, command=self.move_to_register,
-                        #borderwidth=0)
-        #button.pack(pady=30)
-        # Create a Button
-        #self.btn_reg = Button(self.root, image=click_btn, command=self.move_to_register)
-        #self.btn_reg.place(x=30, y=100)
-
-        # Create a Button
-        #self.btn_assign = Button(self.root, text='Log In', command=self.move_to_assign)
-        #self.btn_assign.place(x=200, y=100)
 
 
     def destroy_enter_panel(self):
@@ -259,10 +239,10 @@ class Cli:
 
 
         button_array = [photoimage1, photoimage2, photoimage3]
-        self.calling_button = Button(self.ringing_window, image=button_array[0], command=self.move_to_call_receiving)
-        self.calling_button.place(x=200, y=100)
-        self.calling_button.image = button_array
-        self.calling_button.image_id = 0
+        self.calling_image = Label(self.ringing_window, image=button_array[0])
+        self.calling_image.place(x=200, y=100)
+        self.calling_image.image = button_array
+        self.calling_image.image_id = 0
 
         self.contacts_obj.state = CallStates.RINGING
         self.contacts_obj.transition = True
@@ -297,12 +277,12 @@ class Cli:
 
     def init_panel_create_ring_reciving(self):
         self.ringing_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        self.ringing_window.title("Someone is ringing")
-
-        self.call_who = Label(self.ringing_window, text="Someone is ringing")
-        self.call_who.place(x=180, y=60)
+        # # sets the title of the
+        # # Toplevel widget
+        # self.ringing_window.title("Someone is ringing")
+        #
+        # self.call_who = Label(self.ringing_window, text="Someone is ringing")
+        # self.call_who.place(x=180, y=60)
 
 
 
@@ -315,27 +295,58 @@ class Cli:
         photoimage3 = photo.subsample(3, 3)
 
         button_array = [photoimage1, photoimage2, photoimage3]
-        self.btn_calling = Button(self.ringing_window, image=button_array[0], command=self.move_to_call_receiving)
+        self.btn_calling = Label(self.ringing_window, image=button_array[0])
         self.btn_calling.place(x=200, y=100)
         self.btn_calling.image = button_array
         self.btn_calling.image_id = 0
 
 
+
+
+        # self.call_who = Label(self.ringing_window, text="... is calling")
+        # self.call_who.pack(pady=20)
+        #
+        # self.ringing_window.title("Incoming Call")
+        #
+        # self.photo_answer = PhotoImage(file=r"..\images\answer.png").subsample(3, 3)
+        # self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
+        #
+        # # Create buttons
+        # self.btn_hang_up = Button(self.ringing_window, image=self.photo_hang_up, command=self.hang_up_call,
+        #                           borderwidth=0)
+        # self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
+        # self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
+        #
+        # self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_receiving,
+        #                          borderwidth=0)
+        # self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
+        # self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
+
+    def init_answer_and_hangup_buttons(self):
+
+        print("moved to init_answer_and_hangup_buttons!!!")
+        # sets the title of the
+        # Toplevel widget
+        self.ringing_window.title("Someone is ringing")
+
+        self.call_who = Label(self.ringing_window, text="Someone is ringing")
+        self.call_who.place(x=180, y=60)
         self.call_who = Label(self.ringing_window, text="... is calling")
         self.call_who.pack(pady=20)
 
         self.ringing_window.title("Incoming Call")
 
-    def init_answer_and_hangup_buttons(self):
         self.photo_answer = PhotoImage(file=r"..\images\answer.png").subsample(3, 3)
         self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
 
         # Create buttons
-        self.btn_hang_up = Button(self.ringing_window, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
+        self.btn_hang_up = Button(self.ringing_window, image=self.photo_hang_up, command=self.hang_up_call,
+                                  borderwidth=0)
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
 
-        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_receiving, borderwidth=0)
+        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_receiving,
+                                 borderwidth=0)
         self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
         self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
 
@@ -471,8 +482,8 @@ class Cli:
             self.btn_calling.image_id = (self.btn_calling.image_id + 1) % 6
             self.btn_calling.config(image=self.btn_calling.image[self.btn_calling.image_id//3])
 
-            self.calling_button.image_id = (self.calling_button.image_id + 1) % 6
-            self.calling_button.config(image=self.calling_button.image[self.calling_button.image_id // 3])
+            self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
+            self.calling_image.config(image=self.calling_image.image[self.calling_image.image_id // 3])
 
         if CallStates.IN_CALL == self.contacts_obj.state:
             if self.contacts_obj.transition:
@@ -480,17 +491,6 @@ class Cli:
                 self.contacts_obj.transition = False
 
         self.root.after(40, self.check_network_answers)
-
-
-class UserProfile:
-    # your_port == call_initiate_port
-    # my_port == call_accept_port
-    def __init__(self, call_accept_port, call_initiate_port, my_mic, my_speaker):
-        self.call_accept_port = call_accept_port
-        self.call_initiate_port = call_initiate_port
-        self.my_mic = my_mic
-        self.my_speaker = my_speaker
-
 
 def Main():
     print("1: for 2001, 2: for 2002")
@@ -502,7 +502,6 @@ def Main():
     myclient = Cli(profiles[whoami-1]) # if I write 2 -profiles[1], and if I write 1-profiles[0]
     myclient.connect("127.0.0.1", Pro.PORT)
     myclient.main_loop()
-
 
 
 if __name__ == "__main__":
