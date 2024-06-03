@@ -30,7 +30,7 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, call_initiate_socket, move_to_call_receiving):
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, networking_obj):
         self.profile = profile
         self.root = root
         self.panel_window = None
@@ -44,9 +44,9 @@ class ContactsPanel:
         self.move_to_ringing_initiator = move_to_ringing_initiator
         self.state = CallStates.INIT
         self.transition = False
-        self.move_to_call_receiving = move_to_call_receiving
 
-        self.call_initiate_socket = call_initiate_socket
+
+        self.networking_obj = networking_obj
 
 
     # def split_message2(self, message):
@@ -73,7 +73,7 @@ class ContactsPanel:
 
     def send_cmd_to_other_client(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
-        self.call_initiate_socket.send(msg_to_send)
+        self.networking_obj.call_initiate_socket.send(msg_to_send)
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -103,12 +103,12 @@ class ContactsPanel:
 
     def init_panel_create(self):
 
-        self.init_network()
-        # יצירת תהליך חדש שמחכה לפתיחת שיחה
-        thread = threading.Thread(target=self.wait_for_network)
-
-        # הפעלת התהליך
-        thread.start()
+        # self.init_network()
+        # # יצירת תהליך חדש שמחכה לפתיחת שיחה
+        # thread = threading.Thread(target=self.wait_for_network)
+        #
+        # # הפעלת התהליך
+        # thread.start()
 
         self.Logged_In_window = self.root
         self.Logged_In_window.title("Your Contacts:")
@@ -156,94 +156,6 @@ class ContactsPanel:
 
 
 
-    ###################################
-    # network handling part:
-    ###################################
-
-    def init_network(self):
-        # open socket with the server
-        self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.call_accept_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.call_accept_socket.bind(("0.0.0.0", self.profile.call_accept_port))
-        self.call_accept_socket.listen()
-
-        # self.call_obj = None
-        self.loggedIn_obj = None
-
-
-    ################################
-    # network ==> responder ... secondary thread
-    ################################
-    def wait_for_network(self):
-
-        while True:
-            rlist, _, _ = select.select([self.socket_to_server, self.call_initiate_socket, self.call_accept_socket], [], [])
-
-            for s in rlist:
-                if s == self.socket_to_server: #connect with server
-                    pass
-                elif s == self.call_accept_socket: #for call establishment
-                    self.call_initiate_socket, _ = self.call_accept_socket.accept()
-                    print("Client connected")
-
-                elif self.call_initiate_socket: # for call handling
-
-                    res, message = Pro.get_msg(self.call_initiate_socket)
-                    opcode, nof_params, params = Pro.split_message(message)
-                    print(f"wait_for_network: {message}")
-                    if res:
-                        print("the message is:", opcode, nof_params, params)
-
-                        if opcode == "RING":
-                            params = params[0].decode()
-                            print("received call")
-                            #tkinter after
-                            self.move_to_call_receiving
-                            #self.init_panel_acceptor_create()
-                            self.state = CallStates.RINGING
-                            self.transition = True
-                        elif opcode == "IN_CALL":
-                            #params = params[0].decode()
-                            print("got in call!!")
-                            self.state = CallStates.IN_CALL
-                            self.transition = True
-                            CHUNK = 4096
-                            FORMAT = pyaudio.paInt16
-                            CHANNELS = 1
-                            RATE = 44100
-                            RECORD_SECONDS = 10
-                            self.p = pyaudio.PyAudio()
-                            self.stream_input = self.p.open(format=FORMAT,
-                                                        channels=CHANNELS,
-                                                        rate=RATE,
-                                                        input=True,
-                                                        input_device_index=self.profile.my_mic,
-                                                        frames_per_buffer=CHUNK)
-                            self.stream_output = self.p.open(format=FORMAT,
-                                                        channels=CHANNELS,
-                                                        rate=RATE,
-                                                        output=True,  # for speaker
-                                                        input_device_index=self.profile.my_speaker,
-                                                        frames_per_buffer=CHUNK)
-
-
-
-                        elif opcode == "FRAME":
-                            data = params[0]
-                            print("FRAME params!!! (data)", params)
-                            #accept frame and play
-                            #data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
-                            #data = pickle.loads(data)
-                            print(f"got frame: {data}")
-                            self.stream_output.write(data)
-                            pass
-
-                        else:
-                            pass
-
-                    else:
-                        print("didnt get the message")
-
 
     def handle_connection_failed(self):
         pass
@@ -268,7 +180,7 @@ class ContactsPanel:
                 # make the connection
                 # point to point
                 self.other_client_port = self.assigned_clients_dict[item][1]
-                self.call_initiate_socket.connect(("127.0.0.1", self.other_client_port)) # self.call_initiate_port
+                self.networking_obj.all_initiate_socket.connect(("172.16.15.231", self.other_client_port)) # self.call_initiate_port
                 print("client connected")
             except Exception as ex:
                 print("client couldnt connect")

@@ -9,11 +9,11 @@ from new_protocol import Pro
 import select
 from time import time
 from pathlib import Path
-import pyaudio
+from AudioHandling import AudioHandling
 from call_utilities import *
 
 class CallConnectHandling:
-    def __init__(self, root, socket_to_server, complete_func, profile, call_initiate_socket, call_transmit, move_to_call_receiving):
+    def __init__(self, root, socket_to_server, complete_func, profile, networking_obj, move_to_in_call_acceptotr):
         self.profile = profile
         self.root = root
         self.call_who = None
@@ -30,13 +30,15 @@ class CallConnectHandling:
         self.state = CallStates.INIT
         self.transition = False
         self.images = {}
-        self.call_transmit = call_transmit
-        self.move_to_call_receiving = move_to_call_receiving
+        self.move_to_in_call_acceptotr = move_to_in_call_acceptotr
 
-        self.call_initiate_socket = call_initiate_socket
+        self.networking_obj = networking_obj
 
         self.transition = False
         self.state = CallStates.INIT
+
+        self.audio_handling = None
+
 
     def load_image(self, path, size=None):
         # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
@@ -110,7 +112,7 @@ class CallConnectHandling:
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
 
-        self.btn_answer = Button(self.root, image=self.photo_answer, command=self.move_to_call_receiving,
+        self.btn_answer = Button(self.root, image=self.photo_answer, command=self.move_to_in_call_acceptotr,
                                  borderwidth=0)
         self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
         self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
@@ -147,13 +149,33 @@ class CallConnectHandling:
         self.call_who = Label(self.call_window, text="In call! as call reciever")
         self.call_who.place(x=180, y=60)
 
-        thread = threading.Thread(target=self.call_transmit).start()
+        self.audio_handling = AudioHandling(self.profile)
     def animate_handle(self):
 
         self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
         self.calling_image.config(image=self.calling_image.image[self.calling_image.image_id // 3])
     def hang_up_call(self):
         pass
+
+    def open_and_start_audio_channels(self):
+        CHUNK = 4096
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 1
+        RATE = 44100
+        RECORD_SECONDS = 10
+        self.p = pyaudio.PyAudio()
+        self.stream_input = self.p.open(format=FORMAT,
+                                        channels=CHANNELS,
+                                        rate=RATE,
+                                        input=True,
+                                        input_device_index=self.profile.my_mic,
+                                        frames_per_buffer=CHUNK)
+        self.stream_output = self.p.open(format=FORMAT,
+                                         channels=CHANNELS,
+                                         rate=RATE,
+                                         output=True,  # for speaker
+                                         input_device_index=self.profile.my_speaker,
+                                         frames_per_buffer=CHUNK)
     # def init_panel_destroy(self):
     #     self.call_who.destroy()
     #     self.enter_username.destroy()

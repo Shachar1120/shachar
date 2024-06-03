@@ -10,12 +10,12 @@ from ContactsPanel import ContactsPanel
 from CallConnectHandling import CallConnectHandling
 from new_protocol import Pro
 from call_utilities import *
+from NetworkHandling import NetworkHandling
 
 class Cli:
     def __init__(self, profile):
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
         # self.assigned_client_details = {}  # Create the dictionary globally
 
@@ -26,6 +26,9 @@ class Cli:
         self.root.geometry("600x400")
         self.root.title("Home Page")
 
+        self.networking_obj = NetworkHandling(self.socket_to_server, self.profile)
+        self.networking_obj.init_network()
+
         self.register_obj = RegisterPanel(self.root,
                                           self.socket_to_server,
                                           self.RegisterComplete,
@@ -35,14 +38,19 @@ class Cli:
                                       self.AssignComplete)
         # sending root for socket_to_server and root
 
-        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.ContactsComplete, self.profile, call_initiate_socket, self.call_transmit, self.move_to_call_receiving)
+        self.call_obj = CallConnectHandling(self.root,
+                                            self.socket_to_server,
+                                            self.ContactsComplete,
+                                            self.profile,
+                                            self.networking_obj,
+                                            self.move_to_in_call_acceptotr())
+
         self.contacts_obj = ContactsPanel(self.root,
                                           self.socket_to_server,
                                           self.ContactsComplete,
                                           self.move_to_ringing_initiator,
                                           self.profile,
-                                          call_initiate_socket,
-                                          self.move_to_call_receiving)
+                                          self.networking_obj)
         self.images = {}
         self.init_images_dict()
 
@@ -76,59 +84,6 @@ class Cli:
         self.images['register_button_image'] = self.load_image(register_button_image_path)
         self.images['login_button_image'] = self.load_image(login_button_image_path)
 
-    # def send_cmd(self, cmd: bytes, params):
-    #     msg_to_send = Pro.create_msg(cmd, params)
-    #     self.socket_to_server.send(msg_to_send)
-
-    # def get_response(self):
-    #     res, message = Pro.get_msg(self.socket_to_server)
-    #     message = message.decode()
-    #     if not res:
-    #         return False, message
-    #     return True, message
-
-    # def get_response_from_other_client(self):
-    #     try:
-    #         # Attempt to receive a message using Pro.get_msg
-    #         res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
-    #         message = message.decode()
-    #         print(f"Response: {res}, Message: {message}")
-    #
-    #         if not res:
-    #             print(f"Failed to receive message. Response: {res}")
-    #             return False, message
-    #
-    #         print(f"Successfully received message: {message}")
-    #         return True, message
-    #
-    #     except socket.timeout:
-    #         print("Socket timed out while waiting for a response.")
-    #         return False, "Socket timeout"
-    #
-    #     except socket.error as e:
-    #         print(f"Socket error occurred: {e}")
-    #         return False, f"Socket error: {e}"
-    #
-    #     except Exception as e:
-    #         print(f"An unexpected error occurred: {e}")
-    #         return False, f"Unexpected error: {e}"
-
-    # def check_if_pickle(self, msg):
-    #     try:
-    #         # Try to unpickle the message
-    #         pickle.loads(msg)
-    #         # If successful, the message is in pickle format
-    #         return True
-    #     except pickle.UnpicklingError:
-    #         # If unsuccessful, the message is not in pickle format
-    #         return False
-
-    # def split_message(self, message):
-    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
-    #     opcode = message_parts[0].decode()
-    #     nof_params = int(message_parts[1].decode())
-    #     params = message_parts[2:]
-    #     return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
         if response == "TARGET_NACK":
@@ -172,6 +127,15 @@ class Cli:
         self.assign_obj.init_panel_destroy()
         # destroy main:
         self.destroy_enter_panel()
+
+        # start call based networking
+
+        # יצירת תהליך חדש שמחכה לפתיחת שיחה
+        thread = threading.Thread(target=self.networking_obj.wait_for_network)
+
+        # הפעלת התהליך
+        thread.start()
+
         self.contacts_obj.init_panel_create()
 
     def ContactsComplete(self):
@@ -207,18 +171,20 @@ class Cli:
     #     self.init_panel_create_ring_reciving()
     #     print("moved to ring receiving!!")
 
-    def move_to_calling(self):
+    def move_to_in_call_initiator(self):
+
         self.call_obj.destroy_panel_initiator_create()
+        self.contacts_obj.state = ContactsPanel.IN_CALL
         self.call_obj.init_panel_calling()
 
-    def move_to_call_receiving(self):
+    def move_to_in_call_acceptotr(self):
         self.contacts_obj.state = ContactsPanel.IN_CALL
 
         cmd = Pro.cmds[Pro.IN_CALL]
         # send IN_CALL message to the caller = CALL ACK
         try:
             sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.contacts_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+            self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
             print("IN_CALL message sent successfully")
         except Exception as e:
             print(f"Failed to send IN_CALL message: {e}")
@@ -226,6 +192,11 @@ class Cli:
 
         self.call_obj.destroy_panel_acceptor_create()
         self.call_obj.init_panel_call_receiver()
+        if self.call_obj.audio_handling is not None:
+            self.networking_obj.set_audio_handler(self.call_obj.audio_handling)
+        else:
+            print("missing audio handler!!!")
+
 
 
         # then react to it
@@ -279,7 +250,7 @@ class Cli:
     def check_if_got_msg(self):
         try:
             # Attempt to receive a message using Pro.get_msg
-            res, message = Pro.get_msg(self.contacts_obj.call_initiate_socket)
+            res, message = Pro.get_msg(self.networking_obj.call_initiate_socket)
             message = message.decode()
             print(f"Response: {res}, Message: {message}")
 
@@ -373,7 +344,7 @@ class Cli:
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
 
-        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_receiving,
+        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_in_call_acceptotr,
                                  borderwidth=0)
         self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
         self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
@@ -409,42 +380,6 @@ class Cli:
             # Check if this device is a microphone (an input device)
             if device_info.get('maxInputChannels') > 0:
                 print(f"Microphone: {device_info.get('name')} , Device Index: {device_info.get('index')}")
-    def call_transmit(self):
-
-        # read audio and send
-        sound = True
-        CHUNK = 4096
-        FORMAT = pyaudio.paInt16
-        CHANNELS = 1
-        RATE = 44100
-        RECORD_SECONDS = 10
-
-        p = pyaudio.PyAudio()
-        stream_input = p.open(format=FORMAT,
-                              channels=CHANNELS,
-                              rate=RATE,
-                              input=True,
-                              input_device_index=self.profile.my_mic,
-                              frames_per_buffer=CHUNK)
-        stream_output = p.open(format=FORMAT,
-                               channels=CHANNELS,
-                               rate=RATE,
-                               output=True,  # for speaker
-                               input_device_index=self.profile.my_speaker,
-                               frames_per_buffer=CHUNK)
-
-        while True:
-            data = stream_input.read(CHUNK)
-
-            cmd = Pro.cmds[Pro.FRAME].encode()
-            #params = [pickle.dumps(data)]
-            params = [data]
-            msg_to_send = Pro.create_msg(cmd, params)
-            self.contacts_obj.call_initiate_socket.send(msg_to_send)
-
-
-        p.terminate()
-
 
 
     def connect(self, ip, port):
@@ -470,7 +405,7 @@ class Cli:
 
         if CallStates.IN_CALL == self.contacts_obj.state:
             if self.contacts_obj.transition:
-                self.move_to_calling()
+                self.move_to_in_call_initiator()
                 self.contacts_obj.transition = False
 
         self.root.after(40, self.check_network_answers)
@@ -483,7 +418,7 @@ def Main():
     #if whoami== 1: #profile1 = profiles[0]
 
     myclient = Cli(profiles[whoami-1]) # if I write 2 -profiles[1], and if I write 1-profiles[0]
-    myclient.connect("127.0.0.1", Pro.PORT)
+    myclient.connect("172.16.15.231", Pro.PORT)
     myclient.main_loop()
 
 
