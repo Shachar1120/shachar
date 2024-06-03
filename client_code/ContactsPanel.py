@@ -30,7 +30,7 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, call_initiate_socket):
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, call_initiate_socket, move_to_call_receiving):
         self.profile = profile
         self.root = root
         self.panel_window = None
@@ -44,6 +44,7 @@ class ContactsPanel:
         self.move_to_ringing_initiator = move_to_ringing_initiator
         self.state = CallStates.INIT
         self.transition = False
+        self.move_to_call_receiving = move_to_call_receiving
 
         self.call_initiate_socket = call_initiate_socket
 
@@ -197,7 +198,7 @@ class ContactsPanel:
                             params = params[0].decode()
                             print("received call")
                             #tkinter after
-                            #move_to_call_receiving
+                            self.move_to_call_receiving
                             #self.init_panel_acceptor_create()
                             self.state = CallStates.RINGING
                             self.transition = True
@@ -232,7 +233,7 @@ class ContactsPanel:
                             print("FRAME params!!! (data)", params)
                             #accept frame and play
                             #data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
-                            data = pickle.loads(data)
+                            #data = pickle.loads(data)
                             print(f"got frame: {data}")
                             self.stream_output.write(data)
                             pass

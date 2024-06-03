@@ -1,5 +1,6 @@
 
 import socket
+import threading
 from tkinter import *  # ייבוא כל הפונקציות והמחלקות מ-tkinter
 from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
 import pyaudio
@@ -34,13 +35,14 @@ class Cli:
                                       self.AssignComplete)
         # sending root for socket_to_server and root
 
-        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.ContactsComplete, self.profile, call_initiate_socket)
+        self.call_obj = CallConnectHandling(self.root, self.socket_to_server, self.ContactsComplete, self.profile, call_initiate_socket, self.call_transmit, self.move_to_call_receiving)
         self.contacts_obj = ContactsPanel(self.root,
                                           self.socket_to_server,
                                           self.ContactsComplete,
                                           self.move_to_ringing_initiator,
                                           self.profile,
-                                          call_initiate_socket)
+                                          call_initiate_socket,
+                                          self.move_to_call_receiving)
         self.images = {}
         self.init_images_dict()
 
@@ -206,8 +208,8 @@ class Cli:
     #     print("moved to ring receiving!!")
 
     def move_to_calling(self):
-        self.destroy_panel_ringing()
-        self.init_panel_calling()
+        self.call_obj.destroy_panel_initiator_create()
+        self.call_obj.init_panel_calling()
 
     def move_to_call_receiving(self):
         self.contacts_obj.state = ContactsPanel.IN_CALL
@@ -222,8 +224,8 @@ class Cli:
             print(f"Failed to send IN_CALL message: {e}")
 
 
-        self.destroy_panel_ring_receiver()
-        self.init_panel_call_receiver()
+        self.call_obj.destroy_panel_acceptor_create()
+        self.call_obj.init_panel_call_receiver()
 
 
         # then react to it
@@ -377,27 +379,15 @@ class Cli:
         self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
 
 
-    def destroy_panel_ringing(self):
-        self.call_who.destroy()
-        #self.image_label.destroy()
-        #self.image_label = None
-        self.btn_calling1.destroy()
 
-    def destroy_panel_ring_receiver(self):
 
-        self.call_who.destroy()
-        self.btn_calling.destroy()
+
 
 
 
     def hang_up_call(self):
         pass
-    def init_panel_calling(self):
-        self.call_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        self.call_label = Label(self.ringing_window, text="In call! as caller")
-        self.call_label.place(x=180, y=60)
+
 
     def select_microphone(self, index, p):
         # Select a microphone with a specific index
@@ -455,15 +445,7 @@ class Cli:
 
         p.terminate()
 
-    def init_panel_call_receiver(self):
-        # in call
-        self.call_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        self.call_who = Label(self.ringing_window, text="In call! as call reciever")
-        self.call_who.place(x=180, y=60)
 
-        thread = threading.Thread(target=self.call_transmit).start()
 
     def connect(self, ip, port):
         self.socket_to_server.connect((ip, port))

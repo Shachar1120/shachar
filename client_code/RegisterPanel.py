@@ -137,7 +137,7 @@ class RegisterPanel:
                             # checking if the lable already exists
                             if not hasattr(self, 'already_registered_try_again'):
                                 self.already_registered_try_again = Label(self.register_panel_window,
-                                                                          text="User Already Registered! Try To Log Inq Use Differente Username")
+                                                                          text="User Already Registered! Try To Log In / Use Differente Username")
                                 self.already_registered_try_again.pack()
 
                             print(
@@ -162,7 +162,10 @@ class RegisterPanel:
         #self.home_screen_obj = self.init_panel_create()
         #self.home_screen_obj.init_panel_create()
 
-
+    def add_init_panel_create(self):
+        self.register_panel_window = self.root
+        self.user_name = Label(self.register_panel_window, text="password is incorrect!")
+        self.user_name.place(x=100, y=60)
 
     def init_panel_create(self):
 

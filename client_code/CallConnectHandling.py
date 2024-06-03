@@ -13,7 +13,7 @@ import pyaudio
 from call_utilities import *
 
 class CallConnectHandling:
-    def __init__(self, root, socket_to_server, complete_func, profile, call_initiate_socket):
+    def __init__(self, root, socket_to_server, complete_func, profile, call_initiate_socket, call_transmit, move_to_call_receiving):
         self.profile = profile
         self.root = root
         self.call_who = None
@@ -30,6 +30,8 @@ class CallConnectHandling:
         self.state = CallStates.INIT
         self.transition = False
         self.images = {}
+        self.call_transmit = call_transmit
+        self.move_to_call_receiving = move_to_call_receiving
 
         self.call_initiate_socket = call_initiate_socket
 
@@ -79,8 +81,13 @@ class CallConnectHandling:
         self.calling_image.image = button_array
         self.calling_image.image_id = 0
 
+        self.animate_handle()
         self.state = CallStates.RINGING
         self.transition = True
+
+    def destroy_panel_initiator_create(self):
+        self.call_who.destroy()
+        self.calling_image.destroy()
 
     def init_panel_acceptor_create(self):
         print("moved to init_answer_and_hangup_buttons!!!")
@@ -121,19 +128,38 @@ class CallConnectHandling:
         self.calling_image.place(x=200, y=100)
         self.calling_image.image = button_array
         self.calling_image.image_id = 0
+    def destroy_panel_acceptor_create(self):
+        self.call_who.destroy()
+        self.calling_image.destroy()
+        self.btn_hang_up.destroy()
+        self.btn_answer.destroy()
+    def init_panel_calling(self):
+        # sets the title of the
+        # Toplevel widget
+        self.call_label = Label(self.root, text="In call! as caller")
+        self.call_label.place(x=180, y=60)
 
+    def init_panel_call_receiver(self):
+        # in call
+        self.call_window = self.root
+        # sets the title of the
+        # Toplevel widget
+        self.call_who = Label(self.call_window, text="In call! as call reciever")
+        self.call_who.place(x=180, y=60)
+
+        thread = threading.Thread(target=self.call_transmit).start()
     def animate_handle(self):
 
         self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
         self.calling_image.config(image=self.calling_image.image[self.calling_image.image_id // 3])
     def hang_up_call(self):
         pass
-    def init_panel_destroy(self):
-        self.call_who.destroy()
-        self.enter_username.destroy()
-        self.username_input_area.destroy()
-        self.btn_contact.destroy()
-        self.call_window.destroy()
+    # def init_panel_destroy(self):
+    #     self.call_who.destroy()
+    #     self.enter_username.destroy()
+    #     self.username_input_area.destroy()
+    #     self.btn_contact.destroy()
+    #     self.call_window.destroy()
 
 
 
