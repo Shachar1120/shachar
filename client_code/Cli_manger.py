@@ -26,7 +26,7 @@ class Cli:
         self.root.geometry("600x400")
         self.root.title("Home Page")
 
-        self.networking_obj = NetworkHandling(self.socket_to_server, self.profile)
+        self.networking_obj = NetworkHandling(self.socket_to_server, self.profile, self.move_to_ringing_acceptor)
         self.networking_obj.init_network()
 
         self.register_obj = RegisterPanel(self.root,
@@ -36,25 +36,32 @@ class Cli:
         self.assign_obj = AssignPanel(self.root,
                                       self.socket_to_server,
                                       self.AssignComplete)
-        # sending root for socket_to_server and root
 
         self.call_obj = CallConnectHandling(self.root,
                                             self.socket_to_server,
                                             self.ContactsComplete,
                                             self.profile,
                                             self.networking_obj,
-                                            self.move_to_in_call_acceptotr())
 
+                                            self.move_to_in_call_acceptor)
         self.contacts_obj = ContactsPanel(self.root,
                                           self.socket_to_server,
                                           self.ContactsComplete,
                                           self.move_to_ringing_initiator,
                                           self.profile,
                                           self.networking_obj)
+
+
+
+
+
+
+
         self.images = {}
         self.init_images_dict()
 
         self.init_panel_create()
+
 
     def init_panel_create(self):
 
@@ -174,11 +181,11 @@ class Cli:
     def move_to_in_call_initiator(self):
 
         self.call_obj.destroy_panel_initiator_create()
-        self.contacts_obj.state = ContactsPanel.IN_CALL
-        self.call_obj.init_panel_calling()
+        self.call_obj.state = CallConnectHandling.IN_CALL
+        self.call_obj.init_panel_calling(self.contacts_obj.username)
 
-    def move_to_in_call_acceptotr(self):
-        self.contacts_obj.state = ContactsPanel.IN_CALL
+    def move_to_in_call_acceptor(self):
+        self.call_obj.state = CallConnectHandling.IN_CALL
 
         cmd = Pro.cmds[Pro.IN_CALL]
         # send IN_CALL message to the caller = CALL ACK
@@ -344,7 +351,7 @@ class Cli:
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
 
-        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_in_call_acceptotr,
+        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_in_call_acceptor,
                                  borderwidth=0)
         self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
         self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
@@ -394,19 +401,19 @@ class Cli:
     def check_network_answers(self):
         # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_ring שזה הthread הראשי
         # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
-        if CallStates.RINGING == self.contacts_obj.state:
-            if self.contacts_obj.transition:
+        if CallStates.RINGING == self.call_obj.state:
+            if self.call_obj.transition:
                 self.move_to_ringing_acceptor()
                 #self.move_to_ringing()
-                self.contacts_obj.transition = False
+                self.call_obj.transition = False
 
 
             self.call_obj.animate_handle()
 
-        if CallStates.IN_CALL == self.contacts_obj.state:
-            if self.contacts_obj.transition:
+        if CallStates.IN_CALL == self.call_obj.state:
+            if self.call_obj.transition:
                 self.move_to_in_call_initiator()
-                self.contacts_obj.transition = False
+                self.call_obj.transition = False
 
         self.root.after(40, self.check_network_answers)
 
@@ -418,7 +425,7 @@ def Main():
     #if whoami== 1: #profile1 = profiles[0]
 
     myclient = Cli(profiles[whoami-1]) # if I write 2 -profiles[1], and if I write 1-profiles[0]
-    myclient.connect("172.16.15.231", Pro.PORT)
+    myclient.connect("127.0.0.1", Pro.PORT)
     myclient.main_loop()
 
 

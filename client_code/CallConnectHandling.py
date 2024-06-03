@@ -13,7 +13,10 @@ from AudioHandling import AudioHandling
 from call_utilities import *
 
 class CallConnectHandling:
-    def __init__(self, root, socket_to_server, complete_func, profile, networking_obj, move_to_in_call_acceptotr):
+    INIT = 0
+    RINGING = 1
+    IN_CALL = 2
+    def __init__(self, root, socket_to_server, complete_func, profile, networking_obj, move_to_in_call_acceptor):
         self.profile = profile
         self.root = root
         self.call_who = None
@@ -30,7 +33,7 @@ class CallConnectHandling:
         self.state = CallStates.INIT
         self.transition = False
         self.images = {}
-        self.move_to_in_call_acceptotr = move_to_in_call_acceptotr
+        self.move_to_in_call_acceptor = move_to_in_call_acceptor
 
         self.networking_obj = networking_obj
 
@@ -39,6 +42,16 @@ class CallConnectHandling:
 
         self.audio_handling = None
 
+        self.networking_obj.register_on_ring(self.on_ring)
+        self.networking_obj.register_in_call(self.in_call)
+
+    def on_ring(self):
+        self.transition = True
+        self.state = CallStates.RINGING
+
+    def in_call(self):
+        self.transition = True
+        self.state = CallStates.IN_CALL
 
     def load_image(self, path, size=None):
         # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
@@ -85,7 +98,7 @@ class CallConnectHandling:
 
         self.animate_handle()
         self.state = CallStates.RINGING
-        self.transition = True
+        self.transition = False
 
     def destroy_panel_initiator_create(self):
         self.call_who.destroy()
@@ -112,7 +125,7 @@ class CallConnectHandling:
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
 
-        self.btn_answer = Button(self.root, image=self.photo_answer, command=self.move_to_in_call_acceptotr,
+        self.btn_answer = Button(self.root, image=self.photo_answer, command=self.move_to_in_call_acceptor,
                                  borderwidth=0)
         self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
         self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
@@ -135,10 +148,14 @@ class CallConnectHandling:
         self.calling_image.destroy()
         self.btn_hang_up.destroy()
         self.btn_answer.destroy()
-    def init_panel_calling(self):
+    def init_panel_calling(self, username):
         # sets the title of the
         # Toplevel widget
+        self.label_username = username
         self.call_label = Label(self.root, text="In call! as caller")
+        self.call_label.place(x=180, y=60)
+
+        self.call_label = Label(self.root, text=self.label_username)
         self.call_label.place(x=180, y=60)
 
     def init_panel_call_receiver(self):

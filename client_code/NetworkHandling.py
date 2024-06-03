@@ -6,12 +6,15 @@ from AudioHandling import AudioHandling
 from call_utilities import *
 
 class NetworkHandling:
-    def __init__(self, socket_to_server, profile):
+    def __init__(self, socket_to_server, profile, move_to_ringing_acceptor):
         self.socket_to_server = socket_to_server
         self.call_initiate_socket = None
         self.call_accept_socket = None
         self.profile = profile
         self.audio_handler_obj = None
+        self.on_ring_func = None
+        self.in_call_func = None
+        self.move_to_ringing_acceptor = move_to_ringing_acceptor
 
     def init_network(self):
         # open socket with the server
@@ -20,8 +23,11 @@ class NetworkHandling:
         self.call_accept_socket.bind(("0.0.0.0", self.profile.call_accept_port))
         self.call_accept_socket.listen()
 
+    def register_on_ring(self, func):
+        self.on_ring_func = func
 
-
+    def register_in_call(self, func):
+        self.in_call_func = func
         ################################
         # network ==> responder ... secondary thread
         ################################
@@ -57,13 +63,13 @@ class NetworkHandling:
                             params = params[0].decode()
                             print("received call")
                             # tkinter after
-                            # self.move_to_call_receiving
+                            self.on_ring_func()
                             # self.init_panel_acceptor_create()
-                            self.state = CallStates.RINGING
-                            self.transition = True
+
                         elif opcode == "IN_CALL":
                             # params = params[0].decode()
                             print("got in call!!")
+                            self.in_call_func()
                             if self.audio_handler_obj is None:
                                 self.audio_handler_obj = AudioHandling(self.profile)
 
@@ -91,7 +97,7 @@ class NetworkHandling:
                         print("didnt get the message")
 
             # audio handling... if in call
-            if self.audio_handler_obj.stream_input is not None:
+            if self.audio_handler_obj is not None and self.audio_handler_obj.stream_input is not None:
                 data = self.audio_handler_obj.get_frame()
 
                 cmd = Pro.cmds[Pro.FRAME].encode()
