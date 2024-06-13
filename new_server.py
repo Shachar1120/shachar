@@ -2,8 +2,10 @@ import pickle
 import socket
 import threading
 import select
+import mysql.connector
 
 from new_protocol import Pro
+from DataBase import DataBase
 # from camera import Cam
 
 import glob
@@ -24,6 +26,8 @@ class Ser:
         print("Server is up and running")
 
         self.client_sockets = []
+
+        self.database_obj = DataBase("mydatabase")
 
         # self.registered = False
 
@@ -126,6 +130,7 @@ class Ser:
         return opcode, nof_params, params
 
     def handle_call(self, username_param):
+        # כנראה לא משתמשת בכלל בפונקציה!
         res = self.check_client_assigned(username_param)
         if res:
             print("you can call client, he is assigned")
@@ -145,6 +150,7 @@ class Ser:
 def main():
     # open socket with client
     myserver = Ser(Ser.IP, Pro.PORT)
+
 
     # handle requests until user asks to exit
     while True:
@@ -185,6 +191,7 @@ def main():
                     current_socket.send(message)
 
                 elif cmd_res == Pro.cmds[Pro.CALL]:
+                    # not sure if i still use it???
                     print("cmd is call!!")
                     res = myserver.handle_call(params_res)
                     # send response to the client
@@ -193,6 +200,7 @@ def main():
                     current_socket.send(message)
 
                 elif cmd_res == Pro.cmds[Pro.ASK_TARGET_DETAILS]:
+                    # not sure if i use it???
                     print("cmd is ASK_TARGET_DETAILS!!")
                     client_username = params_res[0]
                     # get client details(ip and port) from client_sockets_details dict

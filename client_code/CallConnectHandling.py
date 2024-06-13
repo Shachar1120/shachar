@@ -42,12 +42,12 @@ class CallConnectHandling:
 
         self.audio_handling = None
 
-        self.networking_obj.register_on_ring(self.on_ring)
+        self.networking_obj.register_on_ring(self.on_ring) # for acceptor???
         self.networking_obj.register_in_call(self.in_call)
 
     def on_ring(self):
         self.transition = True
-        self.state = CallStates.RINGING
+        self.state = CallStates.RINGING # for acceptor
 
     def in_call(self):
         self.transition = True
@@ -97,7 +97,7 @@ class CallConnectHandling:
         self.calling_image.image_id = 0
 
         self.animate_handle()
-        self.state = CallStates.RINGING
+        self.state = CallStates.RINGING # for initiator
         self.transition = False
 
     def destroy_panel_initiator_create(self):

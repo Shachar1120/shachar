@@ -1,4 +1,5 @@
 
+
 import socket
 import threading
 from tkinter import *  # ייבוא כל הפונקציות והמחלקות מ-tkinter
@@ -11,6 +12,9 @@ from CallConnectHandling import CallConnectHandling
 from new_protocol import Pro
 from call_utilities import *
 from NetworkHandling import NetworkHandling
+from DataBase import DataBase
+import sqlite3
+import mysql.connector
 
 class Cli:
     def __init__(self, profile):
@@ -18,6 +22,10 @@ class Cli:
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
         # self.assigned_client_details = {}  # Create the dictionary globally
+        self.db_name = "mydatabase"
+
+
+
 
         self.root = Tk()
 
@@ -25,6 +33,8 @@ class Cli:
         # root window
         self.root.geometry("600x400")
         self.root.title("Home Page")
+
+        #self.database_obj = DataBase()
 
         self.networking_obj = NetworkHandling(self.socket_to_server, self.profile, self.move_to_ringing_acceptor)
         self.networking_obj.init_network()
@@ -91,8 +101,40 @@ class Cli:
         self.images['register_button_image'] = self.load_image(register_button_image_path)
         self.images['login_button_image'] = self.load_image(login_button_image_path)
 
+    def create_new_account(self, username, password, channel_id):
+        """
+              Create a new account with the provided username, password, and channel ID.
+
+              :param username: The username for the new account.
+              :param password: The password for the new account.
+              :param channel_id: The channel ID associated with the new account.
+              """
+        try:
+            self.cursor.execute(f"INSERT INTO users VALUES ('{username}', '{password}', '{channel_id}')")
+            self.create_new_file_table(channel_id)
+        except Exception as e:
+            print(f"Error creating a new account: {e}")
+        finally:
+            self.conn.commit()
+
+    def create_new_file_table(self, channel_id):
+        """
+               Create a new file table for the specified channel ID.
+
+               :param channel_id: The channel ID for which to create the file table.
+               """
+        try:
+            self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS _{channel_id} (
+                                filename TEXT,
+                                message_id INTEGER
+                                )""")
+        except Exception as e:
+            print(f"Error during new table creation: {e}")
+            pass
+
 
     def handle_response_call_target(self, response):
+        # כנראה שלא משתמשת בפונקצייהה
         if response == "TARGET_NACK":
             # they need to call another client
             print("the person you wanted to call to isn't assigned yet")
@@ -102,6 +144,7 @@ class Cli:
             return True
 
     def handle_cmd(self, cmd):
+        # כנראה שלא משתמשת בפונקצייהה
         tof = Pro.check_cmd(cmd)
         if tof:
             # sending to server
@@ -147,7 +190,7 @@ class Cli:
 
     def ContactsComplete(self):
         self.contacts_obj.init_panel_destroy()
-        self.call_obj.init_panel_create_ringing()
+        #self.call_obj.init_panel_create_ringing()
 
     def CallComplete(self):
         pass
@@ -215,6 +258,7 @@ class Cli:
         self.button_frame.destroy()
 
     def init_panel_create_ringing(self):
+        # כנראה שלא משתמשת בפונקציה!!
         self.ringing_window = self.root
         self.ringing_window.title("Log In")
 
@@ -255,6 +299,7 @@ class Cli:
 
 
     def check_if_got_msg(self):
+        # כנראה שלא משתמשת בפונקציה!!
         try:
             # Attempt to receive a message using Pro.get_msg
             res, message = Pro.get_msg(self.networking_obj.call_initiate_socket)
@@ -282,6 +327,7 @@ class Cli:
 
 
     def init_panel_create_ring_reciving(self):
+        # כנראה שלא משתמשת בפונקציה!!
         self.ringing_window = self.root
         # # sets the title of the
         # # Toplevel widget
@@ -329,6 +375,7 @@ class Cli:
         # self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
 
     def init_answer_and_hangup_buttons(self):
+        # כנראה שלא משתמשת בפונקציה!!
 
         print("moved to init_answer_and_hangup_buttons!!!")
         # sets the title of the
@@ -368,6 +415,7 @@ class Cli:
 
 
     def select_microphone(self, index, p):
+        # כנראה שלא משתמשת בפונקציה!!
         # Select a microphone with a specific index
         print(f"please select a microphone")
         # Get the device info
@@ -380,6 +428,7 @@ class Cli:
             print(f"No microphone at index {index}")
 
     def list_microphones(self, devices, p):
+        # כנראה שלא משתמשת בפונקציה!!
         # Iterate through all devices
         for i in range(devices):
             # Get the device info
@@ -402,7 +451,7 @@ class Cli:
         # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_ring שזה הthread הראשי
         # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
         if CallStates.RINGING == self.call_obj.state:
-            if self.call_obj.transition:
+            if self.call_obj.transition: #is True
                 self.move_to_ringing_acceptor()
                 #self.move_to_ringing()
                 self.call_obj.transition = False

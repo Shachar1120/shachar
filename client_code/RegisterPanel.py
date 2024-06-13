@@ -40,6 +40,7 @@ class RegisterPanel:
         self.socket_to_server.send(msg_to_send)
 
     def check_if_pickle(self, msg):
+        # כנראה לא משתמשת בכלל בפונקציה!!
         try:
             # Try to unpickle the message
             pickle.loads(msg)
@@ -57,6 +58,7 @@ class RegisterPanel:
     #     return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
+        # כנראה לא משתמש בכלל בפונקציה!!
         if response == "TARGET_NACK":
             # they need to call another client
             print("the person you wanted to call to isn't assigned yet")
@@ -73,6 +75,7 @@ class RegisterPanel:
         return ImageTk.PhotoImage(image)
 
     def handle_cmd(self, cmd):
+        # כנראה לא משתמשת בפונקציה!!
         tof = Pro.check_cmd(cmd)
         if tof:
             # sending to server
@@ -113,11 +116,11 @@ class RegisterPanel:
 
             params = [username.encode(), password.encode(), my_port.encode()]
             if not Pro.check_cmd_and_params(cmd, params):
-                # Register_not_succeeded!!
+                # Register not succeeded!!
                 self.try_again_label1 = Label(self.register_panel_window, text="Couldn't Register! Try Again.")
                 self.try_again_label1.pack()
 
-                # self.Register_not_succeeded(newWindow)
+
 
             else:
                 # send cmd and params(username, password) to server
@@ -163,6 +166,7 @@ class RegisterPanel:
         #self.home_screen_obj.init_panel_create()
 
     def add_init_panel_create(self):
+        # כנראה לא משתמשת בפונקציה!!
         self.register_panel_window = self.root
         self.user_name = Label(self.register_panel_window, text="password is incorrect!")
         self.user_name.place(x=100, y=60)
@@ -182,7 +186,7 @@ class RegisterPanel:
         # Load the submit button image
         self.images['submit_button_image'] = self.load_image(submit_button_image_path)
 
-        self.register_panel_window.title("Log In")
+        self.register_panel_window.title("Register")
 
         # Create labels with larger font size and new blue color
         self.user_name = Label(self.register_panel_window, text="Username", font=label_font, fg=label_color)
@@ -245,6 +249,7 @@ class RegisterPanel:
 
 
     def Register_not_succeeded(self):
+        # כנראה לא משתמשת!!
         # Destroy the widgets in the registration window
         self.user_name.destroy()
         self.user_password.destroy()

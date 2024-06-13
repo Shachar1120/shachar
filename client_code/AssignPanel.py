@@ -23,6 +23,7 @@ class AssignPanel:
         self.images = {}
 
     def handle_response_assign(self, response):
+        # כנראה שלא משתמשת בפונקציה!!
         if response == "ASSIGN_NACK":
             # they need to enter username and password again
             print("you need to enter password again")
@@ -36,6 +37,7 @@ class AssignPanel:
         self.socket_to_server.send(msg_to_send)
 
     def check_if_pickle(self, msg):
+        # כנראה שלא משתמשת בפונקציה!!
         try:
             # Try to unpickle the message
             pickle.loads(msg)
@@ -53,6 +55,7 @@ class AssignPanel:
     #     return opcode, nof_params, params
 
     def handle_response_call_target(self, response):
+        # כנראה שלא משתמשת בפונקציה!!
         if response == "TARGET_NACK":
             # they need to call another client
             print("the person you wanted to call to isn't assigned yet")
@@ -62,6 +65,7 @@ class AssignPanel:
             return True
 
     def handle_cmd(self, cmd):
+        # כנראה שלא משתמשת בפונקציה!!
         tof = Pro.check_cmd(cmd)
         if tof:
             # sending to server
@@ -79,7 +83,6 @@ class AssignPanel:
 
 
     def handle_assign_response(self, msg):
-        #msg = msg.decode()
         msg_parts = msg.split(Pro.PARAMETERS_DELIMITER)
         print(msg_parts[0], "," , msg_parts[1])
         if msg_parts[0] == "ASSIGN_ACK":
@@ -228,6 +231,7 @@ class AssignPanel:
             self.try_again_label.pack()
 
     def Assign_not_succeeded(self):
+        # כנראה לא משתמשת בפונקציה!!
         # Destroy the widgets in the log in window
         self.user_name.destroy()
         self.user_password.destroy()

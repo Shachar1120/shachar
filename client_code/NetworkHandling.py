@@ -41,6 +41,7 @@ class NetworkHandling:
         RECORD_SECONDS = 10
 
         while True:
+            # אלגוריתם להמתנה להודעות מהרשת, וטיפול בהודעות על פי יעדן
             rlist, _, _ = select.select([self.socket_to_server, self.call_initiate_socket, self.call_accept_socket],
                                         [], [], 0.01)
 
@@ -108,4 +109,3 @@ class NetworkHandling:
 
     def set_audio_handler(self, audio_handler_obj):
         self.audio_handler_obj = audio_handler_obj
-

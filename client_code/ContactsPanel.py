@@ -22,7 +22,7 @@ class ButtonItem:
     def item_clicked(self):
         print(f"Clicked item: {self.item}")
         clicked_item = {self.item}
-        self.call_func(self.item, self.dict) # call func is make call (of ContactsPanel class)
+        self.call_func(self.item, self.dict) # call func is make ring (of ContactsPanel class)
 
 class ContactsPanel:
     INIT = 0
@@ -78,6 +78,7 @@ class ContactsPanel:
         self.networking_obj.call_initiate_socket.send(msg_to_send)
 
     def handle_response_call_target(self, response):
+        # כנראה שלא משתמשת בפונקציה!!
         if response == "TARGET_NACK":
             # they need to call another client
             print("the person you wanted to call to isn't assigned yet")
