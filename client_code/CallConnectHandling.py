@@ -64,10 +64,10 @@ class CallConnectHandling:
 
         self.root.title("Ringing")
 
-        self.root.configure(bg='#2f2f2f')
+        #self.root.configure(bg='#2f2f2f')
 
         # Label for "calling..." text
-        self.call_who = Label(self.root, text="calling...", font=("Garet", 24), bg='#2f2f2f', fg='white')
+        self.call_who = Label(self.root, text="calling...", font=("Garet", 24))
         self.call_who.pack(pady=40)
 
         # Paths to images
@@ -151,42 +151,11 @@ class CallConnectHandling:
     def init_panel_calling(self, username):
         self.root.title("In Call! as caller")
 
-        self.root.configure(bg='#2f2f2f')
+        #self.root.configure(bg='#2f2f2f')
 
         # Label for "calling..." text
-        self.call_who = Label(self.root, text="Called...", font=("Garet", 24), bg='#2f2f2f', fg='white')
-        self.call_who.pack(pady=40)
-
-        # Paths to images
-        ring_image_path = r"..\images\ring1.png"
-
-        # Load the submit button image
-        self.images['ring_image_path'] = self.load_image(ring_image_path)
-
-        # self.image_label = Label(self.root, image=self.images['ring_image_path'], bg='#2f2f2f')
-        # self.image_label.image = self.images['ring_image_path']  # Keep a reference to avoid garbage collection
-        # self.image_label.pack(pady=20)
-
-        # Create a Button
-        photo = PhotoImage(file=r"..\images\ring1.png")
-        photoimage1 = photo.subsample(3, 3)
-        photo = PhotoImage(file=r"..\images\ring2.png")
-        photoimage2 = photo.subsample(3, 3)
-        photo = PhotoImage(file=r"..\images\ringing1.png")
-        photoimage3 = photo.subsample(3, 3)
-
-        button_array = [photoimage1, photoimage2, photoimage3]
-        self.calling_image = Label(self.root, image=button_array[0])
-        self.calling_image.place(x=200, y=100)
-        self.calling_image.image = button_array
-        self.calling_image.image_id = 0
-
-        self.animate_handle()
-        self.state = CallStates.RINGING  # for initiator
-        self.transition = False
-
-
-
+        #self.call_who = Label(self.root, text="Called...", font=("Garet", 24), bg='#2f2f2f', fg='white')
+        #self.call_who.pack(pady=40)
 
 
         self.label_username = username
@@ -199,19 +168,13 @@ class CallConnectHandling:
         self.username_label = Label(self.root, text=self.label_username, font=("Helvetica", 16))
         self.username_label.place(x=180, y=80)
 
+        self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
         # Hang up button with icon
         self.btn_hang_up = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call,
                                   borderwidth=0)
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
-        # # sets the title of the
-        # # Toplevel widget
-        # self.label_username = username
-        # self.call_label = Label(self.root, text="In call! as caller")
-        # self.call_label.place(x=180, y=60)
-        #
-        # self.call_label = Label(self.root, text=self.label_username)
-        # self.call_label.place(x=180, y=60)
+
 
     def init_panel_call_receiver(self):
         # in call
