@@ -94,13 +94,14 @@ class ContactsPanel:
             return True
 
     def split_assigned_clients_msg(self, message):
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
-        opcode = message_parts[0].decode
-        nof_params = int(message_parts[1].decode())
-        params = message_parts[2:][0]
+        #message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
+        #opcode = message_parts[0].decode
+        #nof_params = int(message_parts[1].decode())
+        #params = message_parts[2:]
         # params in this case is the pickle dict!!!
-        print("split_assigned_clients_msg:", params)
-        return opcode, nof_params, params
+        #print("split_assigned_clients_msg:", params)
+        opcode, nof_params, params = Pro.split_message(message)
+        return opcode, nof_params, params[0]
     def split_message3(self, message):
         # כנראה שלא רלוונטית
         message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
@@ -135,7 +136,8 @@ class ContactsPanel:
         res_response, msg_response = Pro.get_msg(self.socket_to_server) # getting msg: b"ASSIGNED_CLIENTS ! /x80...(dict in pickle)"
         if res_response:
             #opcode is ASSIGNED_CLIENTS
-            opcode, nof_params, params = self.split_assigned_clients_msg(msg_response)
+            opcode, nof_params, params = Pro.split_message(msg_response)
+            params = params[0]
             self.assigned_clients_dict = pickle.loads(params)
             print("got the dict!!!", self.assigned_clients_dict)
             self.item_list = list(self.assigned_clients_dict.keys())
