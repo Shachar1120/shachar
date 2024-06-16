@@ -164,40 +164,29 @@ class CallConnectHandling:
         self.btn_hang_up = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
-        # self.root.title("In Call! as caller")
-        #
-        # #self.root.configure(bg='#2f2f2f')
-        #
-        # # Label for "calling..." text
-        # #self.call_who = Label(self.root, text="Called...", font=("Garet", 24), bg='#2f2f2f', fg='white')
-        # #self.call_who.pack(pady=40)
-        #
-        #
-        # self.label_username = username
-        #
-        # # Label for "In Call"
-        # self.call_label = Label(self.root, text="In Call! as caller", font=("Helvetica", 20, "bold"))
-        # self.call_label.place(x=120, y=30)
-        #
-        # # Label for username
-        # self.username_label = Label(self.root, text=self.label_username, font=("Helvetica", 16))
-        # self.username_label.place(x=180, y=80)
-        #
-        # self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
-        # # Hang up button with icon
-        # self.btn_hang_up = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call,
-        #                           borderwidth=0)
-        # self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
-        # self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
+
 
 
     def init_panel_call_receiver(self):
-        # in call
-        self.call_window = self.root
-        # sets the title of the
-        # Toplevel widget
-        self.call_who = Label(self.call_window, text="In call! as call reciever")
-        self.call_who.place(x=180, y=60)
+        self.root.title("In Call! as caller")
+
+        # Label for "In Call"
+        self.call_label = Label(self.root, text="In call! as call reciever", font=("Helvetica", 20, "bold"))
+        self.call_label.place(relx=0.5, rely=0.3, anchor=CENTER)  # Place label in the center top
+
+        # Label for username
+        self.username_label = Label(self.root, font=("Helvetica", 16))
+        self.username_label.place(relx=0.5, rely=0.4, anchor=CENTER)  # Place username label below call label
+
+        self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
+        # Hang up button with icon
+        self.btn_hang_up = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
+        self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
+        self.btn_hang_up.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
+
+
+
+
 
         self.audio_handling = AudioHandling(self.profile)
     def animate_handle(self):
