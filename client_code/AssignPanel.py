@@ -36,16 +36,7 @@ class AssignPanel:
         msg_to_send = Pro.create_msg(cmd, params)
         self.socket_to_server.send(msg_to_send)
 
-    def check_if_pickle(self, msg):
-        # כנראה שלא משתמשת בפונקציה!!
-        try:
-            # Try to unpickle the message
-            pickle.loads(msg)
-            # If successful, the message is in pickle format
-            return True
-        except pickle.UnpicklingError:
-            # If unsuccessful, the message is not in pickle format
-            return False
+
 
     # def split_message(self, message):
     #     message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
@@ -54,15 +45,7 @@ class AssignPanel:
     #     params = message_parts[2:]
     #     return opcode, nof_params, params
 
-    def handle_response_call_target(self, response):
-        # כנראה שלא משתמשת בפונקציה!!
-        if response == "TARGET_NACK":
-            # they need to call another client
-            print("the person you wanted to call to isn't assigned yet")
-            print("call another person(from contacts)")
-            return False
-        elif response == "TARGET_ACK":
-            return True
+
 
     def handle_cmd(self, cmd):
         # כנראה שלא משתמשת בפונקציה!!

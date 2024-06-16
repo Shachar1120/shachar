@@ -104,15 +104,7 @@ class Cli:
 
 
 
-    def handle_response_call_target(self, response):
-        # כנראה שלא משתמשת בפונקצייהה
-        if response == "TARGET_NACK":
-            # they need to call another client
-            print("the person you wanted to call to isn't assigned yet")
-            print("call another person(from contacts)")
-            return False
-        elif response == "TARGET_ACK":
-            return True
+
 
     def handle_cmd(self, cmd):
         # כנראה שלא משתמשת בפונקצייהה

@@ -39,34 +39,6 @@ class RegisterPanel:
         msg_to_send = Pro.create_msg(cmd, params)
         self.socket_to_server.send(msg_to_send)
 
-    def check_if_pickle(self, msg):
-        # כנראה לא משתמשת בכלל בפונקציה!!
-        try:
-            # Try to unpickle the message
-            pickle.loads(msg)
-            # If successful, the message is in pickle format
-            return True
-        except pickle.UnpicklingError:
-            # If unsuccessful, the message is not in pickle format
-            return False
-
-    # def split_message1(self, message):
-    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  #.encode() # message: cmd + len(params) + params
-    #     opcode = message_parts[0].decode()
-    #     nof_params = int(message_parts[1].decode())
-    #     params = message_parts[2:]
-    #     return opcode, nof_params, params
-
-    def handle_response_call_target(self, response):
-        # כנראה לא משתמש בכלל בפונקציה!!
-        if response == "TARGET_NACK":
-            # they need to call another client
-            print("the person you wanted to call to isn't assigned yet")
-            print("call another person(from contacts)")
-            return False
-        elif response == "TARGET_ACK":
-            return True
-
     def load_image(self, path, size=None):
         # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
         image = Image.open(path)

@@ -68,30 +68,13 @@ class ContactsPanel:
         msg_to_send = Pro.create_msg(cmd, params)
         self.socket_to_server.send(msg_to_send)
 
-    def check_if_pickle(self, msg):
-        # לא רלוונטית
-        try:
-            # Try to unpickle the message
-            pickle.loads(msg)
-            # If successful, the message is in pickle format
-            return True
-        except pickle.UnpicklingError:
-            # If unsuccessful, the message is not in pickle format
-            return False
+
 
     def send_cmd_to_other_client(self, cmd: bytes, params):
         msg_to_send = Pro.create_msg(cmd, params)
         self.networking_obj.call_initiate_socket.send(msg_to_send)
 
-    def handle_response_call_target(self, response):
-        # כנראה שלא משתמשת בפונקציה!!
-        if response == "TARGET_NACK":
-            # they need to call another client
-            print("the person you wanted to call to isn't assigned yet")
-            print("call another person(from contacts)")
-            return False
-        elif response == "TARGET_ACK":
-            return True
+
 
     def split_assigned_clients_msg(self, message):
         #message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
