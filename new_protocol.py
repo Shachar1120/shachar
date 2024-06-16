@@ -145,6 +145,8 @@ class Pro:
         opcode = message_parts[0].decode()
         nof_params = int(message_parts[1].decode())
         params = message_parts[2:]
+        if nof_params == 0:
+            params = None
         return opcode, nof_params, params
     @staticmethod
     def check_register_or_assign(cmd: str):

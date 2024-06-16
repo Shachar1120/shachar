@@ -83,9 +83,14 @@ class AssignPanel:
 
 
     def handle_assign_response(self, msg):
-        msg_parts = msg.split(Pro.PARAMETERS_DELIMITER)
-        print(msg_parts[0], "," , msg_parts[1])
-        if msg_parts[0] == "ASSIGN_ACK":
+        #msg = msg.decode()
+        #msg_parts = msg.split(Pro.PARAMETERS_DELIMITER.encode())
+        #opcode = msg_parts[0].decode()
+        #nof_params = int(msg_parts[1].decode())
+        #params = msg_parts[2:]
+        #print(msg_parts, opcode, "," ,nof_params, params )
+        opcode, nof_params, params = Pro.split_message(msg)
+        if opcode == "ASSIGN_ACK":
             return True
         else:
             return False
@@ -209,12 +214,12 @@ class AssignPanel:
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
                 # if str- dont need to decode
-                if isinstance(msg_response, bytes):
-                    # retruns True if its in byter
-                    msg_response = msg_response.decode()
+                #if isinstance(msg_response, bytes):
+                    #retruns True if its in byter
+                    #msg_response = msg_response.decode()
                 if res_response:
-                    assign_response = self.handle_assign_response(msg_response)
-                    if assign_response: #ASSIGN_ACK
+                    opcode, nof_params, params = Pro.split_message(msg_response)
+                    if opcode == "ASSIGN_ACK":
                         print("this is the response!!", msg_response)
                         # only if register Ack- user is assigned!!
                         #moving into Logged In panel
