@@ -32,9 +32,9 @@ class Ser:
         # self.registered = False
 
         # {"username1": "password1", "username2": "password2",...}:
-        self.client_details = {}  # dict of all the registered clients(all of the clients in the system) Username: (password, port)
+        self.client_details = {} # לא רלוונטי??  # dict of all the registered clients(all of the clients in the system) Username: (password, port)
         self.assigned_clients = {}  # dict of all usernames of assigned client(right now)
-        self.client_sockets_details = {}  # {"username1" : "(ip, port)" # i have to check there isnt a username already!!!
+        self.client_sockets_details = {} # לא רלוונטי?? # {"username1" : "(ip, port)" # i have to check there isnt a username already!!!
 
     def accept(self):
         (client_socket, client_address) = self.server_socket.accept()
@@ -49,25 +49,41 @@ class Ser:
 
         # get client username and socket details
         # the port of the client server(my_port in client)!!
+
+        username = params[0]
+        password = params[1]
         call_accept_port = int(params[2])  # client sends it in str, we need to change to int
         print("the Port:", call_accept_port)
+        channel_id = 1  # לדוגמה
 
-        if params[0] in self.client_details.keys():  # if username exists in dictionary
+        # בדוק אם שם המשתמש פנוי
+        if self.database_obj.is_username_in_database(username):
+            # צור חשבון חדש
+            self.database_obj.create_new_account(username, password, call_accept_port, channel_id)
+            print("client details dict:", self.client_details)
+            return Pro.cmds[Pro.REGISTER_ACK]
+        else:
             return Pro.cmds[Pro.REGISTER_NACK]  # already registered
 
-        # else: user is not registered yet
-        # registering = adding client to dictionary
-        # Username: (password, port)
-        self.client_details[params[0]] = (params[1], call_accept_port)  # add client
-        print("client details dict:", self.client_details)
-
-        return Pro.cmds[Pro.REGISTER_ACK]
+        # if params[0] in self.client_details.keys():  # if username exists in dictionary
+        #     return Pro.cmds[Pro.REGISTER_NACK]  # already registered
+        #
+        # # else: user is not registered yet
+        # # registering = adding client to dictionary
+        # # Username: (password, port)
+        # self.client_details[params[0]] = (params[1], call_accept_port)  # add client
+        # print("client details dict:", self.client_details)
+        #
+        # return Pro.cmds[Pro.REGISTER_ACK]
 
     def handle_assigned(self, params: [], client_socket) -> int:
 
+        #בהתחברות אנחנו עדיין משתמשים במילון
+        # רק בהרשמה אנחנו משתמשים בדאטאבייס!!!
         username_value = params[0]
 
-        if self.check_password(params):
+
+        if self.check_password(params): # checks if username exits in database(is registered) and if password is correct
             print("Correct Password!!")
 
             # add to dict of assigned clients
@@ -79,8 +95,10 @@ class Ser:
                 # else: user is not assigned yet
                 # registering = adding client to dictionary
                 # Username: (password, port)
-                client_server_details = self.client_details[username_value]  # (password, port)
-                self.assigned_clients[username_value] = client_server_details  # add client
+                username_value = params[0]
+                password, port = self.database_obj.find_username_info_database(username_value) #takes it from database
+                #client_server_details = self.client_details[username_value]  # (password, port)
+                self.assigned_clients[username_value] = (password, port)  # add client
                 print("assigned_clients dict:", self.assigned_clients)
                 return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
 
@@ -88,20 +106,23 @@ class Ser:
             print("check password failed!!!")
 
     def check_password(self, params: []):
-        username_value = params[0]
-        user_details_value = params[1]  # (password, port)
-        username_in_dict = self.client_details[username_value]  # username: (password, port)
+        username_input = params[0]
+        user_details_value = params[1]  # password
+        #username_in_DataBase = self.database_obj.find_in_database(username_input)
+        #username_in_DataBase = self.client_details[username_input]  # username: (password, port)
 
         # check username is even registered
-        if username_value in self.client_details.keys():
+        if not self.database_obj.is_username_in_database(username_input): # if =False that means the username is registered
+            #username_in_DataBase = self.database_obj.is_username_in_database(username_input)
+            password_in_Database, port_in_Database = self.database_obj.find_username_info_database(username_input)
             # check if password fit
             # if (password in dictionary) == (password in params)
-            if username_in_dict[0] == user_details_value:  # if password of username in dict match password from params
+            if password_in_Database == user_details_value:  # if password of username in dict match password from params
                 return True
         return False
 
     def check_client_request(self, data):
-        # Use protocol.check_cmd first
+        # לא רלוונטי???        # Use protocol.check_cmd first
         tof = Pro.check_cmd(data)
         if tof:
             cmd = data
@@ -111,12 +132,14 @@ class Ser:
             return False, cmd
 
     def handle_client_request(self, command):
+        # לא רלוונטי???
         if command == 'START_STREAMING':
             self.camera(command)
         elif command == 'STOP_STREAMING':
             pass
 
     def split_message(self, message):
+        # לא רלוונטי??
         message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  #.encode() # message: cmd + len(params) + params
         opcode = message_parts[0].decode()
         nof_params = int(message_parts[1].decode())

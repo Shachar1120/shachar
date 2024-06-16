@@ -101,36 +101,7 @@ class Cli:
         self.images['register_button_image'] = self.load_image(register_button_image_path)
         self.images['login_button_image'] = self.load_image(login_button_image_path)
 
-    def create_new_account(self, username, password, channel_id):
-        """
-              Create a new account with the provided username, password, and channel ID.
 
-              :param username: The username for the new account.
-              :param password: The password for the new account.
-              :param channel_id: The channel ID associated with the new account.
-              """
-        try:
-            self.cursor.execute(f"INSERT INTO users VALUES ('{username}', '{password}', '{channel_id}')")
-            self.create_new_file_table(channel_id)
-        except Exception as e:
-            print(f"Error creating a new account: {e}")
-        finally:
-            self.conn.commit()
-
-    def create_new_file_table(self, channel_id):
-        """
-               Create a new file table for the specified channel ID.
-
-               :param channel_id: The channel ID for which to create the file table.
-               """
-        try:
-            self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS _{channel_id} (
-                                filename TEXT,
-                                message_id INTEGER
-                                )""")
-        except Exception as e:
-            print(f"Error during new table creation: {e}")
-            pass
 
 
     def handle_response_call_target(self, response):

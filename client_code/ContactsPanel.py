@@ -1,4 +1,5 @@
 import threading
+from multiprocessing import Process
 from tkinter import *
 import tkinter.ttk as ttk
 from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
@@ -11,6 +12,7 @@ from time import time
 from pathlib import Path
 import pyaudio
 from call_utilities import *
+from DataBase import DataBase
 
 class ButtonItem:
     def __init__(self, item, call_func, dict):
@@ -35,7 +37,7 @@ class ContactsPanel:
         self.root = root
         self.panel_window = None
         self.socket_to_server = socket_to_server
-        self.complete_func = complete_func
+        self.complete_func = complete_func #)לא רלוונטית יותר??)
         self.item = None
         self.button_objs = []
         self.button_widgets = []
@@ -44,8 +46,11 @@ class ContactsPanel:
         self.move_to_ringing_initiator = move_to_ringing_initiator
         self.state = CallStates.INIT
         self.transition = False
+        self.vow1 = None
+        self.vow2 = None
 
         self.username = None
+        self.database_obj = DataBase("mydatabase")
 
 
         self.networking_obj = networking_obj
@@ -64,6 +69,7 @@ class ContactsPanel:
         self.socket_to_server.send(msg_to_send)
 
     def check_if_pickle(self, msg):
+        # לא רלוונטית
         try:
             # Try to unpickle the message
             pickle.loads(msg)
@@ -96,6 +102,7 @@ class ContactsPanel:
         print("split_assigned_clients_msg:", params)
         return opcode, nof_params, params
     def split_message3(self, message):
+        # כנראה שלא רלוונטית
         message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
         opcode = message_parts[0].decode()
         nof_params = int(message_parts[1].decode())
@@ -112,6 +119,7 @@ class ContactsPanel:
         #
         # # הפעלת התהליך
         # thread.start()
+
 
         self.Logged_In_window = self.root
         self.Logged_In_window.title("Your Contacts:")
@@ -132,8 +140,6 @@ class ContactsPanel:
             print("got the dict!!!", self.assigned_clients_dict)
             self.item_list = list(self.assigned_clients_dict.keys())
 
-
-
             # רשימת הפריטים
             items = self.item_list
             # יצירת כפתורים לכל פריט ברשימה
@@ -145,6 +151,12 @@ class ContactsPanel:
                 button.pack(pady=5, padx=10, fill="x")
                 self.button_objs.append(obj)
                 self.button_widgets.append(button)
+
+        #for synchronizing the contacts
+            #self.vow1 = Process(target=self.vow1, args=(self.assigned_clients_dict,))
+            #self.vow2 = Process(target=self.vow2, args=(self.assigned_clients_dict,))
+
+
 
 
     def init_panel_destroy(self):
@@ -183,7 +195,7 @@ class ContactsPanel:
             try:
                 # make the connection
                 # point to point
-                self.other_client_port = self.assigned_clients_dict[item][1]
+                self.other_client_port = int(self.assigned_clients_dict[item][1])
                 self.networking_obj.call_initiate_socket.connect(("127.0.0.1", self.other_client_port)) # self.call_initiate_port
                 print("client connected")
             except Exception as ex:
