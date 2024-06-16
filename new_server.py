@@ -54,12 +54,11 @@ class Ser:
         password = params[1]
         call_accept_port = int(params[2])  # client sends it in str, we need to change to int
         print("the Port:", call_accept_port)
-        channel_id = 1  # לדוגמה
 
         # בדוק אם שם המשתמש פנוי
         if self.database_obj.is_username_in_database(username):
             # צור חשבון חדש
-            self.database_obj.create_new_account(username, password, call_accept_port, channel_id)
+            self.database_obj.create_new_account(username, password, call_accept_port)
             print("client details dict:", self.client_details)
             return Pro.cmds[Pro.REGISTER_ACK]
         else:

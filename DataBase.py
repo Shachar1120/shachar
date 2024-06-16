@@ -33,14 +33,14 @@ class DataBase:
         mycursor.execute(f"USE {self.db_name}")
 
         mycursor.execute(
-            "CREATE TABLE IF NOT EXISTS users (username VARCHAR(255), password VARCHAR(255), port VARCHAR(255), channel_id INTEGER)")
+            "CREATE TABLE IF NOT EXISTS users (username VARCHAR(255), password VARCHAR(255), port VARCHAR(255))")
 
-    def create_new_account(self, username, password, port, channel_id):
+    def create_new_account(self, username, password, port):
         #Create a new account with the provided username, password, port, and channel ID.
 
         try:
-            query = "INSERT INTO users (username, password, port, channel_id) VALUES (%s, %s, %s, %s)"
-            self.cursor.execute(query, (username, password, port, channel_id))
+            query = "INSERT INTO users (username, password, port) VALUES (%s, %s, %s)"
+            self.cursor.execute(query, (username, password, port))
             self.conn.commit()
             print(f"Account for {username} created successfully!")
         except mysql.connector.Error as e:
@@ -56,7 +56,7 @@ class DataBase:
                     username VARCHAR(255) PRIMARY KEY,
                     password VARCHAR(255),
                     port VARCHAR(255),
-                    channel_id INTEGER
+
                 )
             """)
             self.conn.commit()
