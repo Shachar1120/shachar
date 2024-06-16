@@ -22,56 +22,8 @@ class AssignPanel:
 
         self.images = {}
 
-    def handle_response_assign(self, response):
-        # כנראה שלא משתמשת בפונקציה!!
-        if response == "ASSIGN_NACK":
-            # they need to enter username and password again
-            print("you need to enter password again")
-            return False
-        elif response == "ASSIGN_ACK":
-            return True
-
-
-    def send_cmd(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.socket_to_server.send(msg_to_send)
-
-
-
-    # def split_message(self, message):
-    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # message: cmd + len(params) + params
-    #     opcode = message_parts[0].decode()
-    #     nof_params = int(message_parts[1].decode())
-    #     params = message_parts[2:]
-    #     return opcode, nof_params, params
-
-
-
-    def handle_cmd(self, cmd):
-        # כנראה שלא משתמשת בפונקציה!!
-        tof = Pro.check_cmd(cmd)
-        if tof:
-            # sending to server
-            sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.socket_to_server.send(sending_cmd)
-
-            # receiving from server
-            # self.handle_server_response(cmd, None)
-            # if cmd == 'EXIT':
-            #    return False
-        # else:
-        # print("Not a valid command, or missing parameters\n")
-
-        return True
-
 
     def handle_assign_response(self, msg):
-        #msg = msg.decode()
-        #msg_parts = msg.split(Pro.PARAMETERS_DELIMITER.encode())
-        #opcode = msg_parts[0].decode()
-        #nof_params = int(msg_parts[1].decode())
-        #params = msg_parts[2:]
-        #print(msg_parts, opcode, "," ,nof_params, params )
         opcode, nof_params, params = Pro.split_message(msg)
         if opcode == "ASSIGN_ACK":
             return True
@@ -120,33 +72,7 @@ class AssignPanel:
                                     command=self.submit_assign,
                                     bd=0)
         self.submit_button.place(x=170, y=140)  # Adjusted position
-        # # before class it was Assign_Window function!!!
-        # # Toplevel object which will
-        # # be treated as a new window
-        #
-        # self.assign_panel_window = self.root
-        # # sets the title of the
-        # self.assign_panel_window.title("Log In")
-        #
-        # # sets the geometry of toplevel
-        # self.assign_panel_window.geometry("600x400")
-        #
-        # # the label for user_name
-        # self.user_name = Label(self.assign_panel_window, text="Username")
-        # self.user_name.place(x=40, y=60)
-        #
-        # # the label for user_password
-        # self.user_password = Label(self.assign_panel_window, text="Password")
-        # self.user_password.place(x=40, y=100)
-        #
-        # self.user_name_input_area = Entry(self.assign_panel_window, width=30)
-        # self.user_name_input_area.place(x=110, y=60)
-        #
-        # self.user_password_entry_area = Entry(self.assign_panel_window, width=30)
-        # self.user_password_entry_area.place(x=110, y=100)
-        #
-        # self.submit_button = Button(self.assign_panel_window, text="Submit", command=self.submit_assign)
-        # self.submit_button.place(x=40, y=130)
+
 
     def init_panel_destroy(self):
         self.submit_button.destroy()
@@ -160,20 +86,11 @@ class AssignPanel:
             self.try_again_label1 = None
             self.try_again_label1.pack()
 
-        #self.assign_panel_window.destroy()
-        #self.panel_window = None
 
 
     def submit_assign(self):
 
         # hasattr is a python function that checks if a value exists
-
-        # if hasattr(self, 'try_again_label'):
-        #    self.try_again_label.destroy()
-
-        # if hasattr(self, 'try_again_label1'):
-        #    self.try_again_label.destroy()
-
         cmd = "ASSIGN"
         username = self.user_name_input_area.get()
         password = self.user_password_entry_area.get()
@@ -191,15 +108,13 @@ class AssignPanel:
 
             else:
                 # send cmd and params(username, password) to server
-                self.send_cmd(cmd.encode(), params)
+                msg_to_send = Pro.create_msg(cmd.encode(), params)
+                self.socket_to_server.send(msg_to_send)
+
 
 
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
-                # if str- dont need to decode
-                #if isinstance(msg_response, bytes):
-                    #retruns True if its in byter
-                    #msg_response = msg_response.decode()
                 if res_response:
                     opcode, nof_params, params = Pro.split_message(msg_response)
                     if opcode == "ASSIGN_ACK":
@@ -207,28 +122,14 @@ class AssignPanel:
                         # only if register Ack- user is assigned!!
                         #moving into Logged In panel
                         self.complete_func() #AssignComplete function in Cli class
-                        #self.log_in_panel.init_panel_create()
+
                     else:
                         if msg_response == "ASSIGN_NACK":
                             print("password is incorrect???")
-                        # else- another error
+                        # else another error
 
 
         else:
             self.try_again_label = Label(self.assign_panel_window, text="Username or password are empty! Try again.")
             self.try_again_label.pack()
 
-    def Assign_not_succeeded(self):
-        # כנראה לא משתמשת בפונקציה!!
-        # Destroy the widgets in the log in window
-        self.user_name.destroy()
-        self.user_password.destroy()
-        self.submit_button.destroy()
-        self.user_name_input_area.destroy()
-        self.user_password_entry_area.destroy()
-
-        # Create a label indicating successful registration
-        Label(self.assign_panel_window, text="Couldn't Log In, Try Again!").pack()
-
-        # Create a button to close the window
-        Button(self.assign_panel_window, text="Close", command=self.assign_panel_window.destroy).pack()

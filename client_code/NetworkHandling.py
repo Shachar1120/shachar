@@ -56,9 +56,10 @@ class NetworkHandling:
 
                     res, message = Pro.get_msg(self.call_initiate_socket)
                     print(f"wait_for_network: {message}")
-                    opcode, nof_params, params = Pro.split_message(message)
                     if res:
-                        print("the message is:", opcode, nof_params, params)
+                        opcode, nof_params, params = Pro.split_message(message)
+
+                        #print("the message is:", opcode, nof_params, params)
 
                         if opcode == "RING":
                             params = params[0].decode()
@@ -73,6 +74,7 @@ class NetworkHandling:
                             self.in_call_func()
                             if self.audio_handler_obj is None:
                                 self.audio_handler_obj = AudioHandling(self.profile)
+                                self.audio_handler_obj.init_channels()
 
                             self.state = CallStates.IN_CALL
                             self.transition = True
@@ -83,11 +85,11 @@ class NetworkHandling:
 
                         elif opcode == "FRAME":
                             data = params[0]
-                            print("FRAME params!!! (data)", params)
+                            #print("FRAME params!!! (data)", params)
                             # accept frame and play
                             # data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
                             # data = pickle.loads(data)
-                            print(f"got frame: {data}")
+                            #print(f"got frame: {data}")
                             self.audio_handler_obj.put_frame(data)
                             pass
 
@@ -97,6 +99,8 @@ class NetworkHandling:
                     else:
                         print("didnt get the message")
 
+            #if (self.audio_handler_obj):
+            #   print(f"self.audio_handler_obj = {self.audio_handler_obj}, self.audio_handler_obj.stream_input = {self.audio_handler_obj.stream_input}")
             # audio handling... if in call
             if self.audio_handler_obj is not None and self.audio_handler_obj.stream_input is not None:
                 data = self.audio_handler_obj.get_frame()

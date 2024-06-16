@@ -105,7 +105,6 @@ class CallConnectHandling:
         self.calling_image.destroy()
 
     def init_panel_acceptor_create(self):
-        print("moved to init_answer_and_hangup_buttons!!!")
         # sets the title of the
         # Toplevel widget
 
@@ -189,6 +188,7 @@ class CallConnectHandling:
 
 
         self.audio_handling = AudioHandling(self.profile)
+        self.audio_handling.init_channels()
     def animate_handle(self):
 
         self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
@@ -215,12 +215,7 @@ class CallConnectHandling:
                                          output=True,  # for speaker
                                          input_device_index=self.profile.my_speaker,
                                          frames_per_buffer=CHUNK)
-    # def init_panel_destroy(self):
-    #     self.call_who.destroy()
-    #     self.enter_username.destroy()
-    #     self.username_input_area.destroy()
-    #     self.btn_contact.destroy()
-    #     self.call_window.destroy()
+
 
 
 

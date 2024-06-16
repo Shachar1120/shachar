@@ -29,12 +29,8 @@ class Ser:
 
         self.database_obj = DataBase("mydatabase")
 
-        # self.registered = False
-
-        # {"username1": "password1", "username2": "password2",...}:
-        self.client_details = {} # לא רלוונטי??  # dict of all the registered clients(all of the clients in the system) Username: (password, port)
         self.assigned_clients = {}  # dict of all usernames of assigned client(right now)
-        self.client_sockets_details = {} # לא רלוונטי?? # {"username1" : "(ip, port)" # i have to check there isnt a username already!!!
+
 
     def accept(self):
         (client_socket, client_address) = self.server_socket.accept()
@@ -59,21 +55,11 @@ class Ser:
         if self.database_obj.is_username_in_database(username):
             # צור חשבון חדש
             self.database_obj.create_new_account(username, password, call_accept_port)
-            print("client details dict:", self.client_details)
             return Pro.cmds[Pro.REGISTER_ACK]
         else:
             return Pro.cmds[Pro.REGISTER_NACK]  # already registered
 
-        # if params[0] in self.client_details.keys():  # if username exists in dictionary
-        #     return Pro.cmds[Pro.REGISTER_NACK]  # already registered
-        #
-        # # else: user is not registered yet
-        # # registering = adding client to dictionary
-        # # Username: (password, port)
-        # self.client_details[params[0]] = (params[1], call_accept_port)  # add client
-        # print("client details dict:", self.client_details)
-        #
-        # return Pro.cmds[Pro.REGISTER_ACK]
+
 
     def handle_assigned(self, params: [], client_socket) -> int:
 
@@ -96,7 +82,7 @@ class Ser:
                 # Username: (password, port)
                 username_value = params[0]
                 password, port = self.database_obj.find_username_info_database(username_value) #takes it from database
-                #client_server_details = self.client_details[username_value]  # (password, port)
+
                 self.assigned_clients[username_value] = (password, port)  # add client
                 print("assigned_clients dict:", self.assigned_clients)
                 return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
@@ -104,15 +90,13 @@ class Ser:
         else:
             print("check password failed!!!")
 
+
     def check_password(self, params: []):
         username_input = params[0]
         user_details_value = params[1]  # password
-        #username_in_DataBase = self.database_obj.find_in_database(username_input)
-        #username_in_DataBase = self.client_details[username_input]  # username: (password, port)
 
         # check username is even registered
         if not self.database_obj.is_username_in_database(username_input): # if =False that means the username is registered
-            #username_in_DataBase = self.database_obj.is_username_in_database(username_input)
             password_in_Database, port_in_Database = self.database_obj.find_username_info_database(username_input)
             # check if password fit
             # if (password in dictionary) == (password in params)
@@ -120,30 +104,8 @@ class Ser:
                 return True
         return False
 
-    def check_client_request(self, data):
-        # לא רלוונטי???        # Use protocol.check_cmd first
-        tof = Pro.check_cmd(data)
-        if tof:
-            cmd = data
-            if cmd == 'START_STREAMING' or cmd == 'STOP_STREAMING':
-                return True, cmd
-        else:
-            return False, cmd
 
-    def handle_client_request(self, command):
-        # לא רלוונטי???
-        if command == 'START_STREAMING':
-            self.camera(command)
-        elif command == 'STOP_STREAMING':
-            pass
 
-    def split_message(self, message):
-        # לא רלוונטי??
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  #.encode() # message: cmd + len(params) + params
-        opcode = message_parts[0].decode()
-        nof_params = int(message_parts[1].decode())
-        params = message_parts[2:]
-        return opcode, nof_params, params
     def split_cmd_params_msg(self, message):
         message_parts = message.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
         opcode = message_parts[0]
@@ -151,17 +113,7 @@ class Ser:
         params = message_parts[2:]
         return opcode, nof_params, params
 
-    def handle_call(self, username_param):
-        # כנראה לא משתמשת בכלל בפונקציה!
-        res = self.check_client_assigned(username_param)
-        if res:
-            print("you can call client, he is assigned")
-            # target ACK
-            return Pro.cmds[Pro.TARGET_ACK]  # username(=target) acknowledged
-        else:
-            print("client isn't assigned! you cant call him")
-            # target NACK
-            return Pro.cmds[Pro.TARGET_NACK]  # username not acknowledged!
+
 
     def check_client_assigned(self, username):
         if username in self.assigned_clients.keys():
@@ -212,28 +164,6 @@ def main():
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
 
-                elif cmd_res == Pro.cmds[Pro.CALL]:
-                    # not sure if i still use it???
-                    print("cmd is call!!")
-                    res = myserver.handle_call(params_res)
-                    # send response to the client
-                    client_username = params_res[0]
-                    message = Pro.create_msg(res.encode(), [client_username.encode()])
-                    current_socket.send(message)
-
-                elif cmd_res == Pro.cmds[Pro.ASK_TARGET_DETAILS]:
-                    # not sure if i use it???
-                    print("cmd is ASK_TARGET_DETAILS!!")
-                    client_username = params_res[0]
-                    # get client details(ip and port) from client_sockets_details dict
-                    print("client_sockets_details!!:", myserver.client_sockets_details[client_username])
-                    client_ip, client_port = myserver.client_sockets_details[client_username]  # tuple (ip, port)
-                    client_port = str(client_port)
-
-                    # send details to the client
-                    cmd_to_send = Pro.cmds[Pro.SEND_TARGET_DETAILS]
-                    message = Pro.create_msg(cmd_to_send.encode(), [client_ip.encode(), client_port.encode()])
-                    current_socket.send(message)
 
                 # client asks for assigned clients dict
                 elif cmd_res == Pro.cmds[Pro.CONTACTS]:
@@ -247,63 +177,7 @@ def main():
                     current_socket.send(message)
 
 
-                # #if res_split:
-                #     # res_response = True: got both cmd and params (like in REGISTER , ASSIGN)
-                #
-                #     # if REGISTER:
-                #     if cmd_res == Pro.cmds[Pro.REGISTER]:
-                #         res = myserver.handle_registration(params_res,
-                #                                            current_socket)  # return REGISTER_NACK or REGISTER_ACK
-                #         # send response to the client
-                #         message = Pro.create_msg(res.encode(), [])
-                #         current_socket.send(message)
-                #
-                #     # if ASSIGNED:
-                #     elif cmd_res == Pro.cmds[Pro.ASSIGN]:
-                #         print("cmd is assign!!")
-                #         res = myserver.handle_assigned(params_res, current_socket)
-                #         # send response to the client
-                #         message = Pro.create_msg(res.encode(), [])
-                #         current_socket.send(message)
-                #
-                #     elif cmd_res == Pro.cmds[Pro.CALL]:
-                #         print("cmd is call!!")
-                #         res = myserver.handle_call(params_res)
-                #         # send response to the client
-                #         client_username = params_res[0]
-                #         message = Pro.create_msg(res.encode(), [client_username.encode()])
-                #         current_socket.send(message)
-                #
-                #     elif cmd_res == Pro.cmds[Pro.ASK_TARGET_DETAILS]:
-                #         print("cmd is ASK_TARGET_DETAILS!!")
-                #         client_username = params_res[0]
-                #         # get client details(ip and port) from client_sockets_details dict
-                #         print("client_sockets_details!!:", myserver.client_sockets_details[client_username])
-                #         client_ip, client_port = myserver.client_sockets_details[client_username]  # tuple (ip, port)
-                #         client_port = str(client_port)
-                #
-                #         # send details to the client
-                #         cmd_to_send = Pro.cmds[Pro.SEND_TARGET_DETAILS]
-                #         message = Pro.create_msg(cmd_to_send.encode(), [client_ip.encode(), client_port.encode()])
-                #         current_socket.send(message)
-                #
-                #
-                #
-                #
-                #
-                # else:
-                #     # res_response = False: only got cmd (cmd = CONTACTS)
-                #
-                #     # client asks for assigned clients dict
-                #     if cmd_res == Pro.cmds[Pro.CONTACTS]:
-                #         print("got the message contacts!!!!!")
-                #
-                #         # send response to the client
-                #         cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
-                #         print("this is the dict!!!:", myserver.assigned_clients)
-                #         send_dict = pickle.dumps(myserver.assigned_clients)
-                #         message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
-                #         current_socket.send(message)
+
     # close sockets
     print("Closing connection")
     myserver.close()

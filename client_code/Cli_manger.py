@@ -21,7 +21,6 @@ class Cli:
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
-        # self.assigned_client_details = {}  # Create the dictionary globally
         self.db_name = "mydatabase"
 
 
@@ -60,13 +59,6 @@ class Cli:
                                           self.move_to_ringing_initiator,
                                           self.profile,
                                           self.networking_obj)
-
-
-
-
-
-
-
         self.images = {}
         self.init_images_dict()
 
@@ -102,35 +94,12 @@ class Cli:
         self.images['login_button_image'] = self.load_image(login_button_image_path)
 
 
-
-
-
-
-    def handle_cmd(self, cmd):
-        # כנראה שלא משתמשת בפונקצייהה
-        tof = Pro.check_cmd(cmd)
-        if tof:
-            # sending to server
-            sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.socket_to_server.send(sending_cmd)
-
-            # receiving from server
-            # self.handle_server_response(cmd, None)
-            # if cmd == 'EXIT':
-            #    return False
-        # else:
-        # print("Not a valid command, or missing parameters\n")
-
-        return True
-
     def load_image(self, path, size=None):
         # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
         image = Image.open(path)
         if size:
             image = image.resize(size, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(image)
-
-
 
     def RegisterComplete(self):
         self.register_obj.init_panel_destroy()
@@ -153,7 +122,7 @@ class Cli:
 
     def ContactsComplete(self):
         self.contacts_obj.init_panel_destroy()
-        #self.call_obj.init_panel_create_ringing()
+
 
     def CallComplete(self):
         pass
@@ -179,10 +148,6 @@ class Cli:
         self.call_obj.init_panel_acceptor_create()
         print("moved to ringing as acceptor!!")
 
-    # def move_to_ring_receiving(self):
-    #     self.contacts_obj.init_panel_destroy()
-    #     self.init_panel_create_ring_reciving()
-    #     print("moved to ring receiving!!")
 
     def move_to_in_call_initiator(self):
 
@@ -219,157 +184,6 @@ class Cli:
         self.button_assign.destroy()
         self.main_image_label.destroy()
         self.button_frame.destroy()
-
-    def init_panel_create_ringing(self):
-        # כנראה שלא משתמשת בפונקציה!!
-        self.ringing_window = self.root
-        self.ringing_window.title("Log In")
-
-        self.root.configure(bg='#2f2f2f')
-
-        # Label for "calling..." text
-        self.call_who = Label(self.root, text="calling...", font=("Garet", 24), bg='#2f2f2f', fg='white')
-        self.call_who.pack(pady=40)
-
-        # Paths to images
-        ring_image_path = r"..\images\ring1.png"
-
-        # Load the submit button image
-        self.images['ring_image_path'] = self.load_image(ring_image_path)
-
-
-        #self.image_label = Label(self.root, image=self.images['ring_image_path'], bg='#2f2f2f')
-        #self.image_label.image = self.images['ring_image_path']  # Keep a reference to avoid garbage collection
-        #self.image_label.pack(pady=20)
-
-        # Create a Button
-        photo = PhotoImage(file=r"..\images\ring1.png")
-        photoimage1 = photo.subsample(3, 3)
-        photo = PhotoImage(file=r"..\images\ring2.png")
-        photoimage2 = photo.subsample(3, 3)
-        photo = PhotoImage(file=r"..\images\ringing1.png")
-        photoimage3 = photo.subsample(3, 3)
-
-
-        button_array = [photoimage1, photoimage2, photoimage3]
-        self.calling_image = Label(self.ringing_window, image=button_array[0])
-        self.calling_image.place(x=200, y=100)
-        self.calling_image.image = button_array
-        self.calling_image.image_id = 0
-
-        self.contacts_obj.state = CallStates.RINGING
-        self.contacts_obj.transition = True
-
-
-    def check_if_got_msg(self):
-        # כנראה שלא משתמשת בפונקציה!!
-        try:
-            # Attempt to receive a message using Pro.get_msg
-            res, message = Pro.get_msg(self.networking_obj.call_initiate_socket)
-            message = message.decode()
-            print(f"Response: {res}, Message: {message}")
-
-            if not res:
-                print(f"Failed to receive message. Response: {res}")
-                return False, message
-
-            print(f"Successfully received message: {message}")
-            return True, message
-
-        except socket.timeout:
-            print("Socket timed out while waiting for a response.")
-            return False, "Socket timeout"
-
-        except socket.error as e:
-            print(f"Socket error occurred: {e}")
-            return False, f"Socket error: {e}"
-
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            return False, f"Unexpected error: {e}"
-
-
-    def init_panel_create_ring_reciving(self):
-        # כנראה שלא משתמשת בפונקציה!!
-        self.ringing_window = self.root
-        # # sets the title of the
-        # # Toplevel widget
-        # self.ringing_window.title("Someone is ringing")
-        #
-        # self.call_who = Label(self.ringing_window, text="Someone is ringing")
-        # self.call_who.place(x=180, y=60)
-
-
-
-        # Create a Button
-        photo = PhotoImage(file=r"..\images\ring1.png")
-        photoimage1 = photo.subsample(3, 3)
-        photo = PhotoImage(file=r"..\images\ring2.png")
-        photoimage2 = photo.subsample(3, 3)
-        photo = PhotoImage(file=r"..\images\ringing1.png")
-        photoimage3 = photo.subsample(3, 3)
-
-        button_array = [photoimage1, photoimage2, photoimage3]
-        self.btn_calling = Label(self.ringing_window, image=button_array[0])
-        self.btn_calling.place(x=200, y=100)
-        self.btn_calling.image = button_array
-        self.btn_calling.image_id = 0
-
-
-
-
-        # self.call_who = Label(self.ringing_window, text="... is calling")
-        # self.call_who.pack(pady=20)
-        #
-        # self.ringing_window.title("Incoming Call")
-        #
-        # self.photo_answer = PhotoImage(file=r"..\images\answer.png").subsample(3, 3)
-        # self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
-        #
-        # # Create buttons
-        # self.btn_hang_up = Button(self.ringing_window, image=self.photo_hang_up, command=self.hang_up_call,
-        #                           borderwidth=0)
-        # self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
-        # self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
-        #
-        # self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_call_receiving,
-        #                          borderwidth=0)
-        # self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
-        # self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
-
-    def init_answer_and_hangup_buttons(self):
-        # כנראה שלא משתמשת בפונקציה!!
-
-        print("moved to init_answer_and_hangup_buttons!!!")
-        # sets the title of the
-        # Toplevel widget
-        self.ringing_window.title("Someone is ringing")
-
-        self.call_who = Label(self.ringing_window, text="Someone is ringing")
-        self.call_who.place(x=180, y=60)
-        self.call_who = Label(self.ringing_window, text="... is calling")
-        self.call_who.pack(pady=20)
-
-        self.ringing_window.title("Incoming Call")
-
-        self.photo_answer = PhotoImage(file=r"..\images\answer.png").subsample(3, 3)
-        self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
-
-        # Create buttons
-        self.btn_hang_up = Button(self.ringing_window, image=self.photo_hang_up, command=self.hang_up_call,
-                                  borderwidth=0)
-        self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
-        self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
-
-        self.btn_answer = Button(self.ringing_window, image=self.photo_answer, command=self.move_to_in_call_acceptor,
-                                 borderwidth=0)
-        self.btn_answer.image = self.photo_answer  # keep a reference to avoid garbage collection
-        self.btn_answer.pack(side=RIGHT, padx=10, pady=20)
-
-
-
-
-
 
 
 

@@ -56,44 +56,20 @@ class ContactsPanel:
         self.networking_obj = networking_obj
 
 
-    # def split_message2(self, message):
-    #
-    #     message_parts = message.split(Pro.PARAMETERS_DELIMITER)  # message: cmd + len(params) + params
-    #     opcode = message_parts[0]
-    #     nof_params = int(message_parts[1])
-    #     params = message_parts[2:]
-    #     return opcode, nof_params, params
-
-    def send_cmd(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.socket_to_server.send(msg_to_send)
 
 
-
-    def send_cmd_to_other_client(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.networking_obj.call_initiate_socket.send(msg_to_send)
-
-
-
-    def split_assigned_clients_msg(self, message):
+    #def split_assigned_clients_msg(self, message):
+        #opcode, nof_params, params = Pro.split_message(message)
+        #return opcode, nof_params, params[0]
+    #def split_message3(self, message):
+        # כנראה שלא רלוונטית
         #message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
-        #opcode = message_parts[0].decode
+        #opcode = message_parts[0].decode()
         #nof_params = int(message_parts[1].decode())
         #params = message_parts[2:]
         # params in this case is the pickle dict!!!
-        #print("split_assigned_clients_msg:", params)
-        opcode, nof_params, params = Pro.split_message(message)
-        return opcode, nof_params, params[0]
-    def split_message3(self, message):
-        # כנראה שלא רלוונטית
-        message_parts = message.split(Pro.PARAMETERS_DELIMITER.encode())  # .encode() # message: cmd + len(params) + params
-        opcode = message_parts[0].decode()
-        nof_params = int(message_parts[1].decode())
-        params = message_parts[2:]
-        # params in this case is the pickle dict!!!
-        print("split_message3:", opcode, nof_params, params)
-        return opcode, nof_params, params
+        #print("split_message3:", opcode, nof_params, params)
+        #return opcode, nof_params, params
 
     def init_panel_create(self):
 
@@ -111,7 +87,9 @@ class ContactsPanel:
         cmd = "CONTACTS"
         params = []
         # send cmd and params(username, password) to server
-        self.send_cmd(cmd.encode(), params)
+        msg_to_send = Pro.create_msg(cmd.encode(), params)
+        self.socket_to_server.send(msg_to_send)
+
 
         # get response from server
         # מקבל את הרשימת לקוחות הרשומים כדי להציג ללקוח
@@ -137,11 +115,6 @@ class ContactsPanel:
                 self.button_objs.append(obj)
                 self.button_widgets.append(button)
 
-        #for synchronizing the contacts
-            #self.vow1 = Process(target=self.vow1, args=(self.assigned_clients_dict,))
-            #self.vow2 = Process(target=self.vow2, args=(self.assigned_clients_dict,))
-
-
 
 
     def init_panel_destroy(self):
@@ -150,8 +123,7 @@ class ContactsPanel:
             button.destroy()
         self.button_objs = []
         self.button_widgets = []
-            #self.button_objs = []
-        #self.Logged_In_window.destroy()
+
 
 
 
@@ -181,7 +153,7 @@ class ContactsPanel:
                 # make the connection
                 # point to point
                 self.other_client_port = int(self.assigned_clients_dict[item][1])
-                self.networking_obj.call_initiate_socket.connect(("127.0.0.1", self.other_client_port)) # self.call_initiate_port
+                self.networking_obj.call_initiate_socket.connect(("172.16.9.233", self.other_client_port)) # self.call_initiate_port
                 print("client connected")
             except Exception as ex:
                 print("client couldnt connect")
@@ -198,7 +170,9 @@ class ContactsPanel:
 
                 #send it to the other client!!! not to server
                 #because the socket is between the 2 clients now
-                self.send_cmd_to_other_client(cmd.encode(), params)
+                msg_to_send = Pro.create_msg(cmd.encode(), params)
+                self.networking_obj.call_initiate_socket.send(msg_to_send)
+
 
                 # move to new panel
                 # sending root for socket_to_server and root

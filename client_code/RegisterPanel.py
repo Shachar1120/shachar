@@ -35,9 +35,7 @@ class RegisterPanel:
             # create a token
             pass
 
-    def send_cmd(self, cmd: bytes, params):
-        msg_to_send = Pro.create_msg(cmd, params)
-        self.socket_to_server.send(msg_to_send)
+
 
     def load_image(self, path, size=None):
         # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
@@ -46,22 +44,7 @@ class RegisterPanel:
             image = image.resize(size, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(image)
 
-    def handle_cmd(self, cmd):
-        # כנראה לא משתמשת בפונקציה!!
-        tof = Pro.check_cmd(cmd)
-        if tof:
-            # sending to server
-            sending_cmd = Pro.create_msg(cmd.encode(), [])
-            self.socket_to_server.send(sending_cmd)
 
-            # receiving from server
-            # self.handle_server_response(cmd, None)
-            # if cmd == 'EXIT':
-            #    return False
-        # else:
-        # print("Not a valid command, or missing parameters\n")
-
-        return True
 
     def submit_register(self):
 
@@ -96,7 +79,9 @@ class RegisterPanel:
 
             else:
                 # send cmd and params(username, password) to server
-                self.send_cmd(cmd.encode(), params)
+
+                msg_to_send = Pro.create_msg(cmd.encode(), params)
+                self.socket_to_server.send(msg_to_send)
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
                 msg_response = msg_response
@@ -122,7 +107,6 @@ class RegisterPanel:
                             pass
                         else:
                             self.complete_func() #RegisterComplete function in Cli class
-                            #self.move_to_home_screen()
                             print("you registered successfully")
 
 
@@ -132,16 +116,6 @@ class RegisterPanel:
             self.try_again_label = Label(self.register_panel_window, text="Username or password are empty! Try again.")
             self.try_again_label.pack()
 
-    def move_to_home_screen(self):
-        self.init_panel_destroy()
-        #self.home_screen_obj = self.init_panel_create()
-        #self.home_screen_obj.init_panel_create()
-
-    def add_init_panel_create(self):
-        # כנראה לא משתמשת בפונקציה!!
-        self.register_panel_window = self.root
-        self.user_name = Label(self.register_panel_window, text="password is incorrect!")
-        self.user_name.place(x=100, y=60)
 
     def init_panel_create(self):
 
@@ -178,32 +152,6 @@ class RegisterPanel:
         self.submit_button = Button(self.register_panel_window, image=self.images['submit_button_image'], command=self.submit_register,
                                     bd=0)
         self.submit_button.place(x=170, y=140)  # Adjusted position
-        # # before class it was Register_window function!!!
-        # # Toplevel object which will
-        # # be treated as a new window
-        # self.register_panel_window = self.root
-        #
-        # # sets the title of the
-        # # Toplevel widget
-        # self.register_panel_window.title("Register")
-        # # the label for user_name
-        # self.user_name = Label(self.register_panel_window, text="Username")
-        # self.user_name.place(x=40, y=60)
-        #
-        # # the label for user_password
-        # self.user_password = Label(self.register_panel_window, text="Password")
-        # self.user_password.place(x=40, y=100)
-        #
-        # self.user_name_input_area = Entry(self.register_panel_window, width=30)
-        # self.user_name_input_area.place(x=110, y=60)
-        #
-        # self.user_password_entry_area = Entry(self.register_panel_window, width=30)
-        # self.user_password_entry_area.place(x=110, y=100)
-        #
-        # self.submit_button = Button(self.register_panel_window, text="Submit", command=self.submit_register)
-        # self.submit_button.place(x=40, y=130)
-
-
 
 
     def init_panel_destroy(self):
@@ -216,21 +164,3 @@ class RegisterPanel:
             # Assign not succeeded!!
             self.try_again_label1 = None
             self.try_again_label1.pack()
-        #self.register_panel_window.destroy()
-        #self.register_panel_window = None
-
-
-    def Register_not_succeeded(self):
-        # כנראה לא משתמשת!!
-        # Destroy the widgets in the registration window
-        self.user_name.destroy()
-        self.user_password.destroy()
-        self.submit_button.destroy()
-        self.user_name_input_area.destroy()
-        self.user_password_entry_area.destroy()
-
-        # Create a label indicating successful registration
-        Label(self.register_panel_window, text="Couldn't register, Try Again!").pack()
-
-        # Create a button to close the window
-        Button(self.register_panel_window, text="Close", command=self.register_panel_window.destroy).pack()
