@@ -12,20 +12,15 @@ from CallConnectHandling import CallConnectHandling
 from new_protocol import Pro
 from call_utilities import *
 from NetworkHandling import NetworkHandling
-from DataBase import DataBase
-import sqlite3
-import mysql.connector
+#from DataBase import DataBase
+#import sqlite3
+#import mysql.connector
 
 class Cli:
     def __init__(self, profile):
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
-        self.db_name = "mydatabase"
-
-
-
-
         self.root = Tk()
 
         # sets the geometry of main
@@ -191,28 +186,28 @@ class Cli:
         pass
 
 
-    def select_microphone(self, index, p):
-        # כנראה שלא משתמשת בפונקציה!!
-        # Select a microphone with a specific index
-        print(f"please select a microphone")
-        # Get the device info
-        device_info = p.get_device_info_by_index(index)
-        # Check if this device is a microphone (an input device)
-        if device_info.get('maxInputChannels') > 0:
-            print(f"Selected Microphone: {device_info.get('name')}")
-            return device_info.get('name')
-        else:
-            print(f"No microphone at index {index}")
-
-    def list_microphones(self, devices, p):
-        # כנראה שלא משתמשת בפונקציה!!
-        # Iterate through all devices
-        for i in range(devices):
-            # Get the device info
-            device_info = p.get_device_info_by_index(i)
-            # Check if this device is a microphone (an input device)
-            if device_info.get('maxInputChannels') > 0:
-                print(f"Microphone: {device_info.get('name')} , Device Index: {device_info.get('index')}")
+    # def select_microphone(self, index, p):
+    #     # כנראה שלא משתמשת בפונקציה!!
+    #     # Select a microphone with a specific index
+    #     print(f"please select a microphone")
+    #     # Get the device info
+    #     device_info = p.get_device_info_by_index(index)
+    #     # Check if this device is a microphone (an input device)
+    #     if device_info.get('maxInputChannels') > 0:
+    #         print(f"Selected Microphone: {device_info.get('name')}")
+    #         return device_info.get('name')
+    #     else:
+    #         print(f"No microphone at index {index}")
+    #
+    # def list_microphones(self, devices, p):
+    #     # כנראה שלא משתמשת בפונקציה!!
+    #     # Iterate through all devices
+    #     for i in range(devices):
+    #         # Get the device info
+    #         device_info = p.get_device_info_by_index(i)
+    #         # Check if this device is a microphone (an input device)
+    #         if device_info.get('maxInputChannels') > 0:
+    #             print(f"Microphone: {device_info.get('name')} , Device Index: {device_info.get('index')}")
 
 
     def connect(self, ip, port):
