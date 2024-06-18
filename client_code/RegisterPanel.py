@@ -143,7 +143,7 @@ class RegisterPanel:
 
         # Create entry fields with larger font size
         self.user_name_input_area = Entry(self.register_panel_window, width=30, font=entry_font)
-        self.user_name_input_area.place(x=160, y=60)
+        self.user_name_input_area.place(x=160, y=60) 
 
         self.user_password_entry_area = Entry(self.register_panel_window, width=30, font=entry_font)
         self.user_password_entry_area.place(x=160, y=100)
