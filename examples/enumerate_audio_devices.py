@@ -49,11 +49,6 @@ stream_input = p.open(format=FORMAT,
                       input_device_index = input_index,
                       frames_per_buffer=CHUNK)
 print("* recording")
-frames = []
-for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-    data = stream_input.read(CHUNK)
-    frames.append(data)
-
 print("* done recording")
 #stream_input.stop_stream()
 #stream_input.close()
@@ -63,7 +58,14 @@ stream_output = p.open( format=FORMAT,
                         output=True, # for speaker
                         input_device_index = output_index,
                         frames_per_buffer=CHUNK)
-for f in frames:
-    stream_input.write(f) #digital to analog
+frames = []
+for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+    data = stream_input.read(CHUNK)
+    frames.append(data)
+    stream_input.write(data)
+
+
+#for f in frames:
+#    stream_input.write(f) #digital to analog
 
 p.terminate()

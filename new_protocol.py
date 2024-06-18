@@ -115,6 +115,9 @@ class Pro:
 
         msg_len = int(msg_len_before_valid)
         message_bytes = socket_to_server.recv(msg_len)
+        while len(message_bytes) < msg_len:
+            extra = socket_to_server.recv(msg_len-len(message_bytes))
+            message_bytes += extra
         #message = message_bytes.decode()
         return True, message_bytes # message is still bytes
 
@@ -148,7 +151,7 @@ class Pro:
         if nof_params == 0:
             params = None
         return opcode, nof_params, params
-    @staticmethod
+    @staticmethod ;
     def check_register_or_assign(cmd: str):
         return cmd == Pro.cmds[Pro.REGISTER] or cmd == Pro.cmds[Pro.ASSIGN]
 
