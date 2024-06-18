@@ -8,7 +8,7 @@ class AudioHandling:
     RECORD_SECONDS = 10
     def __init__(self, profile):
         self.p = None
-        self.stream_input = None
+        self.stream_input = None 
         self.stream_output = None
         self.profile = profile
     def init_channels(self):
