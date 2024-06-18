@@ -111,7 +111,7 @@ class AssignPanel:
                 msg_to_send = Pro.create_msg(cmd.encode(), params)
                 self.socket_to_server.send(msg_to_send)
 
-
+ 
 
                 # get response from server
                 res_response, msg_response = Pro.get_msg(self.socket_to_server)
