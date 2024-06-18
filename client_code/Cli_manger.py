@@ -163,6 +163,7 @@ class Cli:
             print(f"Failed to send IN_CALL message: {e}")
 
 
+
         self.call_obj.destroy_panel_acceptor_create()
         self.call_obj.init_panel_call_receiver()
         if self.call_obj.audio_handling is not None:
@@ -240,7 +241,7 @@ class Cli:
 
 def Main():
     print("1: for 2001, 2: for 2002")
-    profiles = [ UserProfile(2001, 2002, 0, 15), UserProfile(2002, 2001, 0, 15)]
+    profiles = [ UserProfile(2001, 2002, 0, 15 ), UserProfile(2002, 2001, 0, 18)]
     print("input 1 or 2 to choose user profile")
     whoami = int(input())
     #if whoami== 1: #profile1 = profiles[0]
