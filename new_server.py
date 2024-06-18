@@ -165,7 +165,7 @@ def main():
                     current_socket.send(message)
 
 
-                # client asks for assigned clients dict
+                # client asks for assigned clients dict 
                 elif cmd_res == Pro.cmds[Pro.CONTACTS]:
                     print("got the message contacts!!!!!")
 
