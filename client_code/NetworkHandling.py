@@ -85,18 +85,20 @@ class NetworkHandling:
 
                         elif opcode == "FRAME":
                             if self.audio_handler_obj is not None:
-                                data = params[0]
+                                data = Pro.PARAMETERS_DELIMITER.encode().join(params)
                                 #print("FRAME params!!! (data)", params)
                                 # accept frame and play
                                 # data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
                                 # data = pickle.loads(data)
                                 #print(f"got frame: {data}")
                                 self.audio_handler_obj.put_frame(data)
+
+
                         else:
                             pass
 
                     else:
-                        print("didnt get the message")
+                        print(f"didnt get the message because {message}")
 
 
             if self.audio_handler_obj is not None:
