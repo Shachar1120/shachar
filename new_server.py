@@ -25,15 +25,19 @@ class Ser:
         self.server_socket.listen()
         print("Server is up and running")
 
+        self.client_ip_value = "127.0.0.1"
+
         self.client_sockets = []
 
         self.database_obj = DataBase("mydatabase")
 
         self.assigned_clients = {}  # dict of all usernames of assigned client(right now)
+        self.ip_map = {} # dict of all client_sockets and their IP's
 
 
     def accept(self):
         (client_socket, client_address) = self.server_socket.accept()
+        self.ip_map[client_socket] = client_address[0] # add client_socket: IP
         self.client_sockets.append(client_socket)
         print("Client connected")
 
@@ -66,7 +70,10 @@ class Ser:
         #בהתחברות אנחנו עדיין משתמשים במילון
         # רק בהרשמה אנחנו משתמשים בדאטאבייס!!!
         username_value = params[0]
-
+        call_port_value = params[2]
+        if client_socket in self.ip_map:
+            #get ip
+            self.client_ip_value = self.ip_map[client_socket]
 
         if self.check_password(params): # checks if username exits in database(is registered) and if password is correct
             print("Correct Password!!")
@@ -83,7 +90,7 @@ class Ser:
                 username_value = params[0]
                 password, port = self.database_obj.find_username_info_database(username_value) #takes it from database
 
-                self.assigned_clients[username_value] = (password, port)  # add client
+                self.assigned_clients[username_value] = (password, call_port_value, self.client_ip_value)  # add client
                 print("assigned_clients dict:", self.assigned_clients)
                 return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
 

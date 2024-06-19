@@ -6,7 +6,7 @@ from AudioHandling import AudioHandling
 from call_utilities import *
 
 class NetworkHandling:
-    def __init__(self, socket_to_server, profile, move_to_ringing_acceptor):
+    def __init__(self, socket_to_server, profile, move_to_ringing_acceptor, call_port):
         self.socket_to_server = socket_to_server
         self.call_initiate_socket = None
         self.call_accept_socket = None
@@ -15,12 +15,14 @@ class NetworkHandling:
         self.on_ring_func = None
         self.in_call_func = None
         self.move_to_ringing_acceptor = move_to_ringing_acceptor
+        self.call_port = call_port
 
     def init_network(self):
         # open socket with the server
         self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.call_accept_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.call_accept_socket.bind(("0.0.0.0", self.profile.call_accept_port))
+        #self.call_accept_socket.bind(("0.0.0.0", self.profile.call_accept_port))
+        self.call_accept_socket.bind(("0.0.0.0", (int(self.call_port)))) #if from 2 computers no need +1 !!!
         self.call_accept_socket.listen()
 
     def register_on_ring(self, func):

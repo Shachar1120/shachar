@@ -21,6 +21,8 @@ class Cli:
         # open socket with the server
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
+        self.server_ip = '127.0.0.1'
+        self.call_port = "2001"
         self.root = Tk()
 
         # sets the geometry of main
@@ -30,16 +32,16 @@ class Cli:
 
         #self.database_obj = DataBase()
 
-        self.networking_obj = NetworkHandling(self.socket_to_server, self.profile, self.move_to_ringing_acceptor)
+        self.networking_obj = NetworkHandling(self.socket_to_server, self.profile, self.move_to_ringing_acceptor, self.call_port)
         self.networking_obj.init_network()
 
         self.register_obj = RegisterPanel(self.root,
                                           self.socket_to_server,
                                           self.RegisterComplete,
-                                          self.profile.call_accept_port)
+                                          self.profile.call_accept_port, self.server_ip)
         self.assign_obj = AssignPanel(self.root,
                                       self.socket_to_server,
-                                      self.AssignComplete)
+                                      self.AssignComplete, self.server_ip, self.call_port)
 
         self.call_obj = CallConnectHandling(self.root,
                                             self.socket_to_server,
@@ -77,6 +79,33 @@ class Cli:
         self.button_assign = Button(self.button_frame, image=self.images['login_button_image'], command=self.move_to_assign, bd=0)
         self.button_assign.pack(side=LEFT, padx=10)  # הצבת הכפתור השני עם מרווח מימין
 
+        self.info_frame = Frame(self.root)
+        self.info_frame.pack(pady=10)
+
+        # הוספת תווית, שדה מידע וכפתור עבור server IP
+        self.server_ip_label = Label(self.info_frame, text="Server IP:", width=10)
+        self.server_ip_label.pack(side=LEFT, padx=5)
+
+        self.server_ip_entry = Entry(self.info_frame, width=15)
+        self.server_ip_entry.insert(0, "127.0.0.1")
+        self.server_ip_entry.pack(side=LEFT, padx=5)
+
+        self.server_ip_submit = Button(self.info_frame, text="Submit", command=self.submit_server_ip, width=8, height=1,
+                                       bd=1, highlightthickness=0)
+        self.server_ip_submit.pack(side=LEFT, padx=5)
+
+        # הוספת תווית, שדה מידע וכפתור עבור call port
+        self.call_port_label = Label(self.info_frame, text="Call Port:", width=10)
+        self.call_port_label.pack(side=LEFT, padx=5)
+
+        self.call_port_entry = Entry(self.info_frame, width=15)
+        self.call_port_entry.insert(0, "2001")
+        self.call_port_entry.pack(side=LEFT, padx=5)
+
+        self.call_port_submit = Button(self.info_frame, text="Submit", command=self.submit_call_port, width=8, height=1,
+                                       bd=1, highlightthickness=0)
+        self.call_port_submit.pack(side=LEFT, padx=5)
+
     def init_images_dict(self):
         # נתיבים לתמונות
         main_image_path = r"..\images\logo VOW1.png"
@@ -88,7 +117,15 @@ class Cli:
         self.images['register_button_image'] = self.load_image(register_button_image_path)
         self.images['login_button_image'] = self.load_image(login_button_image_path)
 
+    def submit_server_ip(self):
+        # פעולה לביצוע בעת לחיצה על כפתור 'Submit' של 'Server IP'
+        self.server_ip = self.server_ip_entry.get()
+        print(f"Submitted Server IP: {self.server_ip}")
 
+    def submit_call_port(self):
+        # פעולה לביצוע בעת לחיצה על כפתור 'Submit' של 'Call Port'
+        call_port = self.call_port_entry.get()
+        print(f"Submitted Call Port: {call_port}")
     def load_image(self, path, size=None):
         # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
         image = Image.open(path)
@@ -124,12 +161,12 @@ class Cli:
 
     def move_to_register(self):
         self.destroy_enter_panel()
-        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.profile.call_accept_port)
+        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.profile.call_accept_port, self.server_ip)
         self.register_obj.init_panel_create()
 
     def move_to_assign(self):
         self.destroy_enter_panel()
-        self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
+        self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete, self.server_ip, self.call_port)
         self.assign_obj.init_panel_create()
 
     def move_to_ringing_initiator(self):
@@ -180,6 +217,13 @@ class Cli:
         self.button_assign.destroy()
         self.main_image_label.destroy()
         self.button_frame.destroy()
+        self.info_frame.destroy()
+        self.server_ip_label.destroy()
+        self.server_ip_entry.destroy()
+        self.server_ip_submit.destroy()
+        self.call_port_label.destroy()
+        self.call_port_entry.destroy()
+        self.call_port_submit.destroy()
 
 
 
@@ -240,14 +284,14 @@ class Cli:
         self.root.after(40, self.check_network_answers)
 
 def Main():
-    print("1: for 2001, 2: for 2002")
+    #print("1: for 2001, 2: for 2002")
     profiles = [ UserProfile(2001, 2002, 0, 15 ), UserProfile(2002, 2001, 0, 18)]
-    print("input 1 or 2 to choose user profile")
-    whoami = int(input())
+
     #if whoami== 1: #profile1 = profiles[0]
 
-    myclient = Cli(profiles[whoami-1]) # if I write 2 -profiles[1], and if I write 1-profiles[0]
-    myclient.connect("127.0.0.1", Pro.PORT)
+    myclient = Cli(profiles[0]) # if I write 2 -profiles[1], and if I write 1-profiles[0]
+    #myclient.connect("127.0.0.1", Pro.PORT)
+    #myclient.connect(myclient.server_ip, Pro.PORT)
     myclient.main_loop()
 
 

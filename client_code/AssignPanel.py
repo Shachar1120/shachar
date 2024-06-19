@@ -12,13 +12,15 @@ from pathlib import Path
 import pyaudio
 
 class AssignPanel:
-    def __init__(self, root, socket_to_server, complete_func):
+    def __init__(self, root, socket_to_server, complete_func, server_ip, call_port):
 
         self.root = root
         self.panel_window = None
         self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.assign_response = None
+        self.server_ip = server_ip
+        self.call_port = call_port
 
         self.images = {}
 
@@ -64,7 +66,7 @@ class AssignPanel:
         self.user_name_input_area = Entry(self.assign_panel_window, width=30, font=entry_font)
         self.user_name_input_area.place(x=160, y=60)
 
-        self.user_password_entry_area = Entry(self.assign_panel_window, width=30, font=entry_font)
+        self.user_password_entry_area = Entry(self.assign_panel_window, width=30, font=entry_font, show="*")
         self.user_password_entry_area.place(x=160, y=100)
 
         # Create the submit button with an image and adjust its position
@@ -99,7 +101,7 @@ class AssignPanel:
         if username.strip() and password.strip():
             print("the params:", username, password)
 
-            params = [username.encode(), password.encode()]
+            params = [username.encode(), password.encode(), self.call_port.encode()]
             if not Pro.check_cmd_and_params(cmd, params):
                 if not hasattr(self, 'try_again_label') or not self.try_again_label1:
                     # Assign not succeeded!!
@@ -107,6 +109,11 @@ class AssignPanel:
                     self.try_again_label1.pack()
 
             else:
+                try:
+                    self.socket_to_server.getpeername()
+                except Exception as ex:  # if socket not yet connected and thus has no peer
+                    self.socket_to_server.connect((self.server_ip, Pro.PORT))
+
                 # send cmd and params(username, password) to server
                 msg_to_send = Pro.create_msg(cmd.encode(), params)
                 self.socket_to_server.send(msg_to_send)
