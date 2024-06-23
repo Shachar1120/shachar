@@ -54,6 +54,7 @@ class ContactsPanel:
 
 
         self.networking_obj = networking_obj
+        self.assigned_clients_dict = None
 
 
 
@@ -73,33 +74,26 @@ class ContactsPanel:
 
     def init_panel_create(self):
 
-        # self.init_network()
-        # # יצירת תהליך חדש שמחכה לפתיחת שיחה
-        # thread = threading.Thread(target=self.wait_for_network)
-        #
-        # # הפעלת התהליך
-        # thread.start()
-
-
         self.Logged_In_window = self.root
         self.Logged_In_window.title("Your Contacts:")
 
-        cmd = "CONTACTS"
-        params = []
-        # send cmd and params(username, password) to server
-        msg_to_send = Pro.create_msg(cmd.encode(), params)
-        self.socket_to_server.send(msg_to_send)
+        #cmd = "CONTACTS"
+        #params = []
+         #send cmd and params(username, password) to server
+        #msg_to_send = Pro.create_msg(cmd.encode(), params)
+        #self.socket_to_server.send(msg_to_send)
 
 
         # get response from server
         # מקבל את הרשימת לקוחות הרשומים כדי להציג ללקוח
         # צריכה למחוק את הלקוח שאני מהרשימת אנשי קשר
-        res_response, msg_response = Pro.get_msg(self.socket_to_server) # getting msg: b"ASSIGNED_CLIENTS ! /x80...(dict in pickle)"
-        if res_response:
-            #opcode is ASSIGNED_CLIENTS
-            opcode, nof_params, params = Pro.split_message(msg_response)
-            params = params[0]
-            self.assigned_clients_dict = pickle.loads(params)
+        #res_response, msg_response = Pro.get_msg(self.socket_to_server) # getting msg: b"ASSIGNED_CLIENTS ! /x80...(dict in pickle)"
+        #if res_response:
+        #    #opcode is ASSIGNED_CLIENTS
+        #    opcode, nof_params, params = Pro.split_message(msg_response)
+        #    params = params[0]
+        #    self.assigned_clients_dict = pickle.loads(params)
+        if self.assigned_clients_dict != None:
             print("got the dict!!!", self.assigned_clients_dict)
             self.item_list = list(self.assigned_clients_dict.keys())
 
@@ -115,7 +109,15 @@ class ContactsPanel:
                 self.button_objs.append(obj)
                 self.button_widgets.append(button)
 
+            self.assigned_clients_dict = None
 
+        self.root.after(100, self.update_panel_create)
+
+    def update_panel_create(self):
+        if self.assigned_clients_dict is not None:
+            self.init_panel_destroy()
+            self.init_panel_create()
+        self.root.after(100, self.update_panel_create)
 
     def init_panel_destroy(self):
         for button in self.button_widgets:
@@ -126,8 +128,7 @@ class ContactsPanel:
 
     def update_contacts(self, assigned_clients):
         self.assigned_clients_dict = assigned_clients
-        self.init_panel_destroy()
-        self.init_panel_create()
+
 
 
 

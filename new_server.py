@@ -111,6 +111,17 @@ class Ser:
                 return True
         return False
 
+    def resend_assigned_clients(self):
+        # send response to the client
+        cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
+        print("this is the dict!!!:", self.assigned_clients)
+        send_dict = pickle.dumps(self.assigned_clients)
+        print("send_dict!!", send_dict)
+        message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
+
+        for s in self.client_sockets:
+            s.send(message)
+
 
 
     def split_cmd_params_msg(self, message):
@@ -170,6 +181,10 @@ def main():
                     # send response to the client
                     message = Pro.create_msg(res.encode(), [])
                     current_socket.send(message)
+                    if res == "ASSIGN_ACK":
+                        myserver.resend_assigned_clients()
+
+
 
 
                 # client asks for assigned clients dict

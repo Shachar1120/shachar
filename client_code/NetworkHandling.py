@@ -16,10 +16,12 @@ class NetworkHandling:
         self.on_ring_func = None
         self.in_call_func = None
         self.move_to_ringing_acceptor = move_to_ringing_acceptor
+        self.contacts_obj = None
 
 
 
-    def init_network(self):
+    def init_network(self, contacts_obj):
+        self.contacts_obj = contacts_obj
         # open socket with the server
         self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.call_accept_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -55,26 +57,14 @@ class NetworkHandling:
 
             for s in rlist:
                 if s == self.socket_to_server:  # connect with server
-                    pass
-                    # res, message = Pro.get_msg(self.socket_to_server)
-                    # # print(f"wait_for_network: {message}")
-                    # if res:
-                    #     opcode, nof_params, params = Pro.split_message(message)
-                    #
-                    #     # print("the message is:", opcode, nof_params, params)
-                    #     if opcode == "REGISTER":
-                    #         print("networkhandeling got register")
-                    #         pass
-                    #     if opcode == "ASSIGN":
-                    #         print("networkhandeling got assign")
-                    #         pass
-                    #     if opcode == "CONTACTS":
-                    #         print("networkhandeling got contacts")
-                    #         pass
-                    #     if opcode == "ASSIGNED_CLIENTS":
-                    #         print("networkhandeling got contacts")
-                    #         #self.assigned_clients_dict = pickle.loads(opcode)
-                    #         #self.updated_assigned_clients(self.assigned_clients_dict)
+                    res, message = Pro.get_msg(self.socket_to_server)
+                    if res:
+                        opcode, nof_params, params = Pro.split_message(message)
+                        if opcode == "ASSIGNED_CLIENTS":
+                            print("networkhandeling got contacts")
+                            self.assigned_clients_dict = pickle.loads(params[0])
+                            print("dict in networkhandeling!!!", self.assigned_clients_dict)
+                            self.handle_updated_assigned_clients(self.assigned_clients_dict)
 
                 elif s == self.call_accept_socket:  # for call establishment
                     self.call_initiate_socket, _ = self.call_accept_socket.accept()

@@ -31,7 +31,7 @@ class Cli:
         #self.database_obj = DataBase()
 
         self.networking_obj = NetworkHandling(self.socket_to_server, self.profile, self.move_to_ringing_acceptor)
-        self.networking_obj.init_network()
+
 
         self.register_obj = RegisterPanel(self.root,
                                           self.socket_to_server,
@@ -54,6 +54,7 @@ class Cli:
                                           self.move_to_ringing_initiator,
                                           self.profile,
                                           self.networking_obj)
+        self.networking_obj.init_network(self.contacts_obj)
         self.images = {}
         self.init_images_dict()
 
