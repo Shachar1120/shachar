@@ -3,6 +3,7 @@ import socket
 import threading
 import select
 import mysql.connector
+import hashlib
 
 from new_protocol import Pro
 from DataBase import DataBase
@@ -25,25 +26,25 @@ class Ser:
         self.server_socket.listen()
         print("Server is up and running")
 
-        self.client_ip_value = "127.0.0.1"
-
         self.client_sockets = []
 
         self.database_obj = DataBase("mydatabase")
 
         self.assigned_clients = {}  # dict of all usernames of assigned client(right now)
-        self.ip_map = {} # dict of all client_sockets and their IP's
 
 
     def accept(self):
         (client_socket, client_address) = self.server_socket.accept()
-        self.ip_map[client_socket] = client_address[0] # add client_socket: IP
         self.client_sockets.append(client_socket)
         print("Client connected")
 
     def client_disconnected(self, client_socket):
         self.client_sockets.remove(client_socket)
         print("Client disconnected")
+
+    def encrypte_password(self, password):
+        password = hashlib.md5(password.encode()).hexdigest()
+        return password
 
     def handle_registration(self, params: [], client_socket) -> int:
 
@@ -55,10 +56,11 @@ class Ser:
         call_accept_port = int(params[2])  # client sends it in str, we need to change to int
         print("the Port:", call_accept_port)
 
+        encrypte_password = self.encrypte_password(password)
         # בדוק אם שם המשתמש פנוי
         if self.database_obj.is_username_in_database(username):
             # צור חשבון חדש
-            self.database_obj.create_new_account(username, password, call_accept_port)
+            self.database_obj.create_new_account(username, encrypte_password, call_accept_port)
             return Pro.cmds[Pro.REGISTER_ACK]
         else:
             return Pro.cmds[Pro.REGISTER_NACK]  # already registered
@@ -70,10 +72,7 @@ class Ser:
         #בהתחברות אנחנו עדיין משתמשים במילון
         # רק בהרשמה אנחנו משתמשים בדאטאבייס!!!
         username_value = params[0]
-        call_port_value = params[2]
-        if client_socket in self.ip_map:
-            #get ip
-            self.client_ip_value = self.ip_map[client_socket]
+
 
         if self.check_password(params): # checks if username exits in database(is registered) and if password is correct
             print("Correct Password!!")
@@ -90,7 +89,7 @@ class Ser:
                 username_value = params[0]
                 password, port = self.database_obj.find_username_info_database(username_value) #takes it from database
 
-                self.assigned_clients[username_value] = (password, call_port_value, self.client_ip_value)  # add client
+                self.assigned_clients[username_value] = port #(password(???), port) # add client
                 print("assigned_clients dict:", self.assigned_clients)
                 return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
 
@@ -101,6 +100,7 @@ class Ser:
     def check_password(self, params: []):
         username_input = params[0]
         user_details_value = params[1]  # password
+        user_details_value = self.encrypte_password(user_details_value)
 
         # check username is even registered
         if not self.database_obj.is_username_in_database(username_input): # if =False that means the username is registered
@@ -172,7 +172,7 @@ def main():
                     current_socket.send(message)
 
 
-                # client asks for assigned clients dict 
+                # client asks for assigned clients dict
                 elif cmd_res == Pro.cmds[Pro.CONTACTS]:
                     print("got the message contacts!!!!!")
 
@@ -180,6 +180,7 @@ def main():
                     cmd_to_send = Pro.cmds[Pro.ASSIGNED_CLIENTS]
                     print("this is the dict!!!:", myserver.assigned_clients)
                     send_dict = pickle.dumps(myserver.assigned_clients)
+                    print("send_dict!!", send_dict)
                     message = Pro.create_msg(cmd_to_send.encode(), [send_dict])
                     current_socket.send(message)
 

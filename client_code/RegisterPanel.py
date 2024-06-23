@@ -8,13 +8,12 @@ import pickle
 from new_protocol import Pro
 
 class RegisterPanel:
-    def __init__(self, root, socket_to_server, complete_func, my_port, server_ip):
+    def __init__(self, root, socket_to_server, complete_func, my_port):
         self.root = root
         self.panel_window = None
         self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.my_port = my_port
-        self.server_ip = server_ip
 
         self.images = {}
 
@@ -79,13 +78,8 @@ class RegisterPanel:
 
 
             else:
-
-                try:
-                    self.socket_to_server.getpeername()
-                except Exception as ex:  # if socket not yet connected and thus has no peer
-                    self.socket_to_server.connect((self.server_ip, Pro.PORT))
-
                 # send cmd and params(username, password) to server
+
                 msg_to_send = Pro.create_msg(cmd.encode(), params)
                 self.socket_to_server.send(msg_to_send)
                 # get response from server
@@ -149,9 +143,9 @@ class RegisterPanel:
 
         # Create entry fields with larger font size
         self.user_name_input_area = Entry(self.register_panel_window, width=30, font=entry_font)
-        self.user_name_input_area.place(x=160, y=60) 
+        self.user_name_input_area.place(x=160, y=60)
 
-        self.user_password_entry_area = Entry(self.register_panel_window, width=30, font=entry_font, show="*")
+        self.user_password_entry_area = Entry(self.register_panel_window, width=30, font=entry_font)
         self.user_password_entry_area.place(x=160, y=100)
 
         # Create the submit button with an image and adjust its position

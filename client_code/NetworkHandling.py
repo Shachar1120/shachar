@@ -1,3 +1,4 @@
+import pickle
 import socket
 from new_protocol import Pro
 import select
@@ -6,7 +7,7 @@ from AudioHandling import AudioHandling
 from call_utilities import *
 
 class NetworkHandling:
-    def __init__(self, socket_to_server, profile, move_to_ringing_acceptor, call_port):
+    def __init__(self, socket_to_server, profile, move_to_ringing_acceptor):
         self.socket_to_server = socket_to_server
         self.call_initiate_socket = None
         self.call_accept_socket = None
@@ -15,14 +16,14 @@ class NetworkHandling:
         self.on_ring_func = None
         self.in_call_func = None
         self.move_to_ringing_acceptor = move_to_ringing_acceptor
-        self.call_port = call_port
+
+
 
     def init_network(self):
         # open socket with the server
         self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.call_accept_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.call_accept_socket.bind(("0.0.0.0", self.profile.call_accept_port))
-        self.call_accept_socket.bind(("0.0.0.0", (int(self.call_port)))) #if from 2 computers no need +1 !!!
+        self.call_accept_socket.bind(("0.0.0.0", self.profile.call_accept_port))
         self.call_accept_socket.listen()
 
     def register_on_ring(self, func):
@@ -33,6 +34,11 @@ class NetworkHandling:
         ################################
         # network ==> responder ... secondary thread
         ################################
+
+    def handle_updated_assigned_clients(self, assigned_clients):
+        self.assigned_clients = assigned_clients
+        if self.contacts_obj:
+            self.contacts_obj.update_contacts(self.assigned_clients)
 
     def wait_for_network(self):
 
@@ -50,6 +56,26 @@ class NetworkHandling:
             for s in rlist:
                 if s == self.socket_to_server:  # connect with server
                     pass
+                    # res, message = Pro.get_msg(self.socket_to_server)
+                    # # print(f"wait_for_network: {message}")
+                    # if res:
+                    #     opcode, nof_params, params = Pro.split_message(message)
+                    #
+                    #     # print("the message is:", opcode, nof_params, params)
+                    #     if opcode == "REGISTER":
+                    #         print("networkhandeling got register")
+                    #         pass
+                    #     if opcode == "ASSIGN":
+                    #         print("networkhandeling got assign")
+                    #         pass
+                    #     if opcode == "CONTACTS":
+                    #         print("networkhandeling got contacts")
+                    #         pass
+                    #     if opcode == "ASSIGNED_CLIENTS":
+                    #         print("networkhandeling got contacts")
+                    #         #self.assigned_clients_dict = pickle.loads(opcode)
+                    #         #self.updated_assigned_clients(self.assigned_clients_dict)
+
                 elif s == self.call_accept_socket:  # for call establishment
                     self.call_initiate_socket, _ = self.call_accept_socket.accept()
                     print("Client connected")
@@ -87,20 +113,18 @@ class NetworkHandling:
 
                         elif opcode == "FRAME":
                             if self.audio_handler_obj is not None:
-                                data = Pro.PARAMETERS_DELIMITER.encode().join(params)
+                                data = params[0]
                                 #print("FRAME params!!! (data)", params)
                                 # accept frame and play
                                 # data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
                                 # data = pickle.loads(data)
                                 #print(f"got frame: {data}")
                                 self.audio_handler_obj.put_frame(data)
-
-
                         else:
                             pass
 
                     else:
-                        print(f"didnt get the message because {message}")
+                        print("didnt get the message")
 
 
             if self.audio_handler_obj is not None:

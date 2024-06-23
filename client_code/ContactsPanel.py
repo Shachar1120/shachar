@@ -124,7 +124,10 @@ class ContactsPanel:
         self.button_objs = []
         self.button_widgets = []
 
-
+    def update_contacts(self, assigned_clients):
+        self.assigned_clients_dict = assigned_clients
+        self.init_panel_destroy()
+        self.init_panel_create()
 
 
 
@@ -152,9 +155,8 @@ class ContactsPanel:
             try:
                 # make the connection
                 # point to point
-                self.other_client_port = int(self.assigned_clients_dict[item][1])
-                self.other_client_ip = int(self.assigned_clients_dict[item][2])
-                self.networking_obj.call_initiate_socket.connect(self.other_client_ip, self.other_client_port) # self.call_initiate_port
+                self.other_client_port = int(self.assigned_clients_dict[item])
+                self.networking_obj.call_initiate_socket.connect(("127.0.0.1", self.other_client_port)) # self.call_initiate_port
                 print("client connected")
             except Exception as ex:
                 print("client couldnt connect")
