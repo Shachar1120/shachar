@@ -20,6 +20,7 @@ class AssignPanel:
         self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.assign_response = None
+        self.username = None
 
         self.images = {}
 
@@ -91,6 +92,8 @@ class AssignPanel:
         cmd = "ASSIGN"
         username = self.user_name_input_area.get()
         password = self.user_password_entry_area.get()
+
+        self.username = username # moving username value
 
         # Check if username and password are not empty
         if username.strip() and password.strip():

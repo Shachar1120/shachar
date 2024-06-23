@@ -21,6 +21,7 @@ class ButtonItem:
         self.dict = dict
         self.call_func = call_func
 
+
     def item_clicked(self):
         print(f"Clicked item: {self.item}")
         clicked_item = {self.item}
@@ -32,7 +33,7 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, networking_obj):
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, networking_obj, assign_obj):
         self.profile = profile
         self.root = root
         self.panel_window = None
@@ -49,7 +50,7 @@ class ContactsPanel:
         self.vow1 = None
         self.vow2 = None
 
-        self.username = None
+        self.assign_obj = assign_obj
         #self.database_obj = DataBase("mydatabase")
 
 
@@ -72,10 +73,10 @@ class ContactsPanel:
         #print("split_message3:", opcode, nof_params, params)
         #return opcode, nof_params, params
 
-    def init_panel_create(self):
+    def init_panel_create(self, username):
 
         self.Logged_In_window = self.root
-        self.Logged_In_window.title("Your Contacts:")
+        self.Logged_In_window.title(f"{username}, Your Contacts are:")
 
         #cmd = "CONTACTS"
         #params = []
@@ -116,7 +117,7 @@ class ContactsPanel:
     def update_panel_create(self):
         if self.assigned_clients_dict is not None:
             self.init_panel_destroy()
-            self.init_panel_create()
+            self.init_panel_create(self.assign_obj.username)
         self.root.after(100, self.update_panel_create)
 
     def init_panel_destroy(self):

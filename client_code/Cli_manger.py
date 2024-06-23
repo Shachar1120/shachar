@@ -53,7 +53,7 @@ class Cli:
                                           self.ContactsComplete,
                                           self.move_to_ringing_initiator,
                                           self.profile,
-                                          self.networking_obj)
+                                          self.networking_obj, self.assign_obj)
         self.networking_obj.init_network(self.contacts_obj)
         self.images = {}
         self.init_images_dict()
@@ -114,7 +114,7 @@ class Cli:
         # הפעלת התהליך
         thread.start()
 
-        self.contacts_obj.init_panel_create()
+        self.contacts_obj.init_panel_create(self.assign_obj.username)
 
     def ContactsComplete(self):
         self.contacts_obj.init_panel_destroy()
