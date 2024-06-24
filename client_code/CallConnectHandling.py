@@ -42,6 +42,7 @@ class CallConnectHandling:
 
         self.networking_obj.register_on_ring(self.on_ring) # for acceptor???
         self.networking_obj.register_in_call(self.in_call)
+        self.networking_obj.register_on_contact(self.on_contact)
 
     def on_ring(self):
         self.transition = CallStates.INIT
@@ -50,6 +51,10 @@ class CallConnectHandling:
     def in_call(self):
         self.transition = CallStates.RINGING
         self.state = CallStates.IN_CALL
+
+    def on_contact(self):
+        self.transition = self.state
+        self.state = CallStates.INIT
 
     def load_image(self, path, size=None):
         # פונקציה לטעינת תמונה והמרתה לפורמט Tkinter
@@ -102,8 +107,16 @@ class CallConnectHandling:
     def destroy_panel_initiator_create(self):
         print("in destroy 1!!!")
         self.call_who.destroy()
+        self.call_who = None
         self.calling_image.destroy()
-
+        self.calling_image = None
+        print(f"type of self: {type(self)}")
+        if self.btn_hang_up is not None:
+            self.btn_hang_up.destroy()
+            self.btn_hang_up = None
+        #if self.btn_answer is not None:
+            #self.btn_answer.destroy()
+            #self.btn_answer = None
     def init_panel_acceptor_create(self):
         # sets the title of the
         # Toplevel widget
@@ -144,9 +157,16 @@ class CallConnectHandling:
         self.calling_image.image_id = 0
     def destroy_panel_acceptor_create(self):
         self.call_who.destroy()
+        self.call_who = None
         self.calling_image.destroy()
-        self.btn_hang_up.destroy()
-        self.btn_answer.destroy()
+        self.calling_image = None
+        if self.btn_hang_up is not None:
+            self.btn_hang_up.destroy()
+            self.btn_hang_up = None
+        if self.btn_answer is not None:
+            self.btn_answer.destroy()
+            self.btn_answer = None
+
     def init_panel_calling(self, username=None):
         print("!2")
         print("init_panel_calling: generate AudioHandling")

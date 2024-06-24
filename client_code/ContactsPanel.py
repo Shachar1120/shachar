@@ -76,6 +76,7 @@ class ContactsPanel:
 
     def init_panel_create(self, user=None):
 
+        self.refresh_assigned_clients = True
         self.Logged_In_window = self.root
         username1 = user
         self.Logged_In_window.title("Your Contacts are:") #f"{user}, Your Contacts are:"

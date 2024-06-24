@@ -190,12 +190,20 @@ class Cli:
     def move_from_call_to_contact_list(self):
         self.call_obj.destroy_panel_calling()
         self.call_obj.transition = CallStates.INIT
+
+        sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
+        self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+
         self.contacts_obj.init_panel_create()
 
     def move_from_ringing_to_contact_list(self):
         print('move_from_ringing_to_contact_list!!!')
         self.call_obj.destroy_panel_initiator_create()
         self.call_obj.transition = CallStates.INIT
+
+        sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
+        self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+
         self.contacts_obj.init_panel_create()
 
 

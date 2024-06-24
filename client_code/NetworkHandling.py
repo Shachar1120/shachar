@@ -15,6 +15,7 @@ class NetworkHandling:
         self.audio_handler_obj = None
         self.on_ring_func = None
         self.in_call_func = None
+        self.on_contact_func = None
         self.move_to_ringing_acceptor = move_to_ringing_acceptor
         self.contacts_obj = None
 
@@ -36,6 +37,9 @@ class NetworkHandling:
         ################################
         # network ==> responder ... secondary thread
         ################################
+
+    def register_on_contact(self, func):
+        self.on_contact_func = func
 
     def handle_updated_assigned_clients(self, assigned_clients):
         if self.contacts_obj:
@@ -77,6 +81,10 @@ class NetworkHandling:
                         opcode, nof_params, params = Pro.split_message(message)
 
                         #print("the message is:", opcode, nof_params, params)
+
+                        if opcode == "MOVE_TO_CONTACT":
+                            print("received MOVE_TO_CONTACT")
+                            self.on_contact_func()
 
                         if opcode == "RING":
                             params = params[0].decode()
