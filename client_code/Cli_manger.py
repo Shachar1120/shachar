@@ -23,6 +23,7 @@ class Cli:
         self.profile = profile
         self.root = Tk()
         self.user1 = None
+        self.username1 = None
         # sets the geometry of main
         # root window
         self.root.geometry("600x400")
@@ -134,9 +135,9 @@ class Cli:
         #self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
         self.assign_obj.init_panel_create()
 
-    def move_to_ringing_initiator(self):
+    def move_to_ringing_initiator(self, username):
         self.contacts_obj.init_panel_destroy()
-        self.call_obj.init_panel_initiator_create()
+        self.call_obj.init_panel_initiator_create(username)
         #self.call_obj.init_panel_acceptor_create()
         print("moved to ringing as initiator!!")
 
@@ -149,11 +150,11 @@ class Cli:
     def move_to_in_call_initiator(self):
 
         self.call_obj.destroy_panel_initiator_create()
-        self.call_obj.state = CallConnectHandling.IN_CALL
-        self.call_obj.init_panel_calling(self.contacts_obj.username)
+        self.call_obj.transition = CallStates.IN_CALL
+        self.call_obj.init_panel_calling(self.username1)
 
     def move_to_in_call_acceptor(self):
-        self.call_obj.state = CallConnectHandling.IN_CALL
+        self.call_obj.state = CallStates.IN_CALL
 
         cmd = Pro.cmds[Pro.IN_CALL]
         # send IN_CALL message to the caller = CALL ACK
@@ -182,6 +183,19 @@ class Cli:
         self.button_assign.destroy()
         self.main_image_label.destroy()
         self.button_frame.destroy()
+
+
+
+
+    def move_from_call_to_contact_list(self):
+        self.call_obj.destroy_panel_calling()
+        self.call_obj.transition = CallStates.INIT
+        self.contacts_obj.init_panel_create()
+
+    def move_from_ringing_to_contact_list(self):
+        self.call_obj.destroy_panel_initiator_create()
+        self.call_obj.transition = CallStates.INIT
+        self.contacts_obj.init_panel_create()
 
 
 
@@ -223,21 +237,28 @@ class Cli:
         self.root.mainloop()
 
     def check_network_answers(self):
-        # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_ring שזה הthread הראשי
-        # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
-        if CallStates.RINGING == self.call_obj.state:
-            if self.call_obj.transition: #is True
-                self.move_to_ringing_acceptor()
-                #self.move_to_ringing()
-                self.call_obj.transition = False
-
-
+        if CallStates.RINGING == self.call_obj.state and self.call_obj is not None:
             self.call_obj.animate_handle()
 
-        if CallStates.IN_CALL == self.call_obj.state:
-            if self.call_obj.transition:
+        # בגלל שפתחנו thread נוסף אז הגוי לא מציג אותו, בניגוד לmake_ring שזה הthread הראשי
+        # נעשה פונקציה שכל 40 מילי שניות תעדכן את המסך
+        if self.call_obj.transition != self.call_obj.state:
+            if CallStates.RINGING == self.call_obj.state:
+                self.move_to_ringing_acceptor()
+                #self.move_to_ringing()
+                self.call_obj.transition = self.call_obj.state
+
+            if CallStates.IN_CALL == self.call_obj.state:
                 self.move_to_in_call_initiator()
-                self.call_obj.transition = False
+                self.call_obj.transition = self.call_obj.state
+
+            if CallStates.INIT == self.call_obj.state:
+                if self.call_obj.transition == CallStates.RINGING:
+                    self.move_from_ringing_to_contact_list()
+
+                elif self.call_obj.transition == CallStates.IN_CALL:
+                    self.move_from_call_to_contact_list()
+                self.call_obj.transition = self.call_obj.state
 
         self.root.after(40, self.check_network_answers)
 

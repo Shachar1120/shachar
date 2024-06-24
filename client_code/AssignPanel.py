@@ -91,6 +91,12 @@ class AssignPanel:
         if hasattr(self, 'password_try_again'):
             self.password_try_again.destroy()
 
+        if hasattr(self, 'try_again_label'):
+            self.try_again_label.destroy()
+
+        if hasattr(self, 'try_again_label1'):
+            self.try_again_label1.destroy()
+
         cmd = "ASSIGN"
         username = self.user_name_input_area.get()
         self.user1 = username
@@ -126,14 +132,20 @@ class AssignPanel:
 
                     else:
                         if msg_response == "ASSIGN_NACK":
-                            if not hasattr(self, 'already_registered_try_again'):
-                                self.password_try_again = Label(self.password_try_again,
-                                                                          text="Password is Incorrect! Try Again")
+                            if not hasattr(self, 'try_again_label') or not self.try_again_label1:
+                                # Assign not succeeded!!
+                                self.password_try_again = Label(self.assign_panel_window,
+                                                                text="Password is Incorrect! Try Again")
                                 self.password_try_again.pack()
+
                             print("password is incorrect???")
                         # else another error
 
 
         else:
-            self.try_again_label = Label(self.assign_panel_window, text="Username or password are empty! Try again.")
-            self.try_again_label.pack()
+            if not hasattr(self, 'try_again_label') or not self.try_again_label1:
+                # Assign not succeeded!!
+                self.try_again_label = Label(self.assign_panel_window,
+                                             text="Username or password are empty! Try again.")
+                self.try_again_label.pack()
+

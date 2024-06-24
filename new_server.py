@@ -94,6 +94,7 @@ class Ser:
                 return Pro.cmds[Pro.ASSIGN_ACK]  # username acknowledged
 
         else:
+            return Pro.cmds[Pro.ASSIGN_NACK]  # username not! acknowledged
             print("check password failed!!!")
 
 

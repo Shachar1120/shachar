@@ -27,6 +27,22 @@ class AudioHandling:
                                          input_device_index=self.profile.my_speaker,
                                          frames_per_buffer=AudioHandling.CHUNK)
 
+    def destroy_channels(self):
+        # Stop audio streams
+        if self.stream_input:
+            self.stream_input.stop_stream()
+            self.stream_input.close()
+            self.stream_input = None
+        if self.stream_output:
+            self.stream_output.stop_stream()
+            self.stream_output.close()
+            self.stream_output = None
+
+        # Close PyAudio instance
+        if self.p:
+            self.p.terminate()
+            self.p = None
+
     def get_frame(self):
         data = self.stream_input.read(AudioHandling.CHUNK)
         return data

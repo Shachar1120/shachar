@@ -38,9 +38,8 @@ class NetworkHandling:
         ################################
 
     def handle_updated_assigned_clients(self, assigned_clients):
-        self.assigned_clients = assigned_clients
         if self.contacts_obj:
-            self.contacts_obj.update_contacts(self.assigned_clients)
+            self.contacts_obj.update_contacts(assigned_clients)
 
     def wait_for_network(self):
 
@@ -88,18 +87,13 @@ class NetworkHandling:
 
                         elif opcode == "IN_CALL":
                             # params = params[0].decode()
-                            print("got in call!!")
-                            self.in_call_func()
+                            print("got in call!! AudioHandling")
+
                             if self.audio_handler_obj is None:
                                 self.audio_handler_obj = AudioHandling(self.profile)
                                 self.audio_handler_obj.init_channels()
 
-                            self.state = CallStates.IN_CALL
-                            self.transition = True
-
-
-
-
+                            self.in_call_func()
 
                         elif opcode == "FRAME":
                             if self.audio_handler_obj is not None:

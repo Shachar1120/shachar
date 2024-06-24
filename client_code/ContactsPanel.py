@@ -45,7 +45,7 @@ class ContactsPanel:
         self.item_list = None
         self.move_to_ringing_initiator = move_to_ringing_initiator
         self.state = CallStates.INIT
-        self.transition = False
+        self.transition = None
         self.vow1 = None
         self.vow2 = None
 
@@ -56,6 +56,7 @@ class ContactsPanel:
 
         self.networking_obj = networking_obj
         self.assigned_clients_dict = None
+        self.refresh_assigned_clients = False
 
 
 
@@ -73,11 +74,11 @@ class ContactsPanel:
         #print("split_message3:", opcode, nof_params, params)
         #return opcode, nof_params, params
 
-    def init_panel_create(self, user):
+    def init_panel_create(self, user=None):
 
         self.Logged_In_window = self.root
         username1 = user
-        self.Logged_In_window.title(username1) #f"{user}, Your Contacts are:"
+        #self.Logged_In_window.title(username1) #f"{user}, Your Contacts are:"
 
         #cmd = "CONTACTS"
         #params = []
@@ -95,7 +96,7 @@ class ContactsPanel:
         #    opcode, nof_params, params = Pro.split_message(msg_response)
         #    params = params[0]
         #    self.assigned_clients_dict = pickle.loads(params)
-        if self.assigned_clients_dict != None:
+        if self.assigned_clients_dict != None and self.refresh_assigned_clients:
             print("got the dict!!!", self.assigned_clients_dict)
             self.item_list = list(self.assigned_clients_dict.keys())
 
@@ -112,14 +113,15 @@ class ContactsPanel:
                     self.button_objs.append(obj)
                     self.button_widgets.append(button)
 
-            self.assigned_clients_dict = None
+            self.refresh_assigned_clients = False
 
         self.root.after(100, self.update_panel_create)
 
     def update_panel_create(self):
-        if self.assigned_clients_dict is not None:
+        if self.assigned_clients_dict is not None and self.refresh_assigned_clients:
             self.init_panel_destroy()
             self.init_panel_create(self.assign_obj.user1)
+            self.refresh_assigned_clients = False
         self.root.after(100, self.update_panel_create)
 
     def init_panel_destroy(self):
@@ -131,6 +133,7 @@ class ContactsPanel:
 
     def update_contacts(self, assigned_clients):
         self.assigned_clients_dict = assigned_clients
+        self.refresh_assigned_clients = True
 
 
 
@@ -184,7 +187,7 @@ class ContactsPanel:
 
                 # move to new panel
                 # sending root for socket_to_server and root
-                self.move_to_ringing_initiator()
+                self.move_to_ringing_initiator(self.username)
             except Exception as ex:
                 print(ex)
         else:

@@ -13,9 +13,7 @@ from AudioHandling import AudioHandling
 from call_utilities import *
 
 class CallConnectHandling:
-    INIT = 0
-    RINGING = 1
-    IN_CALL = 2
+
     def __init__(self, root, socket_to_server, complete_func, profile, networking_obj, move_to_in_call_acceptor):
         self.profile = profile
         self.root = root
@@ -30,27 +28,27 @@ class CallConnectHandling:
         self.button_widgets = []
         self.assigned_clients_dict = None
         self.item_list = None
-        self.state = CallStates.INIT
-        self.transition = False
+
         self.images = {}
         self.move_to_in_call_acceptor = move_to_in_call_acceptor
 
         self.networking_obj = networking_obj
 
-        self.transition = False
+        self.transition = None
         self.state = CallStates.INIT
 
         self.audio_handling = None
+        self.contact_name = None
 
         self.networking_obj.register_on_ring(self.on_ring) # for acceptor???
         self.networking_obj.register_in_call(self.in_call)
 
     def on_ring(self):
-        self.transition = True
+        self.transition = CallStates.INIT
         self.state = CallStates.RINGING # for acceptor
 
     def in_call(self):
-        self.transition = True
+        self.transition = CallStates.RINGING
         self.state = CallStates.IN_CALL
 
     def load_image(self, path, size=None):
@@ -60,7 +58,7 @@ class CallConnectHandling:
             image = image.resize(size, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(image)
 
-    def init_panel_initiator_create(self): # for ringing
+    def init_panel_initiator_create(self, username): # for ringing
         #self.contacts_obj.init_panel_destroy()
 
         self.root.title("Ringing")
@@ -99,7 +97,7 @@ class CallConnectHandling:
 
         self.animate_handle()
         self.state = CallStates.RINGING # for initiator
-        self.transition = False
+        self.transition = CallStates.RINGING
 
     def destroy_panel_initiator_create(self):
         self.call_who.destroy()
@@ -148,15 +146,25 @@ class CallConnectHandling:
         self.calling_image.destroy()
         self.btn_hang_up.destroy()
         self.btn_answer.destroy()
-    def init_panel_calling(self, username):
-        self.root.title("In Call! as caller")
+    def init_panel_calling(self, username=None):
+        print("!2")
+        print("init_panel_calling: generate AudioHandling")
 
+        self.audio_handling = AudioHandling(self.profile)
+        self.audio_handling.init_channels()
+
+        self.root.title("In Call! as caller")
+        self.contact_name = username
         # Label for "In Call"
         self.call_label = Label(self.root, text="In Call! as caller", font=("Helvetica", 20, "bold"))
         self.call_label.place(relx=0.5, rely=0.3, anchor=CENTER)  # Place label in the center top
 
         # Label for username
-        self.username_label = Label(self.root, text=username, font=("Helvetica", 16))
+        if self.contact_name == None:
+            text_calling = ""
+        else:
+            text_calling = f"calling {username}"
+        self.username_label = Label(self.root, text=text_calling, font=("Helvetica", 16))
         self.username_label.place(relx=0.5, rely=0.4, anchor=CENTER)  # Place username label below call label
 
         self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
@@ -165,9 +173,18 @@ class CallConnectHandling:
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
 
+    def destroy_panel_calling(self):
+        self.call_label.destroy()
+        self.username_label.destroy()
+        self.btn_hang_up.destroy()
 
 
     def init_panel_call_receiver(self):
+        print("!1")
+        self.audio_handling = AudioHandling(self.profile)
+        self.audio_handling.init_channels()
+        print("init_panel_call_receiver: generate AudioHandling")
+        self.transition = self.state
         self.root.title("In Call! as caller")
 
         # Label for "In Call"
@@ -184,18 +201,36 @@ class CallConnectHandling:
         self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
         self.btn_hang_up.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
 
-
-
-
-
-        self.audio_handling = AudioHandling(self.profile)
-        self.audio_handling.init_channels()
+        #self.audio_handling = AudioHandling(self.profile)
+        #self.audio_handling.init_channels()
     def animate_handle(self):
 
-        self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
-        self.calling_image.config(image=self.calling_image.image[self.calling_image.image_id // 3])
+        if self.calling_image is not None:
+            self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
+            self.calling_image.config(image=self.calling_image.image[self.calling_image.image_id // 3])
     def hang_up_call(self):
-        pass
+        if self.audio_handling is not None:
+            self.audio_handling.destroy_channels()
+            self.audio_handling = None
+
+        # Destroy GUI elements
+        # if self.state == CallStates.RINGING: # reject call
+        #     pass
+        #     #self.destroy_panel_initiator_create()
+        # elif self.state == CallStates.IN_CALL: # hangup call
+        #     if self.profile.caller:
+        #         self.destroy_panel_calling()
+        #     else:
+        #         self.destroy_panel_acceptor_create()
+
+        # reject call || hangup call
+        if self.state == CallStates.RINGING:
+            self.transition = self.state
+            self.state = CallStates.INIT
+        elif self.state == CallStates.IN_CALL:
+            self.transition = self.state
+            self.state = CallStates.INIT
+
 
     def open_and_start_audio_channels(self):
         CHUNK = 4096
