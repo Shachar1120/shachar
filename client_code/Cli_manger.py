@@ -1,5 +1,4 @@
 
-
 import socket
 import threading
 from tkinter import *  # ייבוא כל הפונקציות והמחלקות מ-tkinter

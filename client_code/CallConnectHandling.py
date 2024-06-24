@@ -1,8 +1,10 @@
 import threading
 from tkinter import *
 import tkinter.ttk as ttk
+import os
+import pyaudio
 from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
-
+import sys
 import socket
 import pickle
 from new_protocol import Pro
@@ -105,15 +107,18 @@ class CallConnectHandling:
         self.transition = CallStates.RINGING
 
     def destroy_panel_initiator_create(self):
+        # destroies acceptor create?????
         print("in destroy 1!!!")
         self.call_who.destroy()
         self.call_who = None
         self.calling_image.destroy()
         self.calling_image = None
+        self.btn_hang_up3.destroy()
+        self.btn_hang_up3 = None
         print(f"type of self: {type(self)}")
-        if self.btn_hang_up is not None:
-            self.btn_hang_up.destroy()
-            self.btn_hang_up = None
+        #if self.btn_hang_up is not None:
+            #self.btn_hang_up.destroy()
+            #self.btn_hang_up = None
         #if self.btn_answer is not None:
             #self.btn_answer.destroy()
             #self.btn_answer = None
@@ -132,10 +137,10 @@ class CallConnectHandling:
         self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
 
         # Create buttons
-        self.btn_hang_up = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call,
+        self.btn_hang_up3 = Button(self.root, image=self.photo_hang_up, command=self.hang_up_ring,
                                   borderwidth=0)
-        self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
-        self.btn_hang_up.pack(side=LEFT, padx=20, pady=20)
+        self.btn_hang_up3.image = self.photo_hang_up  # keep a reference to avoid garbage collection
+        self.btn_hang_up3.pack(side=LEFT, padx=20, pady=20)
 
         self.btn_answer = Button(self.root, image=self.photo_answer, command=self.move_to_in_call_acceptor,
                                  borderwidth=0)
@@ -160,13 +165,26 @@ class CallConnectHandling:
         self.call_who = None
         self.calling_image.destroy()
         self.calling_image = None
-        if self.btn_hang_up is not None:
-            self.btn_hang_up.destroy()
-            self.btn_hang_up = None
+        print("btn hang up!!!", self.btn_hang_up3)
+        self.btn_hang_up3.destroy()
+        self.btn_hang_up3 = None
         if self.btn_answer is not None:
             self.btn_answer.destroy()
             self.btn_answer = None
 
+    def destroy_panel_initiator_create(self):
+        print("in destroy 1!!!")
+        self.call_who.destroy()
+        self.call_who = None
+        self.calling_image.destroy()
+        self.calling_image = None
+        print(f"type of self: {type(self)}")
+        #if self.btn_hang_up is not None:
+            #self.btn_hang_up.destroy()
+            #self.btn_hang_up = None
+        #if self.btn_answer is not None:
+            #self.btn_answer.destroy()
+            #self.btn_answer = None
     def init_panel_calling(self, username=None):
         print("!2")
         print("init_panel_calling: generate AudioHandling")
@@ -190,14 +208,25 @@ class CallConnectHandling:
 
         self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
         # Hang up button with icon
-        self.btn_hang_up = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
-        self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
-        self.btn_hang_up.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
+        self.btn_hang_up1 = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
+        self.btn_hang_up1.image = self.photo_hang_up  # keep a reference to avoid garbage collection
+        self.btn_hang_up1.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
 
     def destroy_panel_calling(self):
+        self.root.destroy()
         self.call_label.destroy()
         self.username_label.destroy()
-        self.btn_hang_up.destroy()
+        self.btn_hang_up1.destroy()
+
+    #def destroy_panel_call_reciever(self):
+        #self.root.destroy()
+
+    def hang_up_call(self):
+        self.destroy_panel_calling()
+        #self.destroy_panel_call_reciever()
+        print("exiting")
+        #os._exit(0)
+
 
 
     def init_panel_call_receiver(self):
@@ -218,9 +247,9 @@ class CallConnectHandling:
 
         self.photo_hang_up = PhotoImage(file=r"..\images\hang_up.png").subsample(3, 3)
         # Hang up button with icon
-        self.btn_hang_up = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
-        self.btn_hang_up.image = self.photo_hang_up  # keep a reference to avoid garbage collection
-        self.btn_hang_up.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
+        self.btn_hang_up2 = Button(self.root, image=self.photo_hang_up, command=self.hang_up_call, borderwidth=0)
+        self.btn_hang_up2.image = self.photo_hang_up  # keep a reference to avoid garbage collection
+        self.btn_hang_up2.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
 
         #self.audio_handling = AudioHandling(self.profile)
         #self.audio_handling.init_channels()
@@ -229,7 +258,7 @@ class CallConnectHandling:
         if self.calling_image is not None:
             self.calling_image.image_id = (self.calling_image.image_id + 1) % 6
             self.calling_image.config(image=self.calling_image.image[self.calling_image.image_id // 3])
-    def hang_up_call(self):
+    def hang_up_ring(self):
         if self.audio_handling is not None:
             self.audio_handling.destroy_channels()
             self.audio_handling = None
@@ -244,6 +273,8 @@ class CallConnectHandling:
         #     else:
         #         self.destroy_panel_acceptor_create()
 
+        self.btn_hang_up3.destroy()
+        self.btn_answer.destroy()
         # reject call || hangup call
         if self.state == CallStates.RINGING:
             self.transition = self.state

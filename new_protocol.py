@@ -1,6 +1,7 @@
 import os
 import socket
 
+
 # title Single Client connect, register, assign
 #
 # note right of Server: Client connect to server
