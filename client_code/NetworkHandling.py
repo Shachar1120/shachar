@@ -114,7 +114,7 @@ class NetworkHandling:
                             pass
 
                     else:
-                        print("didnt get the message")
+                        print("wrong user! you called yourself") # bug- when calling userself(we will fi it by remoing ourself from contacts list)
 
 
             if self.audio_handler_obj is not None:

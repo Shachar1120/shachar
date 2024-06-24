@@ -61,6 +61,7 @@ class CallConnectHandling:
         return ImageTk.PhotoImage(image)
 
     def init_panel_initiator_create(self): # for ringing
+        #self.contacts_obj.init_panel_destroy()
 
         self.root.title("Ringing")
 

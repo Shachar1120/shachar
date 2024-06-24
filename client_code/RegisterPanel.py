@@ -14,6 +14,7 @@ class RegisterPanel:
         self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.my_port = my_port
+        self.user1 = None
 
         self.images = {}
 
@@ -61,6 +62,7 @@ class RegisterPanel:
         # Create a label indicating successful registration
         cmd = "REGISTER"
         username = self.user_name_input_area.get()
+        self.user1 = username
         password = self.user_password_entry_area.get()
         my_port = str(self.my_port)
 

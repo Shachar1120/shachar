@@ -15,17 +15,16 @@ from call_utilities import *
 #from DataBase import DataBase
 
 class ButtonItem:
-    def __init__(self, item, call_func, dict):
+    def __init__(self, item, call_func, dictionary):
         self.item = item
         self.call_handling = None
-        self.dict = dict
+        self.dictionary = dictionary
         self.call_func = call_func
-
 
     def item_clicked(self):
         print(f"Clicked item: {self.item}")
         clicked_item = {self.item}
-        self.call_func(self.item, self.dict) # call func is make ring (of ContactsPanel class)
+        self.call_func(self.item, self.dictionary) # call func is make ring (of ContactsPanel class)
 
 class ContactsPanel:
     INIT = 0
@@ -33,7 +32,7 @@ class ContactsPanel:
     IN_CALL = 2
 
 
-    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, networking_obj, assign_obj):
+    def __init__(self, root, socket_to_server, complete_func, move_to_ringing_initiator, profile, networking_obj, assign_obj, register_obj):
         self.profile = profile
         self.root = root
         self.panel_window = None
@@ -51,6 +50,7 @@ class ContactsPanel:
         self.vow2 = None
 
         self.assign_obj = assign_obj
+        self.register_obj = register_obj
         #self.database_obj = DataBase("mydatabase")
 
 
@@ -73,10 +73,11 @@ class ContactsPanel:
         #print("split_message3:", opcode, nof_params, params)
         #return opcode, nof_params, params
 
-    def init_panel_create(self, username):
+    def init_panel_create(self, user):
 
         self.Logged_In_window = self.root
-        self.Logged_In_window.title(f"{username}, Your Contacts are:")
+        username1 = user
+        self.Logged_In_window.title(username1) #f"{user}, Your Contacts are:"
 
         #cmd = "CONTACTS"
         #params = []
@@ -104,11 +105,12 @@ class ContactsPanel:
             cget_bg = self.root.cget("bg")
             print(f"lets see: {cget_bg}")
             for item in items:
-                obj = ButtonItem(item, self.make_ring, self.assigned_clients_dict)
-                button = ttk.Button(self.root, text=item, command=obj.item_clicked)
-                button.pack(pady=5, padx=10, fill="x")
-                self.button_objs.append(obj)
-                self.button_widgets.append(button)
+                if item != user: # לא להציג את הכפתור של עצמך
+                    obj = ButtonItem(item, self.make_ring, self.assigned_clients_dict)
+                    button = ttk.Button(self.root, text=item, command=obj.item_clicked)
+                    button.pack(pady=5, padx=10, fill="x")
+                    self.button_objs.append(obj)
+                    self.button_widgets.append(button)
 
             self.assigned_clients_dict = None
 
@@ -117,7 +119,7 @@ class ContactsPanel:
     def update_panel_create(self):
         if self.assigned_clients_dict is not None:
             self.init_panel_destroy()
-            self.init_panel_create(self.assign_obj.username)
+            self.init_panel_create(self.assign_obj.user1)
         self.root.after(100, self.update_panel_create)
 
     def init_panel_destroy(self):
@@ -144,6 +146,7 @@ class ContactsPanel:
     ################################
 
     def make_ring(self, item, dict):
+
 
         #need to get client details dictionary
         # item is username of wanted client

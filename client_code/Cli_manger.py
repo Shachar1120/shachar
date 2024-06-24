@@ -7,7 +7,7 @@ from PIL import Image, ImageTk  # ייבוא Image ו-ImageTk מ-Pillow
 import pyaudio
 from RegisterPanel import RegisterPanel
 from AssignPanel import AssignPanel
-from ContactsPanel import ContactsPanel
+from ContactsPanel import ContactsPanel, ButtonItem
 from CallConnectHandling import CallConnectHandling
 from new_protocol import Pro
 from call_utilities import *
@@ -22,7 +22,7 @@ class Cli:
         self.socket_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.profile = profile
         self.root = Tk()
-
+        self.user1 = None
         # sets the geometry of main
         # root window
         self.root.geometry("600x400")
@@ -53,7 +53,7 @@ class Cli:
                                           self.ContactsComplete,
                                           self.move_to_ringing_initiator,
                                           self.profile,
-                                          self.networking_obj, self.assign_obj)
+                                          self.networking_obj, self.assign_obj, self.register_obj)
         self.networking_obj.init_network(self.contacts_obj)
         self.images = {}
         self.init_images_dict()
@@ -114,7 +114,8 @@ class Cli:
         # הפעלת התהליך
         thread.start()
 
-        self.contacts_obj.init_panel_create(self.assign_obj.username)
+        self.user1 = self.assign_obj.user1
+        self.contacts_obj.init_panel_create(self.user1)
 
     def ContactsComplete(self):
         self.contacts_obj.init_panel_destroy()
@@ -125,12 +126,12 @@ class Cli:
 
     def move_to_register(self):
         self.destroy_enter_panel()
-        self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.profile.call_accept_port)
+        #self.register_obj = RegisterPanel(self.root, self.socket_to_server, self.RegisterComplete, self.profile.call_accept_port)
         self.register_obj.init_panel_create()
 
     def move_to_assign(self):
         self.destroy_enter_panel()
-        self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
+        #self.assign_obj = AssignPanel(self.root, self.socket_to_server, self.AssignComplete)
         self.assign_obj.init_panel_create()
 
     def move_to_ringing_initiator(self):

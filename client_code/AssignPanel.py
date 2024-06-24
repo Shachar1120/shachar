@@ -20,8 +20,7 @@ class AssignPanel:
         self.socket_to_server = socket_to_server
         self.complete_func = complete_func
         self.assign_response = None
-        self.username = None
-
+        self.user1 = None
         self.images = {}
 
     def handle_assign_response(self, msg):
@@ -89,11 +88,15 @@ class AssignPanel:
     def submit_assign(self):
 
         # hasattr is a python function that checks if a value exists
+        if hasattr(self, 'password_try_again'):
+            self.password_try_again.destroy()
+
         cmd = "ASSIGN"
         username = self.user_name_input_area.get()
+        self.user1 = username
         password = self.user_password_entry_area.get()
 
-        self.username = username # moving username value
+        self.user1 = username # moving username value
 
         # Check if username and password are not empty
         if username.strip() and password.strip():
@@ -123,6 +126,10 @@ class AssignPanel:
 
                     else:
                         if msg_response == "ASSIGN_NACK":
+                            if not hasattr(self, 'already_registered_try_again'):
+                                self.password_try_again = Label(self.password_try_again,
+                                                                          text="Password is Incorrect! Try Again")
+                                self.password_try_again.pack()
                             print("password is incorrect???")
                         # else another error
 
