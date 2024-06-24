@@ -78,7 +78,7 @@ class ContactsPanel:
 
         self.Logged_In_window = self.root
         username1 = user
-        #self.Logged_In_window.title(username1) #f"{user}, Your Contacts are:"
+        self.Logged_In_window.title("Your Contacts are:") #f"{user}, Your Contacts are:"
 
         #cmd = "CONTACTS"
         #params = []

@@ -148,7 +148,7 @@ class Cli:
 
 
     def move_to_in_call_initiator(self):
-
+        print("in destroy!!!")
         self.call_obj.destroy_panel_initiator_create()
         self.call_obj.transition = CallStates.IN_CALL
         self.call_obj.init_panel_calling(self.username1)
@@ -193,14 +193,15 @@ class Cli:
         self.contacts_obj.init_panel_create()
 
     def move_from_ringing_to_contact_list(self):
+        print('move_from_ringing_to_contact_list!!!')
         self.call_obj.destroy_panel_initiator_create()
         self.call_obj.transition = CallStates.INIT
         self.contacts_obj.init_panel_create()
 
 
 
-    def hang_up_call(self):
-        pass
+    #def hang_up_call(self):
+        #pass
 
 
     # def select_microphone(self, index, p):
@@ -254,6 +255,7 @@ class Cli:
 
             if CallStates.INIT == self.call_obj.state:
                 if self.call_obj.transition == CallStates.RINGING:
+                    print("from ringing to contacts!!!!")
                     self.move_from_ringing_to_contact_list()
 
                 elif self.call_obj.transition == CallStates.IN_CALL:

@@ -100,6 +100,7 @@ class CallConnectHandling:
         self.transition = CallStates.RINGING
 
     def destroy_panel_initiator_create(self):
+        print("in destroy 1!!!")
         self.call_who.destroy()
         self.calling_image.destroy()
 
@@ -227,6 +228,7 @@ class CallConnectHandling:
         if self.state == CallStates.RINGING:
             self.transition = self.state
             self.state = CallStates.INIT
+
         elif self.state == CallStates.IN_CALL:
             self.transition = self.state
             self.state = CallStates.INIT

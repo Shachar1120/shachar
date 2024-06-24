@@ -1,5 +1,4 @@
 import mysql.connector
-import sqlite3
 
 class DataBase:
 
@@ -12,7 +11,6 @@ class DataBase:
         self.plug_and_play()
 
         self.conn = mysql.connector.connect(
-            # הגדרת משתנים כשיוצרים את הדאטאבייס
             host="localhost",
             user="root",
             password="1234",
@@ -21,11 +19,11 @@ class DataBase:
         self.cursor = self.conn.cursor()
 
     def plug_and_play(self):
-        # build the database
+        # Build the database
         mydb = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="1234", # הגדרת משתנים ראשונית, אפילו לפני שיוצרים את הדאטאבייס
+            password="1234",
         )
         mycursor = mydb.cursor()
 
@@ -33,10 +31,11 @@ class DataBase:
         mycursor.execute(f"USE {self.db_name}")
 
         mycursor.execute(
-            "CREATE TABLE IF NOT EXISTS users (username VARCHAR(255), password VARCHAR(255), port VARCHAR(255))")
+            "CREATE TABLE IF NOT EXISTS users (username VARCHAR(255), password VARCHAR(255), port VARCHAR(255))"
+        )
 
     def create_new_account(self, username, password, port):
-        #Create a new account with the provided username, password, port, and channel ID.
+        # Create a new account with the provided username, password, port
 
         try:
             query = "INSERT INTO users (username, password, port) VALUES (%s, %s, %s)"
@@ -47,16 +46,14 @@ class DataBase:
             print(f"Error creating a new account: {e}")
 
     def create_tables(self):
-
-        #Create tables if they do not exist.
+        # Create tables if they do not exist
 
         try:
             self.cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     username VARCHAR(255) PRIMARY KEY,
                     password VARCHAR(255),
-                    port VARCHAR(255),
-
+                    port VARCHAR(255)
                 )
             """)
             self.conn.commit()
@@ -64,18 +61,14 @@ class DataBase:
         except mysql.connector.Error as e:
             print(f"Error creating tables: {e}")
 
-
     def is_username_in_database(self, username):
+        # Check if the username is available (if someone already has this username)
 
-        #Check if the username is available (if someone already has this username)
-
-        # בודקת האם שם משתמש קיים במסד נתונים
-        # אם השם משתמש קיים, מחזירה False, ואם לא קיים, מחזירה את פרטי המשתמש
         try:
             query = "SELECT * FROM users WHERE username=%s"
             self.cursor.execute(query, (username,))
             row = self.cursor.fetchone()
-            return row is None # if username exists return False
+            return row is None  # if username exists return False
         except mysql.connector.Error as e:
             print(f"Error checking username availability: {e}")
             return False
@@ -83,15 +76,10 @@ class DataBase:
     def find_username_info_database(self, username):
         # Find password and port (according to username) and return them if user is found
         try:
-            query = "SELECT password, port FROM users WHERE username=%s"  # מחפשת את הסיסמה וה-port לפי שם המשתמש
+            query = "SELECT password, port FROM users WHERE username=%s"
             self.cursor.execute(query, (username,))
             row = self.cursor.fetchone()
-            return row if row else None  # אם הרשומה נמצאה, היא מוחזרת כטופל (password, port)
-        except mysql.connector.Error as e:  # אם היא לא נמצאה, מוחזר None
-            print(f"Error finding password and port in database {e}")
+            return row if row else None  # Return row if found, else None
+        except mysql.connector.Error as e:
+            print(f"Error finding password and port in database: {e}")
             return None
-
-
-
-
-
