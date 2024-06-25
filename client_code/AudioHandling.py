@@ -28,7 +28,7 @@ class AudioHandling:
                                          frames_per_buffer=AudioHandling.CHUNK)
 
     def destroy_channels(self):
-        # Stop audio streams
+        # Stop audio streams 
         if self.stream_input:
             self.stream_input.stop_stream()
             self.stream_input.close()
