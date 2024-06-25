@@ -153,7 +153,7 @@ class RegisterPanel:
         # Create the submit button with an image and adjust its position
         self.submit_button = Button(self.register_panel_window, image=self.images['submit_button_image'], command=self.submit_register,
                                     bd=0)
-        self.submit_button.place(x=170, y=140)  # Adjusted position
+        self.submit_button.place(x=170, y=140)  # Adjusted position 
 
 
     def init_panel_destroy(self):
