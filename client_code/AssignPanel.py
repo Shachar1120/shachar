@@ -128,7 +128,7 @@ class AssignPanel:
                         print("this is the response!!", msg_response)
                         # only if register Ack- user is assigned!!
                         # moving into Logged In panel
-                        self.complete_func()  # AssignComplete function in Cli class
+                        self.complete_func()  # AssignComplete function in Cli class 
 
                     else:
                         if msg_response == "ASSIGN_NACK":
