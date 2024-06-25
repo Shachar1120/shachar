@@ -89,7 +89,7 @@ class NetworkHandling:
                             self.on_contact_func()
                             s.close()
                             self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+                            break
                         if opcode == "RING":
                             params = params[0].decode()
                             print("received call")
@@ -113,7 +113,7 @@ class NetworkHandling:
                                 data = params[0]
                                 #print("FRAME params!!! (data)", params)
                                 # accept frame and play
-                                # data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
+                                data = Pro.PARAMETERS_DELIMITER.encode().join(params) # split msg broke the pickle data by PARAMETERS_DELIMITER, so we combined it bak
                                 # data = pickle.loads(data)
                                 #print(f"got frame: {data}")
                                 self.audio_handler_obj.put_frame(data)
