@@ -306,7 +306,7 @@ class CallConnectHandling:
 
     def open_and_start_audio_channels(self):
         CHUNK = 4096
-        FORMAT = pyaudio.paInt16 
+        FORMAT = pyaudio.paInt16  
         CHANNELS = 1
         RATE = 44100
         RECORD_SECONDS = 10
