@@ -213,19 +213,36 @@ class CallConnectHandling:
         self.btn_hang_up1.place(relx=0.5, rely=0.7, anchor=CENTER)  # Place button at the center bottom
 
     def destroy_panel_calling(self):
-        self.root.destroy()
+        #self.root.destroy()
         self.call_label.destroy()
         self.username_label.destroy()
-        self.btn_hang_up1.destroy()
+        #self.btn_hang_up1.destroy()
 
     #def destroy_panel_call_reciever(self):
         #self.root.destroy()
 
     def hang_up_call(self):
-        self.destroy_panel_calling()
-        #self.destroy_panel_call_reciever()
-        print("exiting")
-        #os._exit(0)
+        # self.destroy_panel_calling()
+        # #self.destroy_panel_call_reciever()
+        # print("exiting")
+        # #os._exit(0)
+        print("hung up")
+        if self.audio_handling is not None:
+            self.audio_handling.destroy_channels()
+            self.audio_handling = None
+
+        sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
+        self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+
+        #self.btn_hang_up2.destroy()
+        # reject call || hangup call
+        if self.state == CallStates.RINGING:
+            self.transition = self.state
+            self.state = CallStates.INIT
+
+        elif self.state == CallStates.IN_CALL:
+            self.transition = self.state
+            self.state = CallStates.INIT
 
 
 
@@ -272,6 +289,8 @@ class CallConnectHandling:
         #         self.destroy_panel_calling()
         #     else:
         #         self.destroy_panel_acceptor_create()
+        sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
+        self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socke
 
         self.btn_hang_up3.destroy()
         self.btn_answer.destroy()

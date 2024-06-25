@@ -18,6 +18,7 @@ class NetworkHandling:
         self.on_contact_func = None
         self.move_to_ringing_acceptor = move_to_ringing_acceptor
         self.contacts_obj = None
+        self.in_call = False
 
 
 
@@ -73,9 +74,9 @@ class NetworkHandling:
                     self.call_initiate_socket, _ = self.call_accept_socket.accept()
                     print("Client connected")
 
-                elif self.call_initiate_socket:  # for call handling
+                elif s == self.call_initiate_socket:  # for call handling
 
-                    res, message = Pro.get_msg(self.call_initiate_socket)
+                    res, message = Pro.get_msg(s)
                     #print(f"wait_for_network: {message}")
                     if res:
                         opcode, nof_params, params = Pro.split_message(message)
@@ -83,8 +84,11 @@ class NetworkHandling:
                         #print("the message is:", opcode, nof_params, params)
 
                         if opcode == "MOVE_TO_CONTACT":
+                            self.in_call = False
                             print("received MOVE_TO_CONTACT")
                             self.on_contact_func()
+                            s.close()
+                            self.call_initiate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
                         if opcode == "RING":
                             params = params[0].decode()
@@ -94,6 +98,7 @@ class NetworkHandling:
                             # self.init_panel_acceptor_create()
 
                         elif opcode == "IN_CALL":
+                            self.in_call = True
                             # params = params[0].decode()
                             print("got in call!! AudioHandling")
 
@@ -116,10 +121,11 @@ class NetworkHandling:
                             pass
 
                     else:
-                        print("wrong user! you called yourself") # bug- when calling userself(we will fi it by remoing ourself from contacts list)
+                        pass
+                        #print("wrong user! you called yourself") # bug- when calling userself(we will fi it by remoing ourself from contacts list)
 
 
-            if self.audio_handler_obj is not None:
+            if self.audio_handler_obj is not None and self.in_call:
                 #if (self.audio_handler_obj):
                 #   print(f"self.audio_handler_obj = {self.audio_handler_obj}, self.audio_handler_obj.stream_input = {self.audio_handler_obj.stream_input}")
                 # audio handling... if in call

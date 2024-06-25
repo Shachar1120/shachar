@@ -154,7 +154,7 @@ class Cli:
 
     def move_to_in_call_acceptor(self):
         self.call_obj.state = CallStates.IN_CALL
-
+        self.networking_obj.in_call = True
         cmd = Pro.cmds[Pro.IN_CALL]
         # send IN_CALL message to the caller = CALL ACK
         try:
@@ -189,21 +189,22 @@ class Cli:
     def move_from_call_to_contact_list(self):
         self.call_obj.destroy_panel_calling()
         self.call_obj.transition = CallStates.INIT
+        self.networking_obj.in_call = False
 
-        sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
-        self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+        #sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
+        #self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
 
-        self.contacts_obj.init_panel_create()
+        self.contacts_obj.init_panel_create(self.assign_obj.user1)
 
     def move_from_ringing_to_contact_list(self):
         print('move_from_ringing_to_contact_list!!!')
         self.call_obj.destroy_panel_initiator_create()
         self.call_obj.transition = CallStates.INIT
 
-        sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
-        self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
+        #sending_cmd = Pro.create_msg("MOVE_TO_CONTACT".encode(), [])
+        #self.networking_obj.call_initiate_socket.send(sending_cmd)  # send to my socket
 
-        self.contacts_obj.init_panel_create()
+        self.contacts_obj.init_panel_create(self.assign_obj.user1)
 
 
 

@@ -74,8 +74,8 @@ class ContactsPanel:
         #print("split_message3:", opcode, nof_params, params)
         #return opcode, nof_params, params
 
-    def init_panel_create(self, user=None):
-
+    def init_panel_create(self, user):
+        print("user in contacts is!!!", user)
         self.refresh_assigned_clients = True
         self.Logged_In_window = self.root
         username1 = user
